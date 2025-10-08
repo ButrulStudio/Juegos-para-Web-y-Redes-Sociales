@@ -6,7 +6,6 @@ public class CameraController : MonoBehaviour
 {
     [SerializeField] private float sensibility = 100f;
     [SerializeField] private float verticalRotation = 0f;
-    [SerializeField] private Transform weapon;
 
     public Transform jugador;
 
@@ -29,7 +28,7 @@ public class CameraController : MonoBehaviour
 
         // Aplica rotación horizontal al jugador (rota el cuerpo)
         jugador.Rotate(Vector3.up * mouseX);
-        weapon.Rotate(Vector3.up * mouseY);
+        
 
 
     }

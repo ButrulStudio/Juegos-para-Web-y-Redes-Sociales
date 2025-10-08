@@ -11,7 +11,7 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private GameObject gameOverPanel;
     //[SerializeField] private TextMeshProUGUI gameOver;
     [SerializeField] private int maxHealth = 100;
-    private int currentHealth;
+    public int currentHealth;
 
     // Start is called before the first frame update
     void Start()
@@ -48,5 +48,19 @@ public class PlayerHealth : MonoBehaviour
         Time.timeScale = 0;
         gameOverPanel.SetActive(true);
         
+    }
+
+    //Debug de vida
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            TakeDamage(20);  // Baja 20 de vida al pulsar la tecla H
+        }
+
+        if (Input.GetKeyDown(KeyCode.J))
+        {
+            Heal(10);  // Recupera 10 de vida al pulsar la tecla J
+        }
     }
 }
