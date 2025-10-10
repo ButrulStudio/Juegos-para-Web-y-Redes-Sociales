@@ -2,27 +2,20 @@
 
 public class ZombieSpawner : MonoBehaviour
 {
-    [Header("Configuraci�n general")]
-    [SerializeField] private GameObject zombiePrefab;
-    // [SerializeField] private int maxZombies = 25; // ELIMINAR O COMENTAR
-    // [SerializeField] private float spawnInterval = 3f; // ELIMINAR O COMENTAR
-
-    [Header("Referencias a Scripts")]
-    [SerializeField] private WaveManager waveManager; // NUEVA REFERENCIA
-
-    [Header("Puntos de spawn (empties en la escena)")]
+    [Header("Configuración general")]
+    [SerializeField] private WaveManager waveManager;
     [SerializeField] private Transform[] spawnPoints;
+    [SerializeField] private ZombieData[] zombieTypes;
 
     private int zombiesRemainingInWave;
     private float currentSpawnInterval;
     private float zombieHpMultiplier;
-
     private float nextSpawnTime;
     private bool isSpawning = false;
 
     void Update()
     {
-        if (!isSpawning) return; // Se detiene si no hay una oleada activa
+        if (!isSpawning) return;
 
         if (Time.time >= nextSpawnTime && zombiesRemainingInWave > 0)
         {
@@ -31,39 +24,72 @@ public class ZombieSpawner : MonoBehaviour
             zombiesRemainingInWave--;
 
             if (zombiesRemainingInWave <= 0)
-            {
-                // Cuando todos los zombies han salido, detener el spawner.
                 isSpawning = false;
-            }
         }
     }
 
-    // Nuevo m�todo llamado por WaveManager para iniciar el spawn de la oleada
     public void StartWaveSpawn(int count, float interval, float hpMultiplier)
     {
         zombiesRemainingInWave = count;
         currentSpawnInterval = interval;
         zombieHpMultiplier = hpMultiplier;
         isSpawning = true;
-        nextSpawnTime = Time.time; // Empieza a spawnear inmediatamente
+        nextSpawnTime = Time.time;
     }
 
     private void SpawnZombie()
     {
-        if (zombiePrefab == null || spawnPoints.Length == 0) return;
+        if (spawnPoints.Length == 0 || zombieTypes.Length == 0) return;
 
-        // Elige un punto de spawn aleatorio
-        Transform randomSpawn = spawnPoints[Random.Range(0, spawnPoints.Length)];
+        Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+        ZombieData chosenData = GetRandomZombieData();
 
-        // Instancia el zombie
-        GameObject newZombie = Instantiate(zombiePrefab, randomSpawn.position, randomSpawn.rotation);
-
-        // APLICA EL MULTIPLICADOR DE VIDA
+        GameObject newZombie = Instantiate(chosenData.prefab, spawnPoint.position, spawnPoint.rotation);
         ZombieController zc = newZombie.GetComponent<ZombieController>();
+
         if (zc != null)
         {
-            // Llama a una nueva funci�n en ZombieController para aplicar el multiplicador
+            zc.ApplyZombieData(chosenData);
             zc.ApplyHealthMultiplier(zombieHpMultiplier);
+        }
+    }
+
+    private ZombieData GetRandomZombieData()
+    {
+        int wave = waveManager != null ? waveManager.GetCurrentWave() : 1;
+
+        float basicChance = 0.5f; // 50% en la oleada 1
+        float fastChance = 0.3f;  // 30% rápido
+        float tankChance = 0.2f;  // 20% tanque
+
+        // Aumenta la dificultad con cada oleada
+        // Cada ola reduce los básicos y aumenta el resto un poco
+        basicChance = Mathf.Clamp01(0.5f - (wave - 1) * 0.05f); // -5% por ola
+        fastChance = Mathf.Clamp01(0.3f + (wave - 1) * 0.03f);  // +3% por ola
+        tankChance = Mathf.Clamp01(0.2f + (wave - 1) * 0.02f);  // +2% por ola
+
+        float total = basicChance + fastChance + tankChance;
+        basicChance /= total;
+        fastChance /= total;
+        tankChance /= total;
+
+        float randomValue = Random.value;
+
+        if (randomValue < basicChance)
+        {
+            return zombieTypes[0]; // básico
+        }
+        else if (randomValue < basicChance + fastChance && zombieTypes.Length > 1)
+        {
+            return zombieTypes[1]; // rápido
+        }
+        else if (zombieTypes.Length > 2)
+        {
+            return zombieTypes[2]; // tanque
+        }
+        else
+        {
+            return zombieTypes[0];
         }
     }
 }

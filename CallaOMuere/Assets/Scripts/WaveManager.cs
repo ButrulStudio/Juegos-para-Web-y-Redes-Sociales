@@ -22,6 +22,9 @@ public class WaveManager : MonoBehaviour
     // Variables para llevar la cuenta de la progresi�n
     private int currentZombieCount;
 
+    // Para mostrar el número de wave dentro del juego
+    public int currentWave => currentWaveIndex + 1;
+
     void Start()
     {
         if (zombieSpawner == null)
@@ -93,4 +96,10 @@ public class WaveManager : MonoBehaviour
         nextWaveTime = Time.time + timeBetweenWaves;
         isWaitingForNextWave = true;
     }
+
+    public int GetCurrentWave()
+    {
+        return currentWave;
+    }
+
 }

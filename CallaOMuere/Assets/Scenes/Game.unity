@@ -922,12 +922,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4edff10f30362644931b637a3a8d09a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  zombiePrefab: {fileID: 6807299748907565382, guid: efcba72cc88af3f40ac286a48c87e929, type: 3}
   waveManager: {fileID: 0}
   spawnPoints:
   - {fileID: 2069635356}
   - {fileID: 861173197}
   - {fileID: 538599132}
+  zombieTypes:
+  - {fileID: 11400000, guid: b01b8cbc23fc10f4bb03d63ae79c5668, type: 2}
+  - {fileID: 11400000, guid: 673871e7ab86faa4bb88ffa2bbe0f85f, type: 2}
+  - {fileID: 11400000, guid: 281066ff5f545e84684795b2dc5550b9, type: 2}
 --- !u!4 &864696410
 Transform:
   m_ObjectHideFlags: 0
