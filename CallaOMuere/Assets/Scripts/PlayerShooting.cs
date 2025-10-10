@@ -18,63 +18,116 @@ public class PlayerShooting : MonoBehaviour
 
     void Update()
     {
-        // Disparo con clic izquierdo y control de cadencia
-        if (Input.GetButton("Fire1") && Time.time >= nextFireTime)
+        // Control de disparo según el tipo de arma
+        switch (currentWeapon.weaponType)
         {
-            nextFireTime = Time.time + currentWeapon.fireRate;
-            Shoot();
+            case WeaponType.Pistol:
+                if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime)
+                {
+                    nextFireTime = Time.time + currentWeapon.fireRate;
+                    Shoot(); // disparo simple
+                }
+                break;
+
+            case WeaponType.Rifle:
+                if (Input.GetButton("Fire1") && Time.time >= nextFireTime)
+                {
+                    nextFireTime = Time.time + currentWeapon.fireRate;
+                    ShootRifle();
+                }
+                break;
+
+            case WeaponType.Shotgun:
+                if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime)
+                {
+                    nextFireTime = Time.time + currentWeapon.fireRate;
+                    ShootShotgun(); // varios perdigones
+                }
+                break;
         }
     }
 
     void Shoot()
     {
-        // Lanza el Raycast
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
         {
-            // Debug.Log($"Impacto en: {hit.collider.name}"); // Desactivado para evitar redundancia
+            HandleHit(hit,currentWeapon.damage);
+        }
+    }
 
-            // 1. Intentar obtener el componente ZombieController
-            ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
+    void ShootShotgun()
+    {
+        for (int i = 0; i < currentWeapon.pelletCount; i++)
+        {
+            // Dirección base
+            Vector3 direction = playerCamera.transform.forward;
 
-            if (zombieHealth != null)
+            // Aplicar rotación aleatoria dentro del cono de spread (pitch y yaw)
+            direction = Quaternion.Euler(
+                Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle),
+                Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle),
+                0
+            ) * direction;
+
+            Ray ray = new Ray(playerCamera.transform.position, direction);
+            if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
             {
-                // A. APLICAR DAÑO Y MENSAJE DE DEBUG (Solo si es un Zombie)
-                float damageAmount = currentWeapon.damage;
-                zombieHealth.TakeDamage(damageAmount);
-                float remainingHealth = zombieHealth.GetHP(); // Usa la nueva función
-
-                Debug.Log($"El Zombie {hit.collider.name} ha recibido {damageAmount} de daño y le quedan {remainingHealth:F1} de vida.");
-                // :F1 formatea el float a un decimal
-
-                // B. ADHERIR BULLET HOLE AL ZOMBIE
-                if (currentWeapon.bulletHolePrefab != null)
-                {
-                    // Calcular rotación para que el agujero mire hacia afuera
-                    Quaternion hitRotation = Quaternion.FromToRotation(Vector3.forward, hit.normal) * Quaternion.Euler(0, 180f, 0);
-
-                    GameObject hole = Instantiate(currentWeapon.bulletHolePrefab,
-                                                   hit.point + hit.normal * 0.001f, // Desplazamiento mínimo para evitar Z-fighting
-                                                   hitRotation);
-
-                    // Adherir el bullet hole al objeto impactado (el zombie)
-                    hole.transform.SetParent(hit.transform);
-
-                    // Rotación aleatoria sobre Z para que se vea más natural
-                    hole.transform.Rotate(0, 0, Random.Range(0, 360));
-
-                    // Desactivar el Collider del bullet hole para que no interfiera con el zombie
-                    Collider holeCollider = hole.GetComponent<Collider>();
-                    if (holeCollider != null)
-                    {
-                        holeCollider.enabled = false;
-                    }
-
-                    Destroy(hole, 5f); // Se destruye automáticamente tras 5 segundos
-                }
+                HandleHit(hit, currentWeapon.damage); // cada perdigón hace el daño completo
             }
-            // 2. Restricción: Si impacta algo pero NO tiene ZombieController, 
-            // no se pone el bullet hole ni se aplica daño (cumple la restricción de 'solo en zombies').
+        }
+    }
+
+    void ShootRifle()
+    {
+        // Raycast desde la cámara hacia adelante
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+
+        // Si impacta algo
+        if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
+        {
+            // Aplica el daño normal del arma
+            HandleHit(hit, currentWeapon.damage);
+        }
+
+        // (Opcional) aquí más adelante puedes añadir:
+        // - retroceso visual
+        // - sonido de ráfaga
+        // - partículas del cañón
+    }
+
+    void HandleHit(RaycastHit hit,float damage)
+    {
+        // Intentar obtener el componente del zombie (tu clase actualmente es ZombieController)
+        ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
+
+        if (zombieHealth != null)
+        {
+            float damageAmount = damage;
+            zombieHealth.TakeDamage(damageAmount);
+            float remainingHealth = zombieHealth.GetHP();
+            Debug.Log($"El Zombie {hit.collider.name} ha recibido {damageAmount} de daño y le quedan {remainingHealth:F1} de vida.");
+        }
+
+        // Instanciar bullet hole (si hay prefab)
+        if (hit.collider.CompareTag("Zombie") && currentWeapon.bulletHolePrefab != null)
+        {
+            Quaternion hitRotation = Quaternion.FromToRotation(Vector3.forward, hit.normal) * Quaternion.Euler(0, 180f, 0);
+            GameObject hole = Instantiate(currentWeapon.bulletHolePrefab,
+                                           hit.point + hit.normal * 0.001f,
+                                           hitRotation);
+
+            // Adherir al objeto impactado para que se mueva con él
+            hole.transform.SetParent(hit.transform);
+
+            // Rotación aleatoria en Z
+            hole.transform.Rotate(0, 0, Random.Range(0, 360));
+
+            // Desactivar collider del agujero si tiene (para evitar interferencias)
+            Collider holeCollider = hole.GetComponent<Collider>();
+            if (holeCollider != null) holeCollider.enabled = false;
+
+            Destroy(hole, 5f);
         }
     }
 

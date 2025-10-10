@@ -10,12 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4a8d08586d887ca40939c1b07c163a91, type: 3}
-  m_Name: Pistola
+  m_Name: Rifle
   m_EditorClassIdentifier: 
-  weaponName: Pistola
+  weaponType: 1
+  weaponName: Rifle
   damage: 20
   range: 100
   fireRate: 0.2
-  weaponModelPrefab: {fileID: 8878068774180451747, guid: 68dfd0698ffdc2c45b76bcf5b41175a3, type: 3}
+  weaponModelPrefab: {fileID: 5819002439409631892, guid: 552dfc4e0ae09d14c9941c19ccfb8f5c, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
   crosshairIcon: {fileID: 21300000, guid: 6a9b37de87d370e42a71bb623b10af05, type: 3}
+  pelletCount: 5
+  spreadAngle: 10
