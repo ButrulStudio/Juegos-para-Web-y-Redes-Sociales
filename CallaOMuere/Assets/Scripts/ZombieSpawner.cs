@@ -1,8 +1,8 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class ZombieSpawner : MonoBehaviour
 {
-    [Header("Configuración general")]
+    [Header("Configuraciï¿½n general")]
     [SerializeField] private GameObject zombiePrefab;
     // [SerializeField] private int maxZombies = 25; // ELIMINAR O COMENTAR
     // [SerializeField] private float spawnInterval = 3f; // ELIMINAR O COMENTAR
@@ -38,7 +38,7 @@ public class ZombieSpawner : MonoBehaviour
         }
     }
 
-    // Nuevo método llamado por WaveManager para iniciar el spawn de la oleada
+    // Nuevo mï¿½todo llamado por WaveManager para iniciar el spawn de la oleada
     public void StartWaveSpawn(int count, float interval, float hpMultiplier)
     {
         zombiesRemainingInWave = count;
@@ -62,7 +62,7 @@ public class ZombieSpawner : MonoBehaviour
         ZombieController zc = newZombie.GetComponent<ZombieController>();
         if (zc != null)
         {
-            // Llama a una nueva función en ZombieController para aplicar el multiplicador
+            // Llama a una nueva funciï¿½n en ZombieController para aplicar el multiplicador
             zc.ApplyHealthMultiplier(zombieHpMultiplier);
         }
     }

@@ -1,45 +1,68 @@
 using UnityEngine;
-using TMPro; // Necesario para TextMeshPro
+using TMPro;
 
 public class ScoreManager : MonoBehaviour
 {
-    // ¡VERIFICA ESTO EN EL INSPECTOR! Debe tener arrastrado tu TextMeshPro.
-    [SerializeField] private TextMeshProUGUI scoreText;
+    // Propiedad estática para el patrón Singleton
+    public static ScoreManager Instance { get; private set; }
 
-    // Establecemos 30 como el valor por defecto en el código
+    [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField] private int pointsPerKill = 30;
 
     private int currentScore = 0;
 
+    // Inicializa 'Instance' al cargar la escena
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
     void Start()
     {
-        // El script se asegura de que el texto inicial sea "PUNTOS: 0"
         UpdateScoreDisplay();
     }
 
     public void AddScore(int points)
     {
         currentScore += points;
-        // La actualización ocurre aquí, inmediatamente después de sumar los puntos.
         UpdateScoreDisplay();
     }
 
     public void ZombieKilled()
     {
-        // Esta función ahora usa el valor configurado (30 por defecto)
         AddScore(pointsPerKill);
+    }
+
+    public int GetCurrentScore()
+    {
+        return currentScore;
+    }
+
+    // Método para gastar puntos (usado por PowerUps)
+    public bool TrySpendPoints(int amount)
+    {
+        if (currentScore >= amount)
+        {
+            currentScore -= amount;
+            UpdateScoreDisplay();
+            return true;
+        }
+        return false;
     }
 
     private void UpdateScoreDisplay()
     {
         if (scoreText != null)
         {
-            // Formato claro para la puntuación
             scoreText.text = currentScore.ToString();
         }
         else
         {
-            // Si ves esto en el log, es el problema.
             Debug.LogError("El TextMeshProUGUI (scoreText) no está asignado en el Inspector del ScoreManager.");
         }
     }

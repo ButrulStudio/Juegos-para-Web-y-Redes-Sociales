@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System.Collections;
 
 public class ZombieController : MonoBehaviour
@@ -32,10 +32,10 @@ public class ZombieController : MonoBehaviour
         waveManager = FindObjectOfType<WaveManager>();
         scoreManager = FindObjectOfType<ScoreManager>();
 
-        // VERIFICACIÓN DE DEBUG
+        // VERIFICACIï¿½N DE DEBUG
         if (scoreManager == null)
         {
-            Debug.LogError("ERROR GRAVE: ScoreManager NO encontrado en la escena. ¡Los puntos NO se sumarán!");
+            Debug.LogError("ERROR GRAVE: ScoreManager NO encontrado en la escena. ï¿½Los puntos NO se sumaran!");
         }
     }
 
@@ -81,7 +81,7 @@ public class ZombieController : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
 
-        // Aplicar daño al jugador
+        // Aplicar daï¿½o al jugador
         PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
         if (playerHealth != null)
         {

@@ -1,15 +1,15 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class WaveManager : MonoBehaviour
 {
-    [Header("Configuración de Oleadas")]
+    [Header("Configuraciï¿½n de Oleadas")]
     [SerializeField] private float timeBetweenWaves = 10f;
 
-    [Header("Configuración de Zombies")]
+    [Header("Configuraciï¿½n de Zombies")]
     [SerializeField] private int initialZombieCount = 5;
     [SerializeField][Range(1.0f, 2.0f)] private float zombieCountMultiplier = 1.05f; // 5% de aumento
     [SerializeField] private float baseZombieHealth = 60f; // La vida de la ronda 1
-    [SerializeField] private float healthIncreasePerWave = 30f; // Puntos de vida a añadir por ronda
+    [SerializeField] private float healthIncreasePerWave = 30f; // Puntos de vida a aï¿½adir por ronda
 
     [Header("Referencias")]
     [SerializeField] private ZombieSpawner zombieSpawner;
@@ -19,7 +19,7 @@ public class WaveManager : MonoBehaviour
     private float nextWaveTime;
     private bool isWaitingForNextWave = true;
 
-    // Variables para llevar la cuenta de la progresión
+    // Variables para llevar la cuenta de la progresiï¿½n
     private int currentZombieCount;
 
     void Start()
@@ -50,12 +50,12 @@ public class WaveManager : MonoBehaviour
 
     void StartNextWave()
     {
-        // --- CÁLCULO PROCEDURAL DE LA OLEADA ---
+        // --- Cï¿½LCULO PROCEDURAL DE LA OLEADA ---
 
-        // 1. Calcular el número de zombies para esta oleada
+        // 1. Calcular el nï¿½mero de zombies para esta oleada
         if (currentWaveIndex > 0) // No aplicar el multiplicador en la primera ronda
         {
-            // Aumenta un 5% y redondea hacia arriba al entero más cercano
+            // Aumenta un 5% y redondea hacia arriba al entero mï¿½s cercano
             currentZombieCount = Mathf.CeilToInt(currentZombieCount * zombieCountMultiplier);
         }
         zombiesRemainingInWave = currentZombieCount;
@@ -65,17 +65,13 @@ public class WaveManager : MonoBehaviour
         // Convertimos la vida a un multiplicador basado en la vida inicial (60)
         float healthMultiplier = currentHealth / baseZombieHealth;
 
-        // 3. El intervalo de spawn puede ser constante o también podrías hacerlo procedural
+        // 3. El intervalo de spawn puede ser constante o tambiï¿½n podrï¿½as hacerlo procedural
         float spawnInterval = 1f;
 
         Debug.Log($"Iniciando Oleada {currentWaveIndex + 1}: Spawneando {zombiesRemainingInWave} zombies con {currentHealth} HP cada uno.");
 
         // Instruir al spawner para que comience a generar
-        zombieSpawner.StartWaveSpawn(
-            zombiesRemainingInWave,
-            spawnInterval,
-            healthMultiplier
-        );
+        zombieSpawner.StartWaveSpawn(zombiesRemainingInWave,spawnInterval,healthMultiplier);
     }
 
     public void ZombieDied()
@@ -91,7 +87,7 @@ public class WaveManager : MonoBehaviour
 
     void EndWave()
     {
-        Debug.Log($"¡Oleada {currentWaveIndex + 1} completada!");
+        Debug.Log($"ï¿½Oleada {currentWaveIndex + 1} completada!");
         currentWaveIndex++;
 
         nextWaveTime = Time.time + timeBetweenWaves;

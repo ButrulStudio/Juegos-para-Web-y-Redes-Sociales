@@ -7,101 +7,99 @@ using UnityEngine.UI;
 public class PlayerHealth : MonoBehaviour
 {
     [SerializeField] private Slider healthSlider;
+    [SerializeField] private Slider armorSlider;
     [SerializeField] private GameObject gameOverPanel;
-    [SerializeField] private float maxHealth = 100;
-    public float currentHealth; // Vida visible (entero)
+
+    [Header("Salud")]
+    [SerializeField] private float maxHealth = 100f;
+    public float currentHealth;
+
+    [Header("Armadura")]
+    [SerializeField] public float maxArmor = 100f; // Ahora es public para accesibilidad
+    public float currentArmor;
 
     [Header("Regeneración")]
-    [SerializeField] private float timeUntilRegenStarts = 3.0f; // Tiempo en segundos antes de que empiece a regenerar
-    [SerializeField] private float regenRatePerSecond = 20.0f;  // Cantidad de vida por segundo
+    [SerializeField] private float timeUntilRegenStarts = 3.0f;
+    [SerializeField] private float regenRatePerSecond = 20.0f;
 
     private float lastDamageTime;
-    // NUEVA VARIABLE: Almacena la vida con decimales para la regeneración gradual
-    private float currentHealthFloat;
 
     void Start()
     {
         currentHealth = maxHealth;
-        currentHealthFloat = maxHealth;
+        currentArmor = 0f;
+
         healthSlider.maxValue = maxHealth;
         healthSlider.value = currentHealth;
+
+        if (armorSlider != null)
+        {
+            armorSlider.maxValue = maxArmor;
+            armorSlider.value = currentArmor;
+        }
+
         gameOverPanel.SetActive(false);
         lastDamageTime = Time.time;
     }
 
     void Update()
     {
-        // Debug de vida
-        if (Input.GetKeyDown(KeyCode.H))
-        {
-            TakeDamage(10);
-        }
-
-        // --- LÓGICA DE REGENERACIÓN ---
-
-        // 1. Verificar si ha pasado el tiempo de espera (3 segundos)
+        // LÓGICA DE REGENERACIÓN (SÓLO HEALTH)
         if (Time.time >= lastDamageTime + timeUntilRegenStarts)
         {
-            // 2. Verificar si la vida no está al máximo
             if (currentHealth < maxHealth)
             {
-                // Aplicar curación en el float
-                currentHealthFloat += regenRatePerSecond * Time.deltaTime;
-
-                // Asegurar que el float no exceda la vida máxima
-                currentHealthFloat = Mathf.Min(currentHealthFloat, (float)maxHealth);
-
-                // 3. Comprobar si la parte entera de la vida ha cambiado
-                if (currentHealthFloat != currentHealth)
-                {
-                    // Si ha cambiado, actualizar la vida entera y el Slider
-                    currentHealth = currentHealthFloat;
-                    healthSlider.value = currentHealth; // Actualiza el Slider
-                }
+                currentHealth += regenRatePerSecond * Time.deltaTime;
+                currentHealth = Mathf.Min(currentHealth, maxHealth);
+                healthSlider.value = currentHealth;
             }
         }
     }
 
-    public void TakeDamage(int amount)
+    public void TakeDamage(float amount) // El daño es FLOAT
     {
-        currentHealth -= amount;
+        float damageRemaining = amount;
 
-        // Sincronizar la vida float con la vida int
-        currentHealthFloat = currentHealth;
+        // 1. PRIORIDAD: DEDUCIR DAÑO DE LA ARMADURA
+        if (currentArmor > 0f)
+        {
+            if (currentArmor >= damageRemaining)
+            {
+                currentArmor -= damageRemaining;
+                damageRemaining = 0f;
+            }
+            else
+            {
+                damageRemaining -= currentArmor;
+                currentArmor = 0f;
+            }
+            if (armorSlider != null) armorSlider.value = currentArmor;
+        }
 
-        healthSlider.value = currentHealth;
+        // 2. DEDUCIR DAÑO RESTANTE DE LA VIDA
+        if (damageRemaining > 0f)
+        {
+            currentHealth -= damageRemaining;
+            healthSlider.value = currentHealth;
+            lastDamageTime = Time.time;
+        }
 
-        // REINICIA EL TEMPORIZADOR AL RECIBIR DAÑO
-        lastDamageTime = Time.time;
-
-        if (currentHealth <= 0)
+        if (currentHealth <= 0f)
         {
             Die();
         }
     }
 
-    // Adaptamos Heal para usar el float si se llama desde otro sitio, pero la lógica principal
-    // de regeneración está ahora en Update.
-    public void Heal(int amount)
+    // MÉTODO DE COMPRA (Importante para PowerUps.cs)
+    public void BuyMaxArmor()
     {
-        if (currentHealth < maxHealth)
-        {
-            currentHealth += amount;
-
-            if (currentHealth > maxHealth)
-            {
-                currentHealth = maxHealth;
-            }
-            // Sincronizar la vida float
-            currentHealthFloat = currentHealth;
-
-            healthSlider.value = currentHealth;
-        }
+        currentArmor = maxArmor;
+        if (armorSlider != null) armorSlider.value = currentArmor;
     }
 
     public void Die()
     {
-        Debug.Log("Has muerto ajaj, tonto tonto");
+        Debug.Log("Has muerto");
         Time.timeScale = 0;
         gameOverPanel.SetActive(true);
     }
