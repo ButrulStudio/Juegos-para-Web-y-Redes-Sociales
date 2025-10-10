@@ -21,8 +21,8 @@ public class ZombieController : MonoBehaviour
         zombie = GetComponent<CharacterController>();
         player = GameObject.FindGameObjectWithTag("Player").transform;
 
-        waveManager = FindObjectOfType<WaveManager>();
-        scoreManager = FindObjectOfType<ScoreManager>();
+        waveManager = FindAnyObjectByType<WaveManager>();
+        scoreManager = FindAnyObjectByType<ScoreManager>();
 
         ApplyZombieData(zombieData);
     }

@@ -19,6 +19,7 @@ public class WeaponData : ScriptableObject
     public float damage = 20f;
     public float range = 100f;
     public float fireRate = 0.2f;
+    public float price = 0;
 
     [Header("Visuales y efectos")]
     public GameObject weaponModelPrefab;
