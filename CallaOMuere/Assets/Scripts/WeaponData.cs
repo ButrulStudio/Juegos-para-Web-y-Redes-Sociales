@@ -21,6 +21,10 @@ public class WeaponData : ScriptableObject
     public float fireRate = 0.2f;
     public float price = 0;
 
+    [Header("Mejoras del arma")]
+    public bool isUpgraded = false;  
+    public int upgradeCost = 100;     
+
     [Header("Visuales y efectos")]
     public GameObject weaponModelPrefab;
     public GameObject bulletHolePrefab;
@@ -32,5 +36,6 @@ public class WeaponData : ScriptableObject
     [Tooltip("Ángulo máximo (grados) de dispersión desde la dirección de la mira")]
     [Range(0f, 45f)]
     public float spreadAngle = 10f;
+
 
 }

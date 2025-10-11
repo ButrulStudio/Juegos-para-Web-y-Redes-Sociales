@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerShooting : MonoBehaviour
@@ -11,6 +13,8 @@ public class PlayerShooting : MonoBehaviour
     private GameObject currentWeaponModel;
     private float nextFireTime = 0f;
 
+    private bool isBursting = false;
+
     void Start()
     {
         EquipWeapon(currentWeapon);  // Instancia la pistola al iniciar
@@ -22,10 +26,18 @@ public class PlayerShooting : MonoBehaviour
         switch (currentWeapon.weaponType)
         {
             case WeaponType.Pistol:
-                if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime)
+                if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime && !isBursting)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    Shoot(); // disparo simple
+
+                    if (currentWeapon.isUpgraded)
+                    {
+                        StartCoroutine(BurstFire());
+                    }
+                    else
+                    {
+                        Shoot(); // disparo normal
+                    }
                 }
                 break;
 
@@ -54,6 +66,31 @@ public class PlayerShooting : MonoBehaviour
         {
             HandleHit(hit,currentWeapon.damage);
         }
+    }
+
+    private IEnumerator BurstFire()
+    {
+        if (isBursting) yield break; // Si ya está disparando una ráfaga, salir
+
+        isBursting = true; // Marca que estamos en ráfaga
+        int burstCount = 3; // Número de disparos por ráfaga
+
+        for (int i = 0; i < burstCount; i++)
+        {
+            Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+            if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
+            {
+                HandleHit(hit, currentWeapon.damage);
+            }
+
+            // Pequeño delay entre balas individuales de la ráfaga
+            yield return new WaitForSeconds(currentWeapon.fireRate);
+        }
+
+        // Cadencia entre ráfagas (puedes ajustar el tiempo)
+        yield return new WaitForSeconds(0.1f);
+
+        isBursting = false; // Permite una nueva rafaga
     }
 
     void ShootShotgun()
@@ -137,7 +174,7 @@ public class PlayerShooting : MonoBehaviour
         if (currentWeaponModel != null)
             Destroy(currentWeaponModel);
 
-        currentWeapon = weaponData;
+        currentWeapon = Instantiate(weaponData);
 
         if (currentWeapon.weaponModelPrefab != null && weaponHolder != null)
         {
