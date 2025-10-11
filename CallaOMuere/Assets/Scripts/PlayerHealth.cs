@@ -1,21 +1,17 @@
-using System.Collections;
-using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UI; // Necesario para los Sliders
 
 public class PlayerHealth : MonoBehaviour
 {
     [SerializeField] private Slider healthSlider;
     [SerializeField] private Slider armorSlider;
-    [SerializeField] private GameObject gameOverPanel;
 
     [Header("Salud")]
     [SerializeField] private float maxHealth = 100f;
     public float currentHealth;
 
     [Header("Armadura")]
-    [SerializeField] public float maxArmor = 100f; // Ahora es public para accesibilidad
+    [SerializeField] public float maxArmor = 100f;
     public float currentArmor;
 
     [Header("Regeneración")]
@@ -29,35 +25,46 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = maxHealth;
         currentArmor = 0f;
 
-        healthSlider.maxValue = maxHealth;
-        healthSlider.value = currentHealth;
+        // Configuración de la barra de salud
+        if (healthSlider != null)
+        {
+            healthSlider.maxValue = maxHealth;
+            healthSlider.value = currentHealth;
+        }
 
+        // Configuración de la barra de armadura (si existe)
         if (armorSlider != null)
         {
             armorSlider.maxValue = maxArmor;
             armorSlider.value = currentArmor;
         }
 
-        gameOverPanel.SetActive(false);
         lastDamageTime = Time.time;
     }
 
     void Update()
     {
         // LÓGICA DE REGENERACIÓN (SÓLO HEALTH)
-        if (Time.time >= lastDamageTime + timeUntilRegenStarts)
+        if (Time.timeScale > 0 && Time.time >= lastDamageTime + timeUntilRegenStarts)
         {
             if (currentHealth < maxHealth)
             {
                 currentHealth += regenRatePerSecond * Time.deltaTime;
                 currentHealth = Mathf.Min(currentHealth, maxHealth);
-                healthSlider.value = currentHealth;
+
+                if (healthSlider != null)
+                {
+                    healthSlider.value = currentHealth;
+                }
             }
         }
     }
 
-    public void TakeDamage(float amount) // El daño es FLOAT
+    public void TakeDamage(float amount)
     {
+        // El jugador no puede recibir daño si el juego está pausado (Time.timeScale = 0)
+        if (Time.timeScale == 0) return;
+
         float damageRemaining = amount;
 
         // 1. PRIORIDAD: DEDUCIR DAÑO DE LA ARMADURA
@@ -80,27 +87,35 @@ public class PlayerHealth : MonoBehaviour
         if (damageRemaining > 0f)
         {
             currentHealth -= damageRemaining;
-            healthSlider.value = currentHealth;
+            currentHealth = Mathf.Max(currentHealth, 0f); // Asegura que la vida no sea negativa
+
+            if (healthSlider != null)
+            {
+                healthSlider.value = currentHealth;
+            }
+
             lastDamageTime = Time.time;
         }
 
+        // 3. COMPROBAR MUERTE
         if (currentHealth <= 0f)
         {
-            Die();
+            // Llama al GameManager para manejar la muerte del jugador y el Game Over
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.PlayerDied();
+            }
+            else
+            {
+                Debug.LogError("Player died but GameManager.Instance is null. Cannot handle game over properly.");
+            }
         }
     }
 
-    // MÉTODO DE COMPRA (Importante para PowerUps.cs)
+    // MÉTODO DE COMPRA
     public void BuyMaxArmor()
     {
         currentArmor = maxArmor;
         if (armorSlider != null) armorSlider.value = currentArmor;
-    }
-
-    public void Die()
-    {
-        Debug.Log("Has muerto");
-        Time.timeScale = 0;
-        gameOverPanel.SetActive(true);
     }
 }

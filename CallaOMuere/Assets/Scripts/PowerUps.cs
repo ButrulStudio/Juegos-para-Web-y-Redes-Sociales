@@ -6,7 +6,7 @@ public class PowerUps : MonoBehaviour
     // ENUM con los tipos de compra (Solo Armadura por ahora)
     public enum PurchaseType
     {
-        MaxArmor
+        MaxArmor,
     }
 
     [System.Serializable]
@@ -77,14 +77,14 @@ public class PowerUps : MonoBehaviour
         // 1. Verificación de Armadura Máxima (usa el público maxArmor)
         if (itemForSale.type == PurchaseType.MaxArmor && playerHealth.currentArmor == playerHealth.maxArmor)
         {
-            ShowConfirmationText("🛡️ Armadura al máximo. ¡Compra innecesaria!", 2f);
+            ShowConfirmationText("Armadura al máximo. ¡Compra innecesaria!", 2f);
             return;
         }
 
         // 2. Verificación de Puntos
         if (ScoreManager.Instance.GetCurrentScore() < itemForSale.cost)
         {
-            ShowConfirmationText($"❌ Puntos insuficientes. Necesitas {itemForSale.cost} puntos.", 2f);
+            ShowConfirmationText($"Puntos insuficientes. Necesitas {itemForSale.cost} puntos.", 2f);
             return;
         }
 
@@ -101,7 +101,7 @@ public class PowerUps : MonoBehaviour
             {
                 case PurchaseType.MaxArmor:
                     playerHealth.BuyMaxArmor();
-                    ShowConfirmationText($"✅ Armadura comprada por {itemForSale.cost} Puntos. Protección máxima.", 3f);
+                    ShowConfirmationText($"Armadura comprada por {itemForSale.cost} Puntos. Protección máxima.", 3f);
                     break;
             }
         }
