@@ -1,6 +1,5 @@
 using UnityEngine;
 
-
 public enum WeaponType
 {
     Pistol,
@@ -11,7 +10,6 @@ public enum WeaponType
 [CreateAssetMenu(fileName = "NewWeapon", menuName = "Weapons/Weapon Data")]
 public class WeaponData : ScriptableObject
 {
-
     public WeaponType weaponType = WeaponType.Pistol;
 
     [Header("Atributos del arma")]
@@ -22,20 +20,30 @@ public class WeaponData : ScriptableObject
     public float price = 0;
 
     [Header("Mejoras del arma")]
-    public bool isUpgraded = false;  
-    public int upgradeCost = 100;     
+    public bool isUpgraded = false;
+    public int upgradeCost = 100;
 
     [Header("Visuales y efectos")]
     public GameObject weaponModelPrefab;
     public GameObject bulletHolePrefab;
     public Sprite crosshairIcon;
 
-    [Header("Par·metros de escopeta")]
-    [Tooltip("N˙mero de perdigones que se disparan en un tiro (solo para Shotgun)")]
+    [Header("Par√°metros de escopeta")]
+    [Tooltip("N√∫mero de perdigones que se disparan en un tiro (solo para Shotgun)")]
     public int pelletCount = 5;
-    [Tooltip("¡ngulo m·ximo (grados) de dispersiÛn desde la direcciÛn de la mira")]
+    [Tooltip("√Ångulo m√°ximo (grados) de dispersi√≥n desde la direcci√≥n de la mira")]
     [Range(0f, 45f)]
     public float spreadAngle = 10f;
 
+    [Header("Recoil / Kickback")]
+    public float recoilVerticalMin = 1f;     // m√≠nimo recoil vertical
+    public float recoilVerticalMax = 2f;     // m√°ximo recoil vertical
+    public float recoilHorizontalMin = -0.5f;// m√≠nimo recoil horizontal
+    public float recoilHorizontalMax = 0.5f; // m√°ximo recoil horizontal
 
+    [Tooltip("Distancia que retrocede el arma al disparar")]
+    public float weaponKickbackDistance = 0.05f;
+
+    [Tooltip("Velocidad de regreso del arma a la posici√≥n original")]
+    public float weaponKickbackReturnSpeed = 8f;
 }

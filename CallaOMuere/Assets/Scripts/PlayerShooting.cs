@@ -1,28 +1,45 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerShooting : MonoBehaviour
 {
     [Header("Referencias")]
-    [SerializeField] private Camera playerCamera;  // Cámara del jugador
-    [SerializeField] private Transform weaponHolder; // Empty donde se instanciará el arma
+    [SerializeField] private Camera playerCamera;
+    [SerializeField] private Transform weaponHolder;
+    [SerializeField] private CameraController cameraController;
 
     [Header("Arma actual")]
-    public WeaponData currentWeapon;  // Arma equipada actualmente
+    public WeaponData currentWeapon;
     private GameObject currentWeaponModel;
     private float nextFireTime = 0f;
 
     private bool isBursting = false;
 
+    private Vector3 weaponInitialLocalPos;
+    private Vector3 weaponCurrentOffset;
+
     void Start()
     {
-        EquipWeapon(currentWeapon);  // Instancia la pistola al iniciar
+        EquipWeapon(currentWeapon);
+        if (weaponHolder != null) weaponInitialLocalPos = weaponHolder.localPosition;
     }
 
     void Update()
     {
-        // Control de disparo según el tipo de arma
+        HandleShooting();
+
+        // Movimiento de retorno del arma
+        if (weaponHolder != null)
+        {
+            weaponCurrentOffset = Vector3.Lerp(weaponCurrentOffset, Vector3.zero, Time.deltaTime * currentWeapon.weaponKickbackReturnSpeed);
+            weaponHolder.localPosition = weaponInitialLocalPos + weaponCurrentOffset;
+        }
+    }
+
+    void HandleShooting()
+    {
+        if (currentWeapon == null) return;
+
         switch (currentWeapon.weaponType)
         {
             case WeaponType.Pistol:
@@ -31,13 +48,9 @@ public class PlayerShooting : MonoBehaviour
                     nextFireTime = Time.time + currentWeapon.fireRate;
 
                     if (currentWeapon.isUpgraded)
-                    {
                         StartCoroutine(BurstFire());
-                    }
                     else
-                    {
-                        Shoot(); // disparo normal
-                    }
+                        Shoot();
                 }
                 break;
 
@@ -53,7 +66,7 @@ public class PlayerShooting : MonoBehaviour
                 if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    ShootShotgun(); // varios perdigones
+                    ShootShotgun();
                 }
                 break;
         }
@@ -63,44 +76,45 @@ public class PlayerShooting : MonoBehaviour
     {
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-        {
-            HandleHit(hit,currentWeapon.damage);
-        }
+            HandleHit(hit, currentWeapon.damage);
+
+        ApplyRecoil();
     }
 
     private IEnumerator BurstFire()
     {
-        if (isBursting) yield break; // Si ya está disparando una ráfaga, salir
+        if (isBursting) yield break;
+        isBursting = true;
 
-        isBursting = true; // Marca que estamos en ráfaga
-        int burstCount = 3; // Número de disparos por ráfaga
-
+        int burstCount = 3;
         for (int i = 0; i < burstCount; i++)
         {
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-            {
                 HandleHit(hit, currentWeapon.damage);
-            }
 
-            // Pequeño delay entre balas individuales de la ráfaga
+            ApplyRecoil();
             yield return new WaitForSeconds(currentWeapon.fireRate);
         }
 
-        // Cadencia entre ráfagas (puedes ajustar el tiempo)
         yield return new WaitForSeconds(0.1f);
+        isBursting = false;
+    }
 
-        isBursting = false; // Permite una nueva rafaga
+    void ShootRifle()
+    {
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
+            HandleHit(hit, currentWeapon.damage);
+
+        ApplyRecoil();
     }
 
     void ShootShotgun()
     {
         for (int i = 0; i < currentWeapon.pelletCount; i++)
         {
-            // Dirección base
             Vector3 direction = playerCamera.transform.forward;
-
-            // Aplicar rotación aleatoria dentro del cono de spread (pitch y yaw)
             direction = Quaternion.Euler(
                 Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle),
                 Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle),
@@ -109,58 +123,33 @@ public class PlayerShooting : MonoBehaviour
 
             Ray ray = new Ray(playerCamera.transform.position, direction);
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-            {
-                HandleHit(hit, currentWeapon.damage); // cada perdigón hace el daño completo
-            }
-        }
-    }
-
-    void ShootRifle()
-    {
-        // Raycast desde la cámara hacia adelante
-        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-
-        // Si impacta algo
-        if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-        {
-            // Aplica el daño normal del arma
-            HandleHit(hit, currentWeapon.damage);
+                HandleHit(hit, currentWeapon.damage);
         }
 
-        // (Opcional) aquí más adelante puedes añadir:
-        // - retroceso visual
-        // - sonido de ráfaga
-        // - partículas del cañón
+        ApplyRecoil();
     }
 
-    void HandleHit(RaycastHit hit,float damage)
+    void HandleHit(RaycastHit hit, float damage)
     {
-        // Intentar obtener el componente del zombie (tu clase actualmente es ZombieController)
         ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
 
         if (zombieHealth != null)
         {
-            float damageAmount = damage;
-            zombieHealth.TakeDamage(damageAmount);
-            float remainingHealth = zombieHealth.GetHP();
-            Debug.Log($"El Zombie {hit.collider.name} ha recibido {damageAmount} de daño y le quedan {remainingHealth:F1} de vida.");
+            zombieHealth.TakeDamage(damage);
+            float remainingHealth = zombieHealth.GetHP(); // Feedback de vida
+            Debug.Log($"El Zombie {hit.collider.name} ha recibido {damage} de daÃ±o y le quedan {remainingHealth:F1} de vida.");
         }
 
-        // Instanciar bullet hole (si hay prefab)
         if (hit.collider.CompareTag("Zombie") && currentWeapon.bulletHolePrefab != null)
         {
             Quaternion hitRotation = Quaternion.FromToRotation(Vector3.forward, hit.normal) * Quaternion.Euler(0, 180f, 0);
             GameObject hole = Instantiate(currentWeapon.bulletHolePrefab,
-                                           hit.point + hit.normal * 0.001f,
-                                           hitRotation);
+                                        hit.point + hit.normal * 0.001f,
+                                        hitRotation);
 
-            // Adherir al objeto impactado para que se mueva con él
             hole.transform.SetParent(hit.transform);
-
-            // Rotación aleatoria en Z
             hole.transform.Rotate(0, 0, Random.Range(0, 360));
 
-            // Desactivar collider del agujero si tiene (para evitar interferencias)
             Collider holeCollider = hole.GetComponent<Collider>();
             if (holeCollider != null) holeCollider.enabled = false;
 
@@ -168,7 +157,6 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // Método para equipar un arma y mostrar su modelo
     public void EquipWeapon(WeaponData weaponData)
     {
         if (currentWeaponModel != null)
@@ -181,6 +169,21 @@ public class PlayerShooting : MonoBehaviour
             currentWeaponModel = Instantiate(currentWeapon.weaponModelPrefab, weaponHolder);
             currentWeaponModel.transform.localPosition = Vector3.zero;
             currentWeaponModel.transform.localRotation = Quaternion.identity;
+        }
+    }
+
+    private void ApplyRecoil()
+    {
+        if (cameraController != null)
+        {
+            float vertical = Random.Range(currentWeapon.recoilVerticalMin, currentWeapon.recoilVerticalMax);
+            float horizontal = Random.Range(currentWeapon.recoilHorizontalMin, currentWeapon.recoilHorizontalMax);
+            cameraController.AddRecoil(vertical, horizontal);
+        }
+
+        if (weaponHolder != null)
+        {
+            weaponCurrentOffset = new Vector3(0, 0, -currentWeapon.weaponKickbackDistance);
         }
     }
 }

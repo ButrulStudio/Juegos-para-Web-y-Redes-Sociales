@@ -1,13 +1,19 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
+    [Header("Sensibilidad")]
     [SerializeField] private float sensibility = 100f;
-    [SerializeField] private float verticalRotation = 0f;
 
+    [Header("Referencias")]
     public Transform jugador;
+
+    [Header("Recoil")]
+    [SerializeField] private float recoilRecoverySpeed = 5f;
+    private Vector2 recoilOffset;
+    [SerializeField, Range(0f, 1f)] private float recoilMultiplier = 0.01f;
+
+    private float verticalRotation = 0f;
 
     void Start()
     {
@@ -16,20 +22,27 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
-        float mouseX = Input.GetAxis("Mouse X") * sensibility * Time.deltaTime; // Input de rotacion horizontal
-        float mouseY = Input.GetAxis("Mouse Y") * sensibility * Time.deltaTime; // Input de rotacion vertical
+        // --- Entrada del rat贸n ---
+        float mouseX = Input.GetAxis("Mouse X") * sensibility * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * sensibility * Time.deltaTime;
 
-        // Rotaci髇 vertical (mirar arriba/abajo), invertida normalmente para FPS
+        // --- Rotaci贸n vertical (mirar arriba/abajo) ---
         verticalRotation -= mouseY;
+        verticalRotation -= recoilOffset.x; // recoil empuja la c谩mara hacia arriba
         verticalRotation = Mathf.Clamp(verticalRotation, -90f, 90f);
 
-        // Aplica rotaci髇 vertical a la c醡ara
+        // --- Rotaci贸n horizontal ---
+        jugador.Rotate(Vector3.up * (mouseX + recoilOffset.y));
+
+        // --- Aplicar rotaci贸n a la c谩mara ---
         transform.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
 
-        // Aplica rotaci髇 horizontal al jugador (rota el cuerpo)
-        jugador.Rotate(Vector3.up * mouseX);
-        
+        // --- Recuperaci贸n suave del recoil ---
+        recoilOffset = Vector2.Lerp(recoilOffset, Vector2.zero, Time.deltaTime * recoilRecoverySpeed);
+    }
 
-
+    public void AddRecoil(float vertical, float horizontal)
+    {
+        recoilOffset += new Vector2(vertical, horizontal) * recoilMultiplier;
     }
 }

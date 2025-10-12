@@ -176,9 +176,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   healthSlider: {fileID: 0}
-  gameOverPanel: {fileID: 0}
+  armorSlider: {fileID: 0}
   maxHealth: 100
   currentHealth: 0
+  maxArmor: 100
+  currentArmor: 0
+  timeUntilRegenStarts: 3
+  regenRatePerSecond: 20
 --- !u!1 &2599392171781388409
 GameObject:
   m_ObjectHideFlags: 0
@@ -362,8 +366,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sensibility: 200
-  verticalRotation: 200
   jugador: {fileID: 2789888946692566376}
+  recoilRecoverySpeed: 6
+  recoilMultiplier: 0.05
 --- !u!1 &6878279382411075853
 GameObject:
   m_ObjectHideFlags: 0

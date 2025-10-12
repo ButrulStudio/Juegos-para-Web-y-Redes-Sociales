@@ -3225,6 +3225,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1623721578}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1726440932 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6020118131600127513, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
+  m_PrefabInstance: {fileID: 4526121979383119316}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f87057a7069628a40af6d5e8575afe12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1752821481
 GameObject:
   m_ObjectHideFlags: 0
@@ -3637,6 +3648,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerCamera: {fileID: 330585545}
   weaponHolder: {fileID: 1377504225}
+  cameraController: {fileID: 1726440932}
   currentWeapon: {fileID: 11400000, guid: b54dae3deb2bb42409c38217fd1e3301, type: 2}
 --- !u!4 &1837902159
 Transform:
@@ -4212,6 +4224,14 @@ PrefabInstance:
     - target: {fileID: 2789888946692566376, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6020118131600127513, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
+      propertyPath: recoilMultiplier
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 6020118131600127513, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
+      propertyPath: recoilRecoverySpeed
+      value: 8
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
