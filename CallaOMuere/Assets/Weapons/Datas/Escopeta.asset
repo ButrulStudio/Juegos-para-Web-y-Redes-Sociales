@@ -18,6 +18,9 @@ MonoBehaviour:
   range: 20
   fireRate: 0.2
   price: 100
+  magCapacity: 6
+  maxAmmo: 24
+  reloadTime: 2
   isUpgraded: 0
   upgradeCost: 100
   weaponModelPrefab: {fileID: 8841163763819339933, guid: 12fdd860ddd1b25408a08af8dfa21ec0, type: 3}

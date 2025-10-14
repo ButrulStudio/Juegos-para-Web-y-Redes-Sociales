@@ -19,6 +19,14 @@ public class WeaponData : ScriptableObject
     public float fireRate = 0.2f;
     public float price = 0;
 
+    [Header("Munición")]
+    [Tooltip("Balas que caben en el cargador")]
+    public int magCapacity = 8;
+    [Tooltip("Máxima munición")]
+    public int maxAmmo = 32;
+    [Tooltip("Tiempo que tarda el arma en recargar (en segundos)")]
+    public float reloadTime = 2.0f;
+
     [Header("Mejoras del arma")]
     public bool isUpgraded = false;
     public int upgradeCost = 100;

@@ -1,5 +1,7 @@
 using System.Collections;
 using UnityEngine;
+using TMPro;
+using UnityEngine.UI;
 
 public class PlayerShooting : MonoBehaviour
 {
@@ -7,6 +9,10 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private Camera playerCamera;
     [SerializeField] private Transform weaponHolder;
     [SerializeField] private CameraController cameraController;
+
+    [Header("UI")]
+    [SerializeField] private TextMeshProUGUI ammoText;     // Texto del HUD de munición
+    [SerializeField] private Image crosshairImage;         // Imagen de la mira (crosshair)
 
     [Header("Arma actual")]
     public WeaponData currentWeapon;
@@ -18,24 +24,70 @@ public class PlayerShooting : MonoBehaviour
     private Vector3 weaponInitialLocalPos;
     private Vector3 weaponCurrentOffset;
 
+    // === MUNICIÓN ===
+    private int currentAmmoInMag;
+    private int totalAmmo;
+    private bool isReloading = false;
+
     void Start()
     {
         EquipWeapon(currentWeapon);
         if (weaponHolder != null) weaponInitialLocalPos = weaponHolder.localPosition;
+
+        // Inicializar munición
+        currentAmmoInMag = currentWeapon.magCapacity;
+        totalAmmo = currentWeapon.maxAmmo - currentAmmoInMag;
+
+        UpdateAmmoUI();
+        UpdateCrosshair();
     }
 
     void Update()
     {
+        if (isReloading) return;
+
         HandleShooting();
+        HandleReloadInput();
 
         // Movimiento de retorno del arma
         if (weaponHolder != null)
         {
-            weaponCurrentOffset = Vector3.Lerp(weaponCurrentOffset, Vector3.zero, Time.deltaTime * currentWeapon.weaponKickbackReturnSpeed);
+            weaponCurrentOffset = Vector3.Lerp(
+                weaponCurrentOffset,
+                Vector3.zero,
+                Time.deltaTime * currentWeapon.weaponKickbackReturnSpeed
+            );
             weaponHolder.localPosition = weaponInitialLocalPos + weaponCurrentOffset;
         }
     }
 
+    // === RECARGA ===
+    void HandleReloadInput()
+    {
+        if (Input.GetKeyDown(KeyCode.R) && !isReloading && currentAmmoInMag < currentWeapon.magCapacity && totalAmmo > 0)
+        {
+            StartCoroutine(ReloadCoroutine());
+        }
+    }
+
+    IEnumerator ReloadCoroutine()
+    {
+        isReloading = true;
+        if (ammoText != null) ammoText.text = "Recargando...";
+
+        yield return new WaitForSeconds(currentWeapon.reloadTime);
+
+        int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
+        int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
+
+        currentAmmoInMag += ammoToLoad;
+        totalAmmo -= ammoToLoad;
+
+        isReloading = false;
+        UpdateAmmoUI();
+    }
+
+    // === DISPARO PRINCIPAL ===
     void HandleShooting()
     {
         if (currentWeapon == null) return;
@@ -72,8 +124,18 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
+    // === DISPARO PISTOLA ===
     void Shoot()
     {
+        if (currentAmmoInMag <= 0)
+        {
+            if (ammoText != null) ammoText.text = "R para recargar";
+            return;
+        }
+
+        currentAmmoInMag--;
+        UpdateAmmoUI();
+
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
             HandleHit(hit, currentWeapon.damage);
@@ -81,6 +143,7 @@ public class PlayerShooting : MonoBehaviour
         ApplyRecoil();
     }
 
+    // === RAFAGA (PISTOLA MEJORADA) ===
     private IEnumerator BurstFire()
     {
         if (isBursting) yield break;
@@ -89,6 +152,10 @@ public class PlayerShooting : MonoBehaviour
         int burstCount = 3;
         for (int i = 0; i < burstCount; i++)
         {
+            if (currentAmmoInMag <= 0) break;
+            currentAmmoInMag--;
+            UpdateAmmoUI();
+
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
                 HandleHit(hit, currentWeapon.damage);
@@ -101,8 +168,18 @@ public class PlayerShooting : MonoBehaviour
         isBursting = false;
     }
 
+    // === DISPARO RIFLE ===
     void ShootRifle()
     {
+        if (currentAmmoInMag <= 0)
+        {
+            if (ammoText != null) ammoText.text = "R para recargar";
+            return;
+        }
+
+        currentAmmoInMag--;
+        UpdateAmmoUI();
+
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
             HandleHit(hit, currentWeapon.damage);
@@ -110,8 +187,18 @@ public class PlayerShooting : MonoBehaviour
         ApplyRecoil();
     }
 
+    // === DISPARO ESCOPETA ===
     void ShootShotgun()
     {
+        if (currentAmmoInMag <= 0)
+        {
+            if (ammoText != null) ammoText.text = "R para recargar";
+            return;
+        }
+
+        currentAmmoInMag--;
+        UpdateAmmoUI();
+
         for (int i = 0; i < currentWeapon.pelletCount; i++)
         {
             Vector3 direction = playerCamera.transform.forward;
@@ -129,6 +216,7 @@ public class PlayerShooting : MonoBehaviour
         ApplyRecoil();
     }
 
+    // === GESTIÓN DE IMPACTOS ===
     void HandleHit(RaycastHit hit, float damage)
     {
         ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
@@ -136,7 +224,7 @@ public class PlayerShooting : MonoBehaviour
         if (zombieHealth != null)
         {
             zombieHealth.TakeDamage(damage);
-            float remainingHealth = zombieHealth.GetHP(); // Feedback de vida
+            float remainingHealth = zombieHealth.GetHP();
             Debug.Log($"El Zombie {hit.collider.name} ha recibido {damage} de daño y le quedan {remainingHealth:F1} de vida.");
         }
 
@@ -157,6 +245,7 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
+    // === CAMBIO DE ARMA ===
     public void EquipWeapon(WeaponData weaponData)
     {
         if (currentWeaponModel != null)
@@ -170,8 +259,16 @@ public class PlayerShooting : MonoBehaviour
             currentWeaponModel.transform.localPosition = Vector3.zero;
             currentWeaponModel.transform.localRotation = Quaternion.identity;
         }
+
+        // Reinicia la munición
+        currentAmmoInMag = currentWeapon.magCapacity;
+        totalAmmo = currentWeapon.maxAmmo - currentAmmoInMag;
+
+        UpdateAmmoUI();
+        UpdateCrosshair();
     }
 
+    // === RECOIL ===
     private void ApplyRecoil()
     {
         if (cameraController != null)
@@ -184,6 +281,29 @@ public class PlayerShooting : MonoBehaviour
         if (weaponHolder != null)
         {
             weaponCurrentOffset = new Vector3(0, 0, -currentWeapon.weaponKickbackDistance);
+        }
+    }
+
+    // === ACTUALIZACIÓN DE HUD ===
+    private void UpdateAmmoUI()
+    {
+        if (ammoText != null && currentWeapon != null)
+            ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
+    }
+
+    // === ACTUALIZACIÓN DE LA MIRA ===
+    private void UpdateCrosshair()
+    {
+        if (crosshairImage == null) return;
+
+        if (currentWeapon != null && currentWeapon.crosshairIcon != null)
+        {
+            crosshairImage.sprite = currentWeapon.crosshairIcon;
+            crosshairImage.enabled = true;
+        }
+        else
+        {
+            crosshairImage.enabled = false;
         }
     }
 }
