@@ -30,7 +30,7 @@ public class WeaponData : ScriptableObject
 
     [Header("Parámetros de escopeta")]
     [Tooltip("Número de perdigones que se disparan en un tiro (solo para Shotgun)")]
-    public int pelletCount = 5;
+    public int pelletCount = 4;
     [Tooltip("Ángulo máximo (grados) de dispersión desde la dirección de la mira")]
     [Range(0f, 45f)]
     public float spreadAngle = 10f;

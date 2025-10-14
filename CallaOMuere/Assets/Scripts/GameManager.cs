@@ -1,3 +1,5 @@
+using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -12,12 +14,14 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMPro.TextMeshProUGUI gameOverText;
     [SerializeField] private UnityEngine.UI.Button retryButton;
 
+    [SerializeField] private GameObject pausePanel;
+    [SerializeField] private TextMeshProUGUI pauseText;
+
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            // No destruir el GameManager al cargar una escena nueva si deseas mantenerlo.
         }
         else
         {
@@ -27,17 +31,19 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        // 1. INICIALIZACIÓN: Asegurarse de que el Panel esté oculto al iniciar.
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(false);
         }
 
-        // 2. CURSOR: Ocultar el cursor del ratón y bloquearlo al centro de la pantalla durante el juego.
+        if(pausePanel != null)
+        {
+            pausePanel.SetActive(false);
+        }
+
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
 
-        // 3. CONFIGURAR BOTÓN
         if (retryButton != null)
         {
             retryButton.onClick.RemoveAllListeners();
@@ -47,17 +53,20 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1;
     }
 
-    /// <summary>
-    /// Método llamado por PlayerHealth cuando la salud llega a cero.
-    /// </summary>
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            PanelOpen();
+        }
+    }
+
     public void PlayerDied()
     {
         Debug.Log("Game Over. Player Died.");
 
-        // 1. Detener el tiempo del juego
         Time.timeScale = 0;
 
-        // 2. Mostrar la UI de Game Over
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
@@ -67,24 +76,35 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // 3. CURSOR: Hacer visible el cursor para que el jugador pueda interactuar con la UI.
         Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None; // Desbloquear el cursor
+        Cursor.lockState = CursorLockMode.None;
     }
 
-    /// <summary>
-    /// Método llamado por el botón de reintento.
-    /// </summary>
     public void RestartGame()
     {
-        // 1. Restablecer la escala de tiempo
         Time.timeScale = 1;
 
-        // 2. CURSOR: Ocultar y bloquear el cursor de nuevo antes de recargar la escena.
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
 
-        // 3. Recargar la escena actual
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void PanelOpen()
+    {
+        if (pausePanel.activeSelf)
+        {
+            pausePanel.SetActive (false);
+            Time.timeScale = 1;
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+        else
+        {
+            pausePanel.SetActive (true);
+            Time.timeScale = 0;
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+        }
     }
 }

@@ -23,7 +23,7 @@ public class MovementController : MonoBehaviour
     private bool isSprinting = false;
     private bool inGround;
     private bool jumped = false;
-    private int jumps = 2; // Doble salto
+    private int jumps = 1;
 
     private float inputX;
     private float inputZ;

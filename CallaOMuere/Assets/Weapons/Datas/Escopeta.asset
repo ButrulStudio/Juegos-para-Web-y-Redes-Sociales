@@ -23,8 +23,11 @@ MonoBehaviour:
   weaponModelPrefab: {fileID: 8841163763819339933, guid: 12fdd860ddd1b25408a08af8dfa21ec0, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
   crosshairIcon: {fileID: 21300000, guid: 6a9b37de87d370e42a71bb623b10af05, type: 3}
-  pelletCount: 8
+  pelletCount: 4
   spreadAngle: 10
-  recoilAmount: 5
-  recoilRecovery: 3
-  knockbackForce: 0.3
+  recoilVerticalMin: 0.5
+  recoilVerticalMax: 0.8
+  recoilHorizontalMin: -0.2
+  recoilHorizontalMax: 0.2
+  weaponKickbackDistance: 0.05
+  weaponKickbackReturnSpeed: 8
