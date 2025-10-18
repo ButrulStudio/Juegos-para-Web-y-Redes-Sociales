@@ -352,7 +352,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   powerUpData: {fileID: 11400000, guid: 184fd2ca60ec4a740b76dbfbeb4dddd1, type: 2}
-  interactionDistance: 3
+  interactionDistance: 2.7
   interactionKey: 101
   baseColor: {r: 1, g: 0.07907429, b: 0, a: 1}
   highlightColor: {r: 1, g: 0.45227522, b: 0.40566033, a: 1}
@@ -2706,7 +2706,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   powerUpData: {fileID: 11400000, guid: cafacb81fbff7d04ca731e7f6d5ca684, type: 2}
-  interactionDistance: 3
+  interactionDistance: 2.7
   interactionKey: 101
   baseColor: {r: 1, g: 0.5711637, b: 0.035848916, a: 1}
   highlightColor: {r: 0.9924528, g: 0.6979064, b: 0.32769656, a: 1}
@@ -2743,6 +2743,23 @@ Transform:
   - {fileID: 256163478}
   m_Father: {fileID: 1821393757}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1087856037 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2171825167259851377, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
+  m_PrefabInstance: {fileID: 4526121979383119316}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1087856045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1087856037}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b30f76fcb0812474a80394b8bddb4824, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1108431919
 GameObject:
   m_ObjectHideFlags: 0
@@ -3511,7 +3528,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   powerUpData: {fileID: 11400000, guid: 91a0f605e84dc364caf288db9d575a5b, type: 2}
-  interactionDistance: 3
+  interactionDistance: 2.7
   interactionKey: 101
   baseColor: {r: 0.9924528, g: 0.9866489, b: 0, a: 1}
   highlightColor: {r: 1, g: 0.99652433, b: 0.40566033, a: 1}
@@ -4716,7 +4733,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   powerUpData: {fileID: 11400000, guid: 0838b622d341aa642ac46490c60b29cd, type: 2}
-  interactionDistance: 3
+  interactionDistance: 2.7
   interactionKey: 101
   baseColor: {r: 0, g: 0.8523021, b: 1, a: 1}
   highlightColor: {r: 0.3679244, g: 0.90580827, b: 1, a: 1}
@@ -5606,7 +5623,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2171825167259851377, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1087856045}
   m_SourcePrefab: {fileID: 100100000, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

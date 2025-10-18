@@ -40,8 +40,9 @@ public class PowerUpStore : MonoBehaviour
 
         // Obtener PowerUpManager del jugador
         playerPowerUpManager = playerGO.GetComponent<PowerUpManager>();
-        if (playerPowerUpManager == null)
+        if (playerPowerUpManager == null) {
             Debug.LogError("El jugador no tiene PowerUpManager! Agrégalo al jugador.");
+        }
 
         // Renderer
         rend = GetComponent<Renderer>();
@@ -109,9 +110,15 @@ public class PowerUpStore : MonoBehaviour
 
     private void TryPurchase()
     {
-        if (ScoreManager.Instance == null || playerPowerUpManager == null)
+        if (ScoreManager.Instance == null )
         {
-            Debug.LogWarning("Faltan referencias al ScoreManager o PowerUpManager.");
+            Debug.LogWarning("Faltan referencias al ScoreManager.");
+            return;
+        }
+
+        if ( playerPowerUpManager == null)
+        {
+            Debug.LogWarning("Faltan referencias al PowerUpManager.");
             return;
         }
 
