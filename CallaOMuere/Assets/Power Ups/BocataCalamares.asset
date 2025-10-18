@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4d9b95a9a79abc409ebd8e65bcd9121, type: 3}
+  m_Name: BocataCalamares
+  m_EditorClassIdentifier: 
+  powerUpType: 0
+  powerUpName: Bocata de calamares
+  description: Rellena el escudo
+  cost: 1500
+  duration: 0
+  armorRestore: 100
+  speedMultiplier: 1
+  reloadMultiplier: 1
+  damageMultiplier: 1

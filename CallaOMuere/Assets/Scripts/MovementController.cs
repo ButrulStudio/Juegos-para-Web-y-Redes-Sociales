@@ -1,74 +1,97 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
 
-
+[RequireComponent(typeof(CharacterController))]
 public class MovementController : MonoBehaviour
 {
-    [SerializeField] private CharacterController characterController;
-    public Transform isGrounded;  // Empty para detectar colisión con el suelo
-
     [Header("Movimiento")]
-    [SerializeField] private float velocity = 15f;
-    [SerializeField] private float sprint = 1.5f;
-
-    [Header("Salto")]
-    [SerializeField] private float jumpForce = 2f;
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float sprintMultiplier = 1.5f;
+    [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private float gravity = -9.81f;
-    [SerializeField] private float groundDistance;
-    [SerializeField] private LayerMask groundLayerMask;
 
-    private Vector3 velocityVector;
-    private bool isSprinting = false;
-    private bool inGround;
-    private bool jumped = false;
-    private int jumps = 1;
+    private CharacterController controller;
+    private Vector3 velocity;
+    private bool isGrounded;
 
-    private float inputX;
-    private float inputZ;
+    private float defaultSpeed;       // Velocidad base normal
+    private float currentSpeed;       // Velocidad actual (puede ser modificada)
+    public float speedMultiplier = 1f; // Multiplicador temporal por PowerUps
+
+    void Start()
+    {
+        controller = GetComponent<CharacterController>();
+        defaultSpeed = moveSpeed;
+        currentSpeed = moveSpeed;
+    }
 
     void Update()
     {
-        // Detectar si está en el suelo
-        inGround = Physics.CheckSphere(isGrounded.position, groundDistance, groundLayerMask);
+        HandleMovement();
+    }
+
+    private void HandleMovement()
+    {
+        // Comprobar si estÃ¡ tocando el suelo
+        isGrounded = controller.isGrounded;
+
+        if (isGrounded && velocity.y < 0)
+            velocity.y = -2f;
 
         // Input de movimiento
-        inputX = Input.GetAxis("Horizontal");
-        inputZ = Input.GetAxis("Vertical");
-        isSprinting = Input.GetKey(KeyCode.LeftShift);
+        float moveX = Input.GetAxis("Horizontal");
+        float moveZ = Input.GetAxis("Vertical");
+        Vector3 move = transform.right * moveX + transform.forward * moveZ;
 
-        // Saltar
-        if (Input.GetButtonDown("Jump") && jumps > 0)
-        {
-            jumped = true;
-        }
-    }
+        // Sprint
+        float targetSpeed = currentSpeed * speedMultiplier;
+        if (Input.GetKey(KeyCode.LeftShift))
+            targetSpeed *= sprintMultiplier;
 
-    void FixedUpdate()
-    {
-        Vector3 move = transform.right * inputX + transform.forward * inputZ;
+        controller.Move(move * targetSpeed * Time.deltaTime);
 
-        // Aplica salto
-        if (jumped)
-        {
-            jumps--;
-            velocityVector.y = Mathf.Sqrt(jumpForce * -2f * gravity);
-            jumped = false;
-        }
-
-        // Resetear salto si toca suelo
-        if (inGround && velocityVector.y < 0)
-        {
-            velocityVector.y = -2f;
-            jumps = 2;
-        }
+        // Salto
+        if (Input.GetButtonDown("Jump") && isGrounded)
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
 
         // Gravedad
-        velocityVector.y += gravity * Time.fixedDeltaTime;
-
-        // Movimiento final
-        Vector3 finalMovement = move * (isSprinting ? velocity * sprint : velocity);
-        characterController.Move((finalMovement + velocityVector) * Time.fixedDeltaTime);
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
     }
+
+    // ---------------- MÃ‰TODOS PARA POWERUPS ----------------
+
+    /// <summary>
+    /// Aplica un multiplicador de velocidad temporal por PowerUp
+    /// </summary>
+    public void ApplySpeedMultiplier(float multiplier, float duration)
+    {
+        StopAllCoroutines();
+        StartCoroutine(SpeedCoroutine(multiplier, duration));
+    }
+
+    private IEnumerator SpeedCoroutine(float multiplier, float duration)
+    {
+        speedMultiplier = multiplier;
+        yield return new WaitForSeconds(duration);
+        speedMultiplier = 1f;
+    }
+
+    // Velocidad base normal
+    public float GetBaseSpeed() => defaultSpeed;
+
+    // Velocidad actual (sin sprint)
+    public float GetVelocity() => currentSpeed;
+
+    // Cambiar velocidad base (sin sprint)
+    public void SetVelocity(float newSpeed) => currentSpeed = newSpeed;
+
+    // Restaurar velocidad base normal
+    public void ResetVelocity() => currentSpeed = defaultSpeed;
+
+    // Multiplicador de sprint
+    public float GetSprintMultiplier() => sprintMultiplier;
+
+    // Cambiar multiplicador de sprint
+    public void SetSprintMultiplier(float newMultiplier) => sprintMultiplier = newMultiplier;
 }

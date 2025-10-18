@@ -14,7 +14,7 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] public float maxArmor = 100f;
     public float currentArmor;
 
-    [Header("Regeneración")]
+    [Header("Regeneraciï¿½n")]
     [SerializeField] private float timeUntilRegenStarts = 3.0f;
     [SerializeField] private float regenRatePerSecond = 20.0f;
 
@@ -25,14 +25,14 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = maxHealth;
         currentArmor = 0f;
 
-        // Configuración de la barra de salud
+        // Configuraciï¿½n de la barra de salud
         if (healthSlider != null)
         {
             healthSlider.maxValue = maxHealth;
             healthSlider.value = currentHealth;
         }
 
-        // Configuración de la barra de armadura (si existe)
+        // Configuraciï¿½n de la barra de armadura (si existe)
         if (armorSlider != null)
         {
             armorSlider.maxValue = maxArmor;
@@ -44,7 +44,7 @@ public class PlayerHealth : MonoBehaviour
 
     void Update()
     {
-        // LÓGICA DE REGENERACIÓN (SÓLO HEALTH)
+        // Lï¿½GICA DE REGENERACIï¿½N (Sï¿½LO HEALTH)
         if (Time.timeScale > 0 && Time.time >= lastDamageTime + timeUntilRegenStarts)
         {
             if (currentHealth < maxHealth)
@@ -62,12 +62,12 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
-        // El jugador no puede recibir daño si el juego está pausado (Time.timeScale = 0)
+        // El jugador no puede recibir daï¿½o si el juego estï¿½ pausado (Time.timeScale = 0)
         if (Time.timeScale == 0) return;
 
         float damageRemaining = amount;
 
-        // 1. PRIORIDAD: DEDUCIR DAÑO DE LA ARMADURA
+        // 1. PRIORIDAD: DEDUCIR DAï¿½O DE LA ARMADURA
         if (currentArmor > 0f)
         {
             if (currentArmor >= damageRemaining)
@@ -83,7 +83,7 @@ public class PlayerHealth : MonoBehaviour
             if (armorSlider != null) armorSlider.value = currentArmor;
         }
 
-        // 2. DEDUCIR DAÑO RESTANTE DE LA VIDA
+        // 2. DEDUCIR DAï¿½O RESTANTE DE LA VIDA
         if (damageRemaining > 0f)
         {
             currentHealth -= damageRemaining;
@@ -112,10 +112,18 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // MÉTODO DE COMPRA
+    // Mï¿½TODO DE COMPRA
     public void BuyMaxArmor()
     {
         currentArmor = maxArmor;
         if (armorSlider != null) armorSlider.value = currentArmor;
+    }
+
+    // -------------------- MÃ‰TODOS PARA POWER-UPS --------------------
+    public void RestoreArmor(float amount)
+    {
+        currentArmor += amount;
+        currentArmor = Mathf.Min(currentArmor, maxArmor);
+        Debug.Log($"Armadura restaurada: +{amount}, actual: {currentArmor}");
     }
 }
