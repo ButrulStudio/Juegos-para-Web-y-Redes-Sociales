@@ -331,4 +331,4 @@ Para esta primera entrega de la versión Alpha del juego, me he encargado de  re
 En esta primera entrega del juego, me he centrado principalmente en la elaboración del GDD. Además, he empezado con el modelado del escenario, que se implementará en futuras entregas del juego.
 
 **Diego**
-
+En esta primera entrega me he encargado de programar los power ups, así como de los diferentes tipos de zombies y sus estadísticas.
