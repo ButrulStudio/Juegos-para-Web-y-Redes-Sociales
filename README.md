@@ -335,3 +335,7 @@ En esta primera entrega del juego, me he centrado principalmente en la elaboraci
 **Diego**
 
 En esta primera entrega me he encargado de programar los power ups, así como de los diferentes tipos de zombies y sus estadísticas.
+## 9.3 Trabajo colectivo
+Durante el desarrollo de esta primera versión del juego, tres integrantes del grupo se centraron principalmente en el funcionamiento del juego, encargándose de la programación, las mecánicas y el montaje de las escenas. Los otros dos miembros se enfocaron en la redacción y estructuración del GDD, asegurándose de que toda la información estuviera bien documentada y sirviera como guía para el desarrollo.
+
+La mayoría del trabajo se realizaba en llamadas por Microsoft Teams, lo que facilitaba la comunicación y permitía que todos los avances del juego quedaran correctamente reflejados en el GDD. Este método resultó muy útil para coordinar las tareas y mantener la coherencia entre las partes técnicas y de diseño del proyecto.
