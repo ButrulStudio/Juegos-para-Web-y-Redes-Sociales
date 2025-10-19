@@ -16,13 +16,13 @@ MonoBehaviour:
   weaponName: Escopeta
   damage: 20
   range: 20
-  fireRate: 0.2
-  price: 100
+  fireRate: 0.5
+  price: 300
   magCapacity: 6
   maxAmmo: 24
   reloadTime: 2
   isUpgraded: 0
-  upgradeCost: 100
+  upgradeCost: 500
   weaponModelPrefab: {fileID: 8841163763819339933, guid: 12fdd860ddd1b25408a08af8dfa21ec0, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
   crosshairIcon: {fileID: 21300000, guid: 6a9b37de87d370e42a71bb623b10af05, type: 3}

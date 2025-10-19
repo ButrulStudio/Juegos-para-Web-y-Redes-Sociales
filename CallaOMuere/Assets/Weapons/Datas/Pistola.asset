@@ -15,11 +15,14 @@ MonoBehaviour:
   weaponType: 0
   weaponName: Pistola
   damage: 20
-  range: 100
+  range: 80
   fireRate: 0.1
   price: 0
+  magCapacity: 15
+  maxAmmo: 60
+  reloadTime: 2
   isUpgraded: 0
-  upgradeCost: 100
+  upgradeCost: 500
   weaponModelPrefab: {fileID: 8878068774180451747, guid: 68dfd0698ffdc2c45b76bcf5b41175a3, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
   crosshairIcon: {fileID: 21300000, guid: 6a9b37de87d370e42a71bb623b10af05, type: 3}

@@ -4312,7 +4312,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scoreText: {fileID: 1781582081}
-  pointsPerKill: 5000
+  pointsPerKill: 50
 --- !u!4 &1725038673
 Transform:
   m_ObjectHideFlags: 0
