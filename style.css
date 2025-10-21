@@ -242,7 +242,9 @@ section {
   margin: 20px 0;
   font-weight: 300;
 }
-
+En css: .justificado {
+  text-align: justify;
+}
 /* FOOTER Y CONTACTO  */
 .contact-link {
     font-size: 1.2em;
