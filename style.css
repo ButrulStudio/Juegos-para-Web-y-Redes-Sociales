@@ -1,0 +1,317 @@
+/* style.css - Butrul Studio */
+
+/* VARIABLES Y RESET BÁSICO */
+:root {
+  --color-primary: #3d0000; /* Rojo oscuro o sangre */
+  --color-secondary: #ff8c00; /* Naranja/Oro (para acentos) */
+  --color-text-light: #f4f4f4;
+  --color-text-dark: #1a1a1a;
+  --color-bg-dark: #121212;
+  --color-bg-light: #202020;
+  --font-heading: "Impact", "Arial Black", sans-serif;
+  --font-body: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-light);
+  line-height: 1.6;
+  scroll-behavior: smooth;
+}
+
+/* 💀 HEADER Y NAVEGACIÓN 💀 */
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 5%;
+  background-color: var(--color-bg-dark);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ⭐ ESTILO PARA LA IMAGEN DEL LOGO ⭐ */
+.logo-img {
+  height: 60px; /* Tamaño controlado del logo */
+  width: auto;
+  animation: pulse 4s infinite; /* Animación de pulso */
+  transition: transform 0.3s;
+}
+
+.studio-name {
+  font-family: var(--font-heading);
+  font-size: 1.8em;
+  color: var(--color-secondary);
+  letter-spacing: 2px;
+}
+
+.main-nav ul {
+  list-style: none;
+  display: flex;
+}
+
+.main-nav a {
+  text-decoration: none;
+  color: var(--color-text-light);
+  padding: 10px 15px;
+  transition: color 0.3s, background-color 0.3s;
+  border-radius: 5px;
+}
+
+.main-nav a:hover {
+  color: var(--color-secondary);
+  background-color: var(--color-primary);
+}
+
+/* 💥 BOTONES (Clase reutilizable) 💥 */
+.btn {
+  display: inline-block;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: var(--font-heading);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.primary-btn {
+  background-color: var(--color-secondary);
+  color: var(--color-text-dark);
+  box-shadow: 0 5px var(--color-primary);
+}
+
+.primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px var(--color-primary);
+}
+
+.secondary-btn {
+  background-color: var(--color-primary);
+  color: var(--color-text-light);
+  border: 2px solid var(--color-secondary);
+}
+
+.secondary-btn:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-text-dark);
+}
+
+/* 🖼️ SECCIONES PRINCIPALES 🖼️ */
+section {
+  padding: 80px 5%;
+  text-align: center;
+}
+
+.dark-section {
+  background-color: var(--color-bg-light);
+}
+
+.section-title {
+  font-family: var(--font-heading);
+  font-size: 2.5em;
+  margin-bottom: 40px;
+  color: var(--color-secondary);
+  text-shadow: 2px 2px var(--color-primary);
+  position: relative;
+  display: inline-block;
+}
+
+.section-title::after {
+  content: "";
+  display: block;
+  width: 50%;
+  height: 3px;
+  background-color: var(--color-primary);
+  margin: 10px auto 0;
+}
+
+/* ⚔️ HERO SECTION ⚔️ */
+.hero-section {
+  /* Imagen de fondo de stock (o la que hayas cambiado) con capa oscura */
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+    url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR3bUPzFfp0QpVjAvnXZMDtcY6I_9r53JsI6w&s")
+      no-repeat center center/cover;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Efecto Máquina de Escribir (Typewriter) */
+#main-title {
+  font-family: var(--font-heading);
+  font-size: 4.5em;
+  color: var(--color-secondary);
+  text-shadow: 4px 4px var(--color-primary);
+  border-right: 4px solid var(--color-secondary); /* Cursor */
+  white-space: nowrap;
+  overflow: hidden;
+  animation: blink-cursor 0.75s step-end infinite;
+}
+
+.tagline {
+  font-size: 1.5em;
+  margin: 20px 0 40px;
+  color: var(--color-text-light);
+  animation: fadeIn 3s ease-out;
+}
+
+/* 🛡️ FEATURES GRID 🛡️ */
+.features-grid {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.feature-card {
+  background-color: var(--color-bg-light);
+  padding: 30px;
+  border-radius: 10px;
+  width: 45%;
+  max-width: 400px;
+  text-align: left;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+  border-left: 5px solid var(--color-secondary);
+  transition: transform 0.3s;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+}
+
+.feature-card h3 {
+  color: var(--color-secondary);
+  font-family: var(--font-heading);
+  margin-bottom: 15px;
+}
+
+.feature-card ul {
+  list-style: none;
+  padding-left: 0;
+  text-align: left;
+}
+
+.feature-card ul li::before {
+  content: "★ ";
+  color: var(--color-secondary);
+}
+
+/* 🎮 GAME SHOWCASE 🎮 */
+.game-showcase {
+  /* Fondo con tu imagen (Zpain): */
+  background: 
+    /* Degradado oscuro para que el texto resalte */
+    linear-gradient(rgba(18, 18, 18, 0.8), rgba(18, 18, 18, 0.8)), 
+    /* Ruta de tu imagen */
+    url('Imagenes/zpain_fondo.png') no-repeat center center/cover;
+  
+  padding: 40px;
+  border-radius: 10px;
+  max-width: 800px;
+  margin: 30px auto;
+  /* Mantenemos el resplandor */
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.5); 
+}
+
+.game-details {
+  margin: 20px 0;
+  font-weight: bold;
+}
+
+/* 📬 FOOTER Y CONTACTO 📬 */
+.contact-link {
+  font-size: 1.2em;
+  color: var(--color-secondary);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.contact-link:hover {
+  color: var(--color-primary);
+  text-shadow: 0 0 5px var(--color-secondary);
+}
+
+/* ⭐ ESTILOS PARA LOS ICONOS DE REDES SOCIALES ⭐ */
+.social-links {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.social-links a {
+    color: var(--color-secondary); /* Naranja/Oro */
+    font-size: 2em; /* Tamaño de los iconos */
+    transition: color 0.3s, transform 0.3s;
+}
+
+.social-links a:hover {
+    color: var(--color-primary); /* Rojo oscuro */
+    transform: scale(1.2) translateY(-2px); /* Pequeña animación */
+}
+/* ---------------------------------------------------- */
+
+
+.main-footer {
+  padding: 20px;
+  background-color: var(--color-bg-dark);
+  text-align: center;
+  border-top: 2px solid var(--color-primary);
+  font-size: 0.9em;
+  color: #aaa;
+}
+
+/* 💡 ANIMACIONES 💡 */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blink-cursor {
+  from,
+  to {
+    border-color: transparent;
+  }
+  50% {
+    border-color: var(--color-secondary);
+  }
+}

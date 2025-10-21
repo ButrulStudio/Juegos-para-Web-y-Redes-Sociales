@@ -1,29 +1,118 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Mi Videojuego</title>
-</head>
-<body>
-    <h1>Mi Videojuego</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Butrul Studio | Desarrollando Videojuegos</title>
     
-    <p>Bienvenido al portfolio de mi videojuego. Aquí encontrarás información básica sobre su desarrollo, historia y características principales.</p>
+    <link rel="stylesheet" href="style.css" />
+
+    <script src="https://kit.fontawesome.com/6c6c268875.js" crossorigin="anonymous"></script>
     
-    <h2>Acerca del juego</h2>
-    <p>Este es un videojuego que estoy desarrollando con pasión. Está enfocado en brindar una experiencia divertida y desafiante.</p>
+    </head>
+  <body>
+    <header class="main-header">
+      <div class="logo-container">
+        <img
+          src="Imagenes/logoButrul.png"
+          alt="Logo de Butrul Studio, un ogro simple con cuernos"
+          class="logo-img"
+        />
+        <span class="studio-name">Butrul Studio</span>
+      </div>
+      <nav class="main-nav">
+        <ul>
+          <li><a href="#acerca">Acerca</a></li>
+          <li><a href="#juegos">Juegos</a></li>
+          <li><a href="#contacto">Contacto</a></li>
+        </ul>
+      </nav>
+    </header>
 
-    <h2>Características</h2>
-    <ul>
-        <li>Jugabilidad original</li>
-        <li>Controles intuitivos</li>
-        <li>Diseño simple pero efectivo</li>
-    </ul>
+    <main>
+      <section id="hero" class="hero-section">
+        <h1 id="main-title" class="typewriter-text"></h1>
+        <p class="tagline">Forjando mundos. Desatando la diversión.</p>
+        <a href="#juegos" class="btn primary-btn">¡Explora Nuestros Juegos!</a>
+      </section>
 
-    <h2>Contacto</h2>
-    <p>Si quieres saber más, puedes escribirme a: <a href="mailto:tucorreo@example.com">tucorreo@example.com</a></p>
+      <section id="acerca" class="info-section">
+        <h2 class="section-title">Acerca de Butrul Studio</h2>
+        <p>
+          Somos Butrul Studio, un equipo apasionado por el desarrollo de
+          videojuegos que combinan
+          <strong>jugabilidad original</strong> con desafíos memorables. Nuestro
+          enfoque es crear experiencias que no solo diviertan, sino que dejen
+          una huella.
+        </p>
+        <div class="features-grid">
+          <div class="feature-card">
+            <h3>Visión</h3>
+            <p>
+              Crear mundos inmersivos y mecánicas adictivas. El ogro solo tiene
+              una meta: <strong>¡Aplastar el aburrimiento!</strong>
+            </p>
+          </div>
+          <div class="feature-card">
+            <h3>Juegos</h3>
+            <ul>
+              <li>Jugabilidad única y desafiante</li>
+              <li>Diseño artístico "ogresco" pero funcional</li>
+              <li>Historias simples, pero con giros épicos</li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
-    <footer>
-        <p>&copy; 2025 Mi Nombre</p>
+      <section id="juegos" class="info-section dark-section">
+        <h2 class="section-title">Nuestro Videojuego Destacado</h2>
+        <div class="game-showcase">
+          <h3>Título Provisional: ZPain</h3>
+          <p>
+            Un desafiante juego de supervivencia y acción. Sobrevive a los
+            zombies que han invadido lugares emblemáticos de España.
+          </p>
+          <div class="game-details">
+            <p>🔥 <strong>Estado:</strong> En Desarrollo (Alpha)</p>
+            <p>🎮 <strong>Género:</strong> Supervivencia</p>
+          </div>
+          <a href="#" class="btn secondary-btn">Ver Tráiler (Próximamente)</a>
+        </div>
+      </section>
+
+      <section id="contacto" class="info-section">
+        <h2 class="section-title">¡Hablemos!</h2>
+        <p>
+          ¿Tienes preguntas, ideas o simplemente quieres saludar? ¡Estamos a un
+          correo de distancia!
+        </p>
+        <a href="mailto:butrulstudio@gmail.com" class="contact-link"
+          >📧 butrulstudio@gmail.com</a
+        >
+
+        <div class="social-links">
+          <a
+            href="https://www.instagram.com/butrulstudio/"
+            target="_blank"
+            rel="noopener no-referrer"
+          >
+            <i class="fa-brands fa-instagram"></i>
+          </a>
+          <a
+            href="https://x.com/butrulstudio/"
+            target="_blank"
+            rel="noopener no-referrer"
+          >
+            <i class="fa-brands fa-x-twitter"></i>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="main-footer">
+      <p>&copy; Butrul Studio 2025.</p>
     </footer>
-</body>
+
+    <script src="script.js"></script> 
+  </body>
 </html>
