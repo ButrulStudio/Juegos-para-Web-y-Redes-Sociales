@@ -1,14 +1,14 @@
 /* style.css - Butrul Studio */
 
-/* VARIABLES Y RESET BÁSICO */
+/* VARIABLES */
 :root {
   --color-primary: #3d0000; /* Rojo oscuro o sangre */
-  --color-secondary: #ff8c00; /* Naranja/Oro (para acentos) */
+  --color-secondary: #dfae0c; /* Naranja/Oro (para acentos) */
   --color-text-light: #f4f4f4;
   --color-text-dark: #1a1a1a;
   --color-bg-dark: #121212;
   --color-bg-light: #202020;
-  --font-heading: "Impact", "Arial Black", sans-serif;
+  --font-heading: "Rock Salt", "Arial Black", sans-serif;
   --font-body: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -26,7 +26,7 @@ body {
   scroll-behavior: smooth;
 }
 
-/* 💀 HEADER Y NAVEGACIÓN 💀 */
+/*HEADER Y NAVEGACIÓN*/
 .main-header {
   display: flex;
   justify-content: space-between;
@@ -46,11 +46,11 @@ body {
   gap: 10px;
 }
 
-/* ⭐ ESTILO PARA LA IMAGEN DEL LOGO ⭐ */
+/* ESTILO PARA LA IMAGEN DEL LOGO */
 .logo-img {
-  height: 60px; /* Tamaño controlado del logo */
+  height: 60px; /* Tamaño del logo */
   width: auto;
-  animation: pulse 4s infinite; /* Animación de pulso */
+  animation: pulse 4s infinite; /* Animación */
   transition: transform 0.3s;
 }
 
@@ -79,7 +79,7 @@ body {
   background-color: var(--color-primary);
 }
 
-/* 💥 BOTONES (Clase reutilizable) 💥 */
+/*BOTONES (Clase reutilizable) */
 .btn {
   display: inline-block;
   padding: 12px 25px;
@@ -115,7 +115,7 @@ body {
   color: var(--color-text-dark);
 }
 
-/* 🖼️ SECCIONES PRINCIPALES 🖼️ */
+/* SECCIONES PRINCIPALES*/
 section {
   padding: 80px 5%;
   text-align: center;
@@ -144,11 +144,11 @@ section {
   margin: 10px auto 0;
 }
 
-/* ⚔️ HERO SECTION ⚔️ */
+/* HERO SECTION */
 .hero-section {
-  /* Imagen de fondo de stock (o la que hayas cambiado) con capa oscura */
+  /* Imagen de fondo */
   background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
-    url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR3bUPzFfp0QpVjAvnXZMDtcY6I_9r53JsI6w&s")
+    url("Imagenes/FondoButrul.jpeg")
       no-repeat center center/cover;
   height: 100vh;
   display: flex;
@@ -157,7 +157,6 @@ section {
   align-items: center;
 }
 
-/* Efecto Máquina de Escribir (Typewriter) */
 #main-title {
   font-family: var(--font-heading);
   font-size: 4.5em;
@@ -176,7 +175,7 @@ section {
   animation: fadeIn 3s ease-out;
 }
 
-/* 🛡️ FEATURES GRID 🛡️ */
+/* FEATURES GRID */
 .features-grid {
   display: flex;
   justify-content: center;
@@ -217,60 +216,88 @@ section {
   color: var(--color-secondary);
 }
 
-/* 🎮 GAME SHOWCASE 🎮 */
+/* Caja Juego */
 .game-showcase {
-  /* Fondo con tu imagen (Zpain): */
+  
   background: 
     /* Degradado oscuro para que el texto resalte */
     linear-gradient(rgba(18, 18, 18, 0.8), rgba(18, 18, 18, 0.8)), 
-    /* Ruta de tu imagen */
+  
     url('Imagenes/zpain_fondo.png') no-repeat center center/cover;
   
-  padding: 40px;
+  padding: 60px;
   border-radius: 10px;
-  max-width: 800px;
+  max-width: 1000px;
   margin: 30px auto;
-  /* Mantenemos el resplandor */
   box-shadow: 0 0 20px rgba(255, 140, 0, 0.5); 
 }
-
+.game-buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 40px; 
+    margin-top: 30px;
+    flex-wrap: wrap; 
+}
 .game-details {
   margin: 20px 0;
-  font-weight: bold;
+  font-weight: 300;
 }
 
-/* 📬 FOOTER Y CONTACTO 📬 */
+/* FOOTER Y CONTACTO  */
 .contact-link {
-  font-size: 1.2em;
-  color: var(--color-secondary);
-  text-decoration: none;
-  transition: color 0.3s;
+    font-size: 1.2em;
+    color: var(--color-secondary);
+    text-decoration: none;
+    transition: color 0.3s;
+    
+    display: block; 
+    text-align: center; 
+    margin-bottom: 25px;
 }
 
 .contact-link:hover {
-  color: var(--color-primary);
-  text-shadow: 0 0 5px var(--color-secondary);
+    color: var(--color-primary);
+    text-shadow: 0 0 5px var(--color-secondary);
 }
 
-/* ⭐ ESTILOS PARA LOS ICONOS DE REDES SOCIALES ⭐ */
+/* REDES SOCIALES  */
+
 .social-links {
-    margin-top: 20px;
+    margin-top: 25px;
     display: flex;
+    flex-wrap: wrap; 
     justify-content: center;
-    gap: 20px;
+    gap: 15px; 
 }
 
 .social-links a {
-    color: var(--color-secondary); /* Naranja/Oro */
-    font-size: 2em; /* Tamaño de los iconos */
-    transition: color 0.3s, transform 0.3s;
+    color: var(--color-secondary); 
+    font-size: 1.1em; 
+    font-family: var(--font-heading); 
+    text-decoration: none; 
+    padding: 8px 15px; 
+    border: 1px solid var(--color-secondary); 
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .social-links a:hover {
-    color: var(--color-primary); /* Rojo oscuro */
-    transform: scale(1.2) translateY(-2px); /* Pequeña animación */
+    background-color: var(--color-secondary); 
+    color: var(--color-bg-dark); 
+    border-color: var(--color-secondary);
 }
-/* ---------------------------------------------------- */
+.social-subtitle {
+    color: var(--color-secondary);
+    font-family: var(--font-heading);
+    font-size: 1.5em; 
+    font-weight: 700;
+    
+    
+    margin-top: 20px; 
+    margin-bottom: 20px;
+    text-align: center;
+}
+
 
 
 .main-footer {
@@ -282,7 +309,7 @@ section {
   color: #aaa;
 }
 
-/* 💡 ANIMACIONES 💡 */
+/* ANIMACIONES*/
 @keyframes pulse {
   0% {
     transform: scale(1);
@@ -314,4 +341,84 @@ section {
   50% {
     border-color: var(--color-secondary);
   }
+}
+/* Equipo de desarrollo*/
+.team-grid {
+    display: flex;
+    flex-wrap: wrap; 
+    justify-content: center;
+    gap: 40px;
+    margin-top: 50px;
+}
+
+.team-member-card {
+    background-color: var(--color-bg-light);
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 250px;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--color-primary);
+    transition: transform 0.3s;
+}
+
+.team-member-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(255, 140, 0, 0.2); 
+}
+
+.member-photo {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%; 
+    object-fit: cover; 
+    border: 4px solid var(--color-secondary);
+    margin-bottom: 15px;
+}
+
+.team-member-card h3 {
+    font-family: var(--font-heading);
+  font-size: 1.5em;
+  color: var(--color-secondary);
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.member-title {
+    font-size: 0.9em;
+    color: #ccc;
+    margin-bottom: 15px;
+}
+
+.member-social a {
+    color: var(--color-primary); 
+    background-color: var(--color-secondary); 
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.member-social a:hover {
+    background-color: var(--color-primary);
+    color: var(--color-secondary);
+}
+
+
+@media (max-width: 600px) {
+    .team-grid {
+        gap: 30px;
+    }
+    .team-member-card {
+        max-width: 90%;
+    }
+}
+
+.rock-salt-regular {
+  font-family: "Rock Salt", cursive;
+  font-weight: 400;
+  font-style: normal;
 }
