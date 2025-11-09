@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections.Generic;
 
 public class WeaponStore : MonoBehaviour
 {
@@ -18,7 +19,7 @@ public class WeaponStore : MonoBehaviour
     private bool playerLooking = false;
 
     // Armas que el jugador ya compró (guardadas estáticamente)
-    private static System.Collections.Generic.HashSet<WeaponType> ownedWeapons = new System.Collections.Generic.HashSet<WeaponType>();
+    private static Dictionary<WeaponType, WeaponData> ownedWeaponInstances = new Dictionary<WeaponType, WeaponData>();
 
     void Start()
     {
@@ -66,7 +67,7 @@ public class WeaponStore : MonoBehaviour
     {
         if (interactionText == null) return;
 
-        bool alreadyOwned = ownedWeapons.Contains(weaponData.weaponType);
+        bool alreadyOwned = ownedWeaponInstances.ContainsKey(weaponData.weaponType);
 
         interactionText.gameObject.SetActive(true);
 
@@ -80,19 +81,22 @@ public class WeaponStore : MonoBehaviour
 
     void TryPurchaseOrEquip()
     {
-        bool alreadyOwned = ownedWeapons.Contains(weaponData.weaponType);
+        bool alreadyOwned = ownedWeaponInstances.ContainsKey(weaponData.weaponType);
 
         if (alreadyOwned)
         {
-            playerShooting.EquipWeapon(weaponData);
-            Debug.Log("Has equipado " + weaponData.weaponName + ".");
+            WeaponData instanceToEquip = ownedWeaponInstances[weaponData.weaponType];
+            playerShooting.EquipWeapon(instanceToEquip);
+            Debug.Log("Has equipado " + instanceToEquip.weaponName + ".");
         }
         else
         {
+            WeaponData newWeaponInstance = Instantiate(weaponData);
+
             if (weaponData.price <= 0)
             {
-                ownedWeapons.Add(weaponData.weaponType);
-                playerShooting.EquipWeapon(weaponData);
+                ownedWeaponInstances.Add(newWeaponInstance.weaponType, newWeaponInstance);
+                playerShooting.EquipWeapon(newWeaponInstance);
                 Debug.Log("Has obtenido " + weaponData.weaponName + " (arma gratuita).");
             }
             else
@@ -100,12 +104,13 @@ public class WeaponStore : MonoBehaviour
                 bool paid = ScoreManager.Instance.TrySpendPoints((int)weaponData.price);
                 if (paid)
                 {
-                    ownedWeapons.Add(weaponData.weaponType);
-                    playerShooting.EquipWeapon(weaponData);
-                    Debug.Log("Has comprado y equipado " + weaponData.weaponName + " por " + weaponData.price + " puntos.");
+                    ownedWeaponInstances.Add(newWeaponInstance.weaponType, newWeaponInstance);
+                    playerShooting.EquipWeapon(newWeaponInstance);
+                    Debug.Log("Has comprado y equipado " + newWeaponInstance.weaponName + " por " + weaponData.price + " puntos.");
                 }
                 else
                 {
+                    Destroy(newWeaponInstance);
                     Debug.Log("No tienes suficientes puntos para comprar esta arma.");
                 }
             }

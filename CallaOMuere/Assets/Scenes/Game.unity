@@ -3328,7 +3328,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   interactionDistance: 3
   interactionKey: 101
-  interactionText: {fileID: 0}
+  interactionText: {fileID: 718913011}
   shotgunUpgradePellets: 8
   rifleUpgradeFireRate: 0.05
   pistolBurstFireRate: 0.1

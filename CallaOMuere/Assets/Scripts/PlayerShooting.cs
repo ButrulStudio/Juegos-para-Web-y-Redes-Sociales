@@ -31,6 +31,11 @@ public class PlayerShooting : MonoBehaviour
 
     void Start()
     {
+        if (currentWeapon != null)
+        {
+            currentWeapon = Instantiate(currentWeapon);
+        }
+
         EquipWeapon(currentWeapon);
         if (weaponHolder != null) weaponInitialLocalPos = weaponHolder.localPosition;
 
@@ -251,7 +256,7 @@ public class PlayerShooting : MonoBehaviour
         if (currentWeaponModel != null)
             Destroy(currentWeaponModel);
 
-        currentWeapon = Instantiate(weaponData);
+        currentWeapon = weaponData;
 
         if (currentWeapon.weaponModelPrefab != null && weaponHolder != null)
         {
