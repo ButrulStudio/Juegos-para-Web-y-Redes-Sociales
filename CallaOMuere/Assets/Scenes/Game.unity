@@ -5022,6 +5022,7 @@ MonoBehaviour:
   ammoText: {fileID: 1666018140}
   crosshairImage: {fileID: 986990805}
   currentWeapon: {fileID: 11400000, guid: b54dae3deb2bb42409c38217fd1e3301, type: 2}
+  flashDuration: 0.05
 --- !u!4 &1837902159
 Transform:
   m_ObjectHideFlags: 0
@@ -5348,6 +5349,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 70301698}
     m_Modifications:
+    - target: {fileID: 4575381611056576323, guid: 68dfd0698ffdc2c45b76bcf5b41175a3, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4816352382970224858, guid: 68dfd0698ffdc2c45b76bcf5b41175a3, type: 3}
       propertyPath: m_LocalPosition.x
       value: 6.812256
@@ -5387,6 +5392,14 @@ PrefabInstance:
     - target: {fileID: 4816352382970224858, guid: 68dfd0698ffdc2c45b76bcf5b41175a3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6586945889510136824, guid: 68dfd0698ffdc2c45b76bcf5b41175a3, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8664251185626331803, guid: 68dfd0698ffdc2c45b76bcf5b41175a3, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8878068774180451747, guid: 68dfd0698ffdc2c45b76bcf5b41175a3, type: 3}
       propertyPath: m_Name

@@ -29,6 +29,12 @@ public class PlayerShooting : MonoBehaviour
     private int totalAmmo;
     private bool isReloading = false;
 
+    [Header("Muzzle Flash")]
+    [Tooltip("Arrastra aquí el componente Light (Point Light) del cañón del arma equipada.")]
+    private Light muzzleLight;
+
+    [Tooltip("Duración en segundos del fogonazo. 0.05 es un buen valor para empezar.")]
+    [SerializeField] private float flashDuration = 0.05f;
     void Start()
     {
         if (currentWeapon != null)
@@ -141,6 +147,9 @@ public class PlayerShooting : MonoBehaviour
         currentAmmoInMag--;
         UpdateAmmoUI();
 
+        // AÑADIR: Inicia el efecto luminoso
+        StartCoroutine(MuzzleFlashRoutine());
+
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
             HandleHit(hit, currentWeapon.damage);
@@ -160,6 +169,9 @@ public class PlayerShooting : MonoBehaviour
             if (currentAmmoInMag <= 0) break;
             currentAmmoInMag--;
             UpdateAmmoUI();
+
+            // AÑADIR: Inicia el efecto luminoso
+            StartCoroutine(MuzzleFlashRoutine());
 
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
@@ -185,6 +197,9 @@ public class PlayerShooting : MonoBehaviour
         currentAmmoInMag--;
         UpdateAmmoUI();
 
+        // AÑADIR: Inicia el efecto luminoso
+        StartCoroutine(MuzzleFlashRoutine());
+
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
             HandleHit(hit, currentWeapon.damage);
@@ -203,6 +218,9 @@ public class PlayerShooting : MonoBehaviour
 
         currentAmmoInMag--;
         UpdateAmmoUI();
+
+        // AÑADIR: Inicia el efecto luminoso
+        StartCoroutine(MuzzleFlashRoutine());
 
         for (int i = 0; i < currentWeapon.pelletCount; i++)
         {
@@ -263,6 +281,15 @@ public class PlayerShooting : MonoBehaviour
             currentWeaponModel = Instantiate(currentWeapon.weaponModelPrefab, weaponHolder);
             currentWeaponModel.transform.localPosition = Vector3.zero;
             currentWeaponModel.transform.localRotation = Quaternion.identity;
+
+            Light newMuzzleLight = currentWeaponModel.GetComponentInChildren<Light>();
+
+            muzzleLight = newMuzzleLight;
+
+            if (muzzleLight == null)
+            {
+                Debug.LogWarning($"El arma {weaponData.weaponName} no tiene un componente Light (Muzzle Flash) como hijo o en su jerarquía.");
+            }
         }
 
         // Reinicia la munición
@@ -310,5 +337,25 @@ public class PlayerShooting : MonoBehaviour
         {
             crosshairImage.enabled = false;
         }
+    }
+
+    // === EFECTO LUMINOSO DE FOGONAZO ===
+    private IEnumerator MuzzleFlashRoutine()
+    {
+        // 1. Comprobación de seguridad
+        if (muzzleLight == null)
+        {
+            // Si no está asignada, la corrutina no hace nada
+            yield break;
+        }
+
+        // 2. Enciende la luz instantáneamente
+        muzzleLight.enabled = true;
+
+        // 3. Espera el tiempo de duración definido (0.05 segundos)
+        yield return new WaitForSeconds(flashDuration);
+
+        // 4. Apaga la luz después de la espera
+        muzzleLight.enabled = false;
     }
 }
