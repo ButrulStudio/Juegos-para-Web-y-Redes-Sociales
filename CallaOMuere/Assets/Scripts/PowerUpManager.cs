@@ -5,7 +5,8 @@ public class PowerUpManager : MonoBehaviour
 {
     private PlayerHealth playerHealth;
     private MovementController playerMovement;
-    private PlayerShooting playerShooting;
+    [SerializeField] private PlayerShooting playerShooting;
+
 
     private float originalSpeed;
     private float originalSprintMultiplier;
@@ -18,7 +19,7 @@ public class PowerUpManager : MonoBehaviour
     {
         playerHealth = GetComponent<PlayerHealth>();
         playerMovement = GetComponent<MovementController>();
-        playerShooting = GetComponent<PlayerShooting>();
+        //playerShooting = GetComponent<PlayerShooting>();
 
         if (playerMovement != null)
         {
@@ -40,13 +41,13 @@ public class PowerUpManager : MonoBehaviour
                 ApplyArmorRestore(powerUp);
                 break;
             case PowerUpType.Velocidad:
-                StartCoroutine(ApplySpeedBoost(powerUp));
+                ApplySpeedBoost(powerUp);
                 break;
             case PowerUpType.Recarga:
-                StartCoroutine(ApplyReloadBoost(powerUp));
+                ApplyReloadBoost(powerUp);
                 break;
             case PowerUpType.Daño:
-                StartCoroutine(ApplyDamageBoost(powerUp));
+                ApplyDamageBoost(powerUp);
                 break;
         }
     }
@@ -59,61 +60,36 @@ public class PowerUpManager : MonoBehaviour
         Debug.Log($"Bocata de calamares consumido: blindaje restaurado +{data.armorRestore}.");
     }
 
-    private IEnumerator ApplySpeedBoost(PowerUpData data)
+    private void ApplySpeedBoost(PowerUpData data)
     {
-        if (playerMovement == null || speedBoostActive) yield break;
+        if (playerMovement == null || speedBoostActive) return;
 
         speedBoostActive = true;
 
-        playerMovement.ApplySpeedMultiplier(data.speedMultiplier, data.duration);
-        Debug.Log($"Bebida energética activada: velocidad aumentada x{data.speedMultiplier} por {data.duration} segundos.");
+        playerMovement.SetPermanentSpeedMultiplier(data.speedMultiplier);
+        Debug.Log($"Bebida energética activada: velocidad aumentada x{data.speedMultiplier}.");
 
-        yield return new WaitForSeconds(data.duration);
-
-        speedBoostActive = false;
-        Debug.Log("Efecto de velocidad finalizado.");
     }
 
-    private IEnumerator ApplyReloadBoost(PowerUpData data)
+    private void ApplyReloadBoost(PowerUpData data)
     {
-        if (playerShooting == null || reloadBoostActive) yield break;
+        if (playerShooting == null || reloadBoostActive) return;
 
         reloadBoostActive = true;
 
-        // Aplicar multiplicador de recarga a todas las armas
-        foreach (var weapon in FindObjectsOfType<WeaponData>())
-        {
-            weapon.reloadTime *= data.reloadMultiplier;
-        }
+        playerShooting.reloadTimeMultiplier = data.reloadMultiplier;
 
-        Debug.Log($"Patatas bravas activadas: recarga más rápida x{data.reloadMultiplier} por {data.duration} segundos.");
-
-        yield return new WaitForSeconds(data.duration);
-
-        // Restaurar recarga original
-        foreach (var weapon in FindObjectsOfType<WeaponData>())
-        {
-            weapon.reloadTime /= data.reloadMultiplier;
-        }
-
-        reloadBoostActive = false;
-        Debug.Log("Efecto de recarga finalizado.");
+        Debug.Log($"Patatas bravas activadas: recarga más rápida x{data.reloadMultiplier}.");
     }
 
-    private IEnumerator ApplyDamageBoost(PowerUpData data)
+    private void ApplyDamageBoost(PowerUpData data)
     {
-        if (playerShooting == null || damageBoostActive) yield break;
+        if (playerShooting == null || damageBoostActive) return;
 
         damageBoostActive = true;
-        float originalDamage = playerShooting.currentWeapon.damage;
 
-        playerShooting.currentWeapon.damage *= data.damageMultiplier;
-        Debug.Log($"Schpeppes activado: daño aumentado x{data.damageMultiplier} por {data.duration} segundos.");
+        playerShooting.damageMultiplier = data.damageMultiplier;
+        Debug.Log($"Schpeppes activado: daño aumentado x{data.damageMultiplier}.");
 
-        yield return new WaitForSeconds(data.duration);
-
-        playerShooting.currentWeapon.damage = originalDamage;
-        damageBoostActive = false;
-        Debug.Log("Efecto de daño finalizado.");
     }
 }

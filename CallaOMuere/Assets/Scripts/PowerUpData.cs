@@ -17,8 +17,7 @@ public class PowerUpData : ScriptableObject
     [TextArea] public string description;  // Descripción para la tienda o HUD
     public int cost = 0;               // Precio del Power-Up
 
-    [Header("Duración del efecto (0 = instantáneo o permanente)")]
-    public float duration = 0f;
+    
 
     [Header("Valores de efectos")]
     public float armorRestore = 0f;      // Solo BocataDeCalamares

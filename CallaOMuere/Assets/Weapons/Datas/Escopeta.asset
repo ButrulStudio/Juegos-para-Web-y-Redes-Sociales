@@ -17,12 +17,12 @@ MonoBehaviour:
   damage: 20
   range: 20
   fireRate: 0.5
-  price: 100
+  price: 0
   magCapacity: 6
   maxAmmo: 24
   reloadTime: 2
   isUpgraded: 0
-  upgradeCost: 500
+  upgradeCost: 0
   weaponModelPrefab: {fileID: 6104136574561444166, guid: 06c8b456b26cfe44590f62a034eee270, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
   crosshairIcon: {fileID: 21300000, guid: 6a9b37de87d370e42a71bb623b10af05, type: 3}
