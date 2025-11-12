@@ -1,25 +1,63 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
-    public void LoadGameScene()
+    public Animator transitionAnimator;
+
+
+    public void Start()
     {
+transitionAnimator = GetComponentInChildren<Animator>();
+
+    }
+
+    public IEnumerator LoadGameScene()
+    {
+        transitionAnimator.SetTrigger("StartTransition");
+        yield return new WaitForSeconds(0.3f);
         SceneManager.LoadScene("Game");
     }
 
-    public void LoadOptionsMenu()
+    public void StartGameButton()
     {
+        StartCoroutine(LoadGameScene());
+    }
+
+    public IEnumerator LoadOptionsMenu()
+    {
+        transitionAnimator.SetTrigger("StartTransition");
+        yield return new WaitForSeconds(0.3f);
         SceneManager.LoadScene("OptionsMenu");
     }
 
-    public void LoadCreditsScene()
+    public void StartOptionsButton()
     {
+        StartCoroutine(LoadOptionsMenu());
+    }
+
+    public IEnumerator LoadCreditsScene()
+    {
+        transitionAnimator.SetTrigger("StartTransition");
+        yield return new WaitForSeconds(0.3f);
         SceneManager.LoadScene("Credits");
     }
 
-    public void LoadMainMenu()
+    public void StartCreditsButton()
     {
+        StartCoroutine(LoadCreditsScene());
+    }
+
+    public IEnumerator LoadMainMenu()
+    {
+        transitionAnimator.SetTrigger("StartTransition");
+        yield return new WaitForSeconds(0.3f);
         SceneManager.LoadScene("MainMenu");
+    }
+
+    public void StartMenuButton()
+    {
+        StartCoroutine(LoadMainMenu());
     }
 }

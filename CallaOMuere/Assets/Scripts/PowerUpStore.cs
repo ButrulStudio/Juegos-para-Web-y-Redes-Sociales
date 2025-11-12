@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(Collider))]
 public class PowerUpStore : MonoBehaviour
@@ -21,11 +22,11 @@ public class PowerUpStore : MonoBehaviour
 
     private Transform player;
     private PowerUpManager playerPowerUpManager;
-    private PlayerHealth playerHealth; // ¡NUEVO! Referencia al estado de salud del jugador.
+    private PlayerHealth playerHealth; // Referencia al estado de salud del jugador.
     private bool isPlayerNear = false;
 
-    // Evita comprar varias veces el mismo power-up
-    private static System.Collections.Generic.HashSet<PowerUpType> ownedPowerUps = new System.Collections.Generic.HashSet<PowerUpType>();
+    // Evita comprar varias veces el mismo power-up (EXCEPTO Armadura)
+    private static HashSet<PowerUpType> ownedPowerUps = new HashSet<PowerUpType>();
 
     private void Start()
     {
@@ -46,7 +47,7 @@ public class PowerUpStore : MonoBehaviour
             Debug.LogError("El jugador no tiene PowerUpManager! Agrégalo al jugador.");
         }
 
-        // ¡NUEVO! Obtener PlayerHealth para la lógica de armadura.
+        // Obtener PlayerHealth para la lógica de armadura.
         playerHealth = playerGO.GetComponent<PlayerHealth>();
         if (playerHealth == null)
         {
@@ -84,7 +85,7 @@ public class PowerUpStore : MonoBehaviour
                 Highlight(true);
             }
 
-            ShowPowerUpInfo(); // Mover la actualización de info aquí asegura que el mensaje se actualice (ej. Armadura llena/vacía)
+            ShowPowerUpInfo(); // Mover aquí asegura que el mensaje se actualice (ej. Armadura llena/vacía)
 
             if (Input.GetKeyDown(interactionKey))
                 TryPurchase();
@@ -183,7 +184,7 @@ public class PowerUpStore : MonoBehaviour
 
         if (paid)
         {
-            // Solo añadimos el PowerUp al set de "poseídos" si NO es el de Armadura (porque es repetible)
+            // Solo añadimos el PowerUp al set de "poseídos" si NO es el de Armadura
             if (!isArmorPowerUp)
             {
                 ownedPowerUps.Add(powerUpData.powerUpType);
@@ -192,7 +193,7 @@ public class PowerUpStore : MonoBehaviour
             playerPowerUpManager.ApplyPowerUp(powerUpData);
             Debug.Log($"Has comprado {powerUpData.powerUpName} por {powerUpData.cost} puntos.");
 
-            // Re-evaluar el estado después de la compra (ej. para el caso de armadura llena)
+            // Re-evaluar el estado después de la compra
             ShowPowerUpInfo();
 
             // Si la compra fue la armadura y ya está llena, desactivar el highlight y el HUD.

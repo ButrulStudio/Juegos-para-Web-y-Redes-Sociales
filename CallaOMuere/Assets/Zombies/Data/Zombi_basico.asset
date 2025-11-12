@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Zombi_basico
   m_EditorClassIdentifier: 
   zombieName: 
-  prefab: {fileID: 6807299748907565382, guid: efcba72cc88af3f40ac286a48c87e929, type: 3}
+  prefab: {fileID: 2670437097619204035, guid: abe7b619f66da9346bb60a63a53ecccb, type: 3}
   speed: 3
   maxHp: 100
   damage: 10

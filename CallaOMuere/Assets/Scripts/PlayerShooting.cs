@@ -29,8 +29,8 @@ public class PlayerShooting : MonoBehaviour
     private int totalAmmo;
     private bool isReloading = false;
 
-    public float reloadTimeMultiplier = 1f; 
-    public float damageMultiplier = 1f;     
+    public float reloadTimeMultiplier = 1f;
+    public float damageMultiplier = 1f;
 
     [Header("Muzzle Flash")]
     [Tooltip("Arrastra aquí el componente Light (Point Light) del cañón del arma equipada.")]
