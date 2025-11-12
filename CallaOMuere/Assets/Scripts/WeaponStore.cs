@@ -116,4 +116,28 @@ public class WeaponStore : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// Limpia el diccionario estático de armas.
+    /// Debe llamarse al reiniciar la partida o volver al menú.
+    /// </summary>
+    public static void ResetOwnedWeapons()
+    {
+        if (ownedWeaponInstances != null)
+        {
+            // Destruimos las instancias de ScriptableObject que creamos
+            // para evitar memory leaks.
+            foreach (var weaponInstance in ownedWeaponInstances.Values)
+            {
+                if (weaponInstance != null)
+                {
+                    // Usamos Destroy() porque estas son Instancias
+                    Destroy(weaponInstance);
+                }
+            }
+
+            ownedWeaponInstances.Clear();
+        }
+        Debug.Log("Datos estáticos de Armas reseteados.");
+    }
 }

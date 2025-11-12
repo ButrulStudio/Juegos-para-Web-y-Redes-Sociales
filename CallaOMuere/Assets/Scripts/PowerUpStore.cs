@@ -208,4 +208,16 @@ public class PowerUpStore : MonoBehaviour
             Debug.Log($"No se pudo gastar los puntos. (Saldo actual: {currentPoints})");
         }
     }
+    /// <summary>
+    /// Limpia la lista estática de power-ups.
+    /// Debe llamarse al reiniciar la partida o volver al menú.
+    /// </summary>
+    public static void ResetOwnedPowerUps()
+    {
+        if (ownedPowerUps != null)
+        {
+            ownedPowerUps.Clear();
+        }
+        Debug.Log("Datos estáticos de PowerUps reseteados.");
+    }
 }

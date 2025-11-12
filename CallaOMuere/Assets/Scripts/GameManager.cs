@@ -113,6 +113,9 @@ public class GameManager : MonoBehaviour
         // 2. Espera 0.3 segundos de TIEMPO REAL (ignora la pausa)
         yield return new WaitForSecondsRealtime(0.3f);
 
+        PowerUpStore.ResetOwnedPowerUps();
+        WeaponStore.ResetOwnedWeapons();
+
         // 3. Limpia el estado del juego (¡fundamental!)
         Time.timeScale = 1;
         Cursor.visible = true;
@@ -139,10 +142,13 @@ public class GameManager : MonoBehaviour
         // 2. Espera 0.3 segundos de TIEMPO REAL (ignora la pausa)
         yield return new WaitForSecondsRealtime(0.3f);
 
+        PowerUpStore.ResetOwnedPowerUps();
+        WeaponStore.ResetOwnedWeapons();
         // 3. Limpia el estado del juego (¡fundamental!)
         Time.timeScale = 1;
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
+
 }
