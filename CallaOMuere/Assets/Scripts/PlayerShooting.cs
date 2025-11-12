@@ -29,8 +29,10 @@ public class PlayerShooting : MonoBehaviour
     private int totalAmmo;
     private bool isReloading = false;
 
-    public float reloadTimeMultiplier = 1f;
-    public float damageMultiplier = 1f;
+    // === MULTIPLICADORES DE POWER-UP ===
+    // Estas variables son modificadas por PowerUpManager
+    [HideInInspector] public float reloadTimeMultiplier = 1f;
+    [HideInInspector] public float damageMultiplier = 1f;
 
     [Header("Muzzle Flash")]
     [Tooltip("Arrastra aquí el componente Light (Point Light) del cañón del arma equipada.")]
@@ -89,6 +91,7 @@ public class PlayerShooting : MonoBehaviour
         isReloading = true;
         if (ammoText != null) ammoText.text = "Recargando...";
 
+        // MODIFICACIÓN CLAVE: Usa el multiplicador de recarga
         yield return new WaitForSeconds(currentWeapon.reloadTime * reloadTimeMultiplier);
 
         int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
@@ -149,11 +152,11 @@ public class PlayerShooting : MonoBehaviour
 
         currentAmmoInMag--;
         UpdateAmmoUI();
-
-        // AÑADIR: Inicia el efecto luminoso
         StartCoroutine(MuzzleFlashRoutine());
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+
+        // MODIFICACIÓN CLAVE: Usa el multiplicador de daño
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
             HandleHit(hit, currentWeapon.damage * damageMultiplier);
 
@@ -172,11 +175,11 @@ public class PlayerShooting : MonoBehaviour
             if (currentAmmoInMag <= 0) break;
             currentAmmoInMag--;
             UpdateAmmoUI();
-
-            // AÑADIR: Inicia el efecto luminoso
             StartCoroutine(MuzzleFlashRoutine());
 
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+
+            // MODIFICACIÓN CLAVE: Usa el multiplicador de daño
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
                 HandleHit(hit, currentWeapon.damage * damageMultiplier);
 
@@ -199,11 +202,11 @@ public class PlayerShooting : MonoBehaviour
 
         currentAmmoInMag--;
         UpdateAmmoUI();
-
-        // AÑADIR: Inicia el efecto luminoso
         StartCoroutine(MuzzleFlashRoutine());
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+
+        // MODIFICACIÓN CLAVE: Usa el multiplicador de daño
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
             HandleHit(hit, currentWeapon.damage * damageMultiplier);
 
@@ -221,8 +224,6 @@ public class PlayerShooting : MonoBehaviour
 
         currentAmmoInMag--;
         UpdateAmmoUI();
-
-        // AÑADIR: Inicia el efecto luminoso
         StartCoroutine(MuzzleFlashRoutine());
 
         for (int i = 0; i < currentWeapon.pelletCount; i++)
@@ -235,6 +236,8 @@ public class PlayerShooting : MonoBehaviour
             ) * direction;
 
             Ray ray = new Ray(playerCamera.transform.position, direction);
+
+            // MODIFICACIÓN CLAVE: Usa el multiplicador de daño
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
                 HandleHit(hit, currentWeapon.damage * damageMultiplier);
         }
@@ -245,6 +248,7 @@ public class PlayerShooting : MonoBehaviour
     // === GESTIÓN DE IMPACTOS ===
     void HandleHit(RaycastHit hit, float damage)
     {
+        // ... (El resto de este método no cambia)
         ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
 
         if (zombieHealth != null)
@@ -277,6 +281,8 @@ public class PlayerShooting : MonoBehaviour
         if (currentWeaponModel != null)
             Destroy(currentWeaponModel);
 
+        // Esta lógica funciona con tu WeaponStore
+        // porque le pasas una instancia
         currentWeapon = weaponData;
 
         if (currentWeapon.weaponModelPrefab != null && weaponHolder != null)
@@ -306,6 +312,7 @@ public class PlayerShooting : MonoBehaviour
     // === RECOIL ===
     private void ApplyRecoil()
     {
+        // ... (Sin cambios)
         if (cameraController != null)
         {
             float vertical = Random.Range(currentWeapon.recoilVerticalMin, currentWeapon.recoilVerticalMax);
@@ -322,6 +329,7 @@ public class PlayerShooting : MonoBehaviour
     // === ACTUALIZACIÓN DE HUD ===
     private void UpdateAmmoUI()
     {
+        // ... (Sin cambios)
         if (ammoText != null && currentWeapon != null)
             ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
     }
@@ -329,6 +337,7 @@ public class PlayerShooting : MonoBehaviour
     // === ACTUALIZACIÓN DE LA MIRA ===
     private void UpdateCrosshair()
     {
+        // ... (Sin cambios)
         if (crosshairImage == null) return;
 
         if (currentWeapon != null && currentWeapon.crosshairIcon != null)
@@ -345,20 +354,13 @@ public class PlayerShooting : MonoBehaviour
     // === EFECTO LUMINOSO DE FOGONAZO ===
     private IEnumerator MuzzleFlashRoutine()
     {
-        // 1. Comprobación de seguridad
+        // ... (Sin cambios)
         if (muzzleLight == null)
         {
-            // Si no está asignada, la corrutina no hace nada
             yield break;
         }
-
-        // 2. Enciende la luz instantáneamente
         muzzleLight.enabled = true;
-
-        // 3. Espera el tiempo de duración definido (0.05 segundos)
         yield return new WaitForSeconds(flashDuration);
-
-        // 4. Apaga la luz después de la espera
         muzzleLight.enabled = false;
     }
 }

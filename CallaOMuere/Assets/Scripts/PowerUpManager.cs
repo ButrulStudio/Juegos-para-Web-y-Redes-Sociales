@@ -1,15 +1,13 @@
-using System.Collections;
 using UnityEngine;
 
 public class PowerUpManager : MonoBehaviour
 {
     private PlayerHealth playerHealth;
     private MovementController playerMovement;
-    private PlayerShooting playerShooting;
+    [SerializeField]private PlayerShooting playerShooting;
 
-    private float originalSpeed;
-    private float originalSprintMultiplier;
-
+    // Estas variables ahora solo evitan que el log se llene,
+    // ya que PowerUpStore evita la recompra.
     private bool speedBoostActive = false;
     private bool reloadBoostActive = false;
     private bool damageBoostActive = false;
@@ -18,12 +16,15 @@ public class PowerUpManager : MonoBehaviour
     {
         playerHealth = GetComponent<PlayerHealth>();
         playerMovement = GetComponent<MovementController>();
-        playerShooting = GetComponent<PlayerShooting>();
 
-        if (playerMovement != null)
+        // Prueba de depuración para asegurar que PlayerShooting se encuentra
+        if (playerShooting == null)
         {
-            originalSpeed = playerMovement.GetVelocity();
-            originalSprintMultiplier = playerMovement.GetSprintMultiplier();
+            Debug.LogError("¡¡ERROR: PowerUpManager no pudo encontrar el script PlayerShooting!!");
+        }
+        else
+        {
+            Debug.Log("PowerUpManager se conectó a PlayerShooting correctamente.");
         }
     }
 
@@ -40,13 +41,16 @@ public class PowerUpManager : MonoBehaviour
                 ApplyArmorRestore(powerUp);
                 break;
             case PowerUpType.Velocidad:
-                StartCoroutine(ApplySpeedBoost(powerUp));
+                // Ya no es una corrutina
+                ApplySpeedBoost(powerUp);
                 break;
             case PowerUpType.Recarga:
-                StartCoroutine(ApplyReloadBoost(powerUp));
+                // Ya no es una corrutina
+                ApplyReloadBoost(powerUp);
                 break;
             case PowerUpType.Daño:
-                StartCoroutine(ApplyDamageBoost(powerUp));
+                // Ya no es una corrutina
+                ApplyDamageBoost(powerUp);
                 break;
         }
     }
@@ -59,61 +63,46 @@ public class PowerUpManager : MonoBehaviour
         Debug.Log($"Bocata de calamares consumido: blindaje restaurado +{data.armorRestore}.");
     }
 
-    private IEnumerator ApplySpeedBoost(PowerUpData data)
+    private void ApplySpeedBoost(PowerUpData data)
     {
-        if (playerMovement == null || speedBoostActive) yield break;
+        // El 'if' ahora solo comprueba si ya se aplicó
+        if (playerMovement == null || speedBoostActive) return;
 
         speedBoostActive = true;
 
-        playerMovement.ApplySpeedMultiplier(data.speedMultiplier, data.duration);
-        Debug.Log($"Bebida energética activada: velocidad aumentada x{data.speedMultiplier} por {data.duration} segundos.");
+        // Llama al nuevo método permanente en MovementController
+        playerMovement.SetPermanentSpeedMultiplier(data.speedMultiplier);
 
-        yield return new WaitForSeconds(data.duration);
+        Debug.Log($"Bebida energética activada: velocidad aumentada permanentemente x{data.speedMultiplier}.");
 
-        speedBoostActive = false;
-        Debug.Log("Efecto de velocidad finalizado.");
+        // Se eliminó la lógica de duración y reversión
     }
 
-    private IEnumerator ApplyReloadBoost(PowerUpData data)
+    private void ApplyReloadBoost(PowerUpData data)
     {
-        if (playerShooting == null || reloadBoostActive) yield break;
+        if (playerShooting == null || reloadBoostActive) return;
 
         reloadBoostActive = true;
 
-        // Aplicar multiplicador de recarga a todas las armas
-        foreach (var weapon in FindObjectsOfType<WeaponData>())
-        {
-            weapon.reloadTime *= data.reloadMultiplier;
-        }
+        // LÓGICA CORREGIDA: Asigna el multiplicador en PlayerShooting
+        playerShooting.reloadTimeMultiplier = data.reloadMultiplier;
 
-        Debug.Log($"Patatas bravas activadas: recarga más rápida x{data.reloadMultiplier} por {data.duration} segundos.");
+        Debug.Log($"Patatas bravas activadas: recarga más rápida permanentemente x{data.reloadMultiplier}.");
 
-        yield return new WaitForSeconds(data.duration);
-
-        // Restaurar recarga original
-        foreach (var weapon in FindObjectsOfType<WeaponData>())
-        {
-            weapon.reloadTime /= data.reloadMultiplier;
-        }
-
-        reloadBoostActive = false;
-        Debug.Log("Efecto de recarga finalizado.");
+        // Se eliminó la lógica de duración y reversión
     }
 
-    private IEnumerator ApplyDamageBoost(PowerUpData data)
+    private void ApplyDamageBoost(PowerUpData data)
     {
-        if (playerShooting == null || damageBoostActive) yield break;
+        if (playerShooting == null || damageBoostActive) return;
 
         damageBoostActive = true;
-        float originalDamage = playerShooting.currentWeapon.damage;
 
-        playerShooting.currentWeapon.damage *= data.damageMultiplier;
-        Debug.Log($"Schpeppes activado: daño aumentado x{data.damageMultiplier} por {data.duration} segundos.");
+        // LÓGICA CORREGIDA: Asigna el multiplicador en PlayerShooting
+        playerShooting.damageMultiplier = data.damageMultiplier;
 
-        yield return new WaitForSeconds(data.duration);
+        Debug.Log($"Schpeppes activado: daño aumentado permanentemente x{data.damageMultiplier}.");
 
-        playerShooting.currentWeapon.damage = originalDamage;
-        damageBoostActive = false;
-        Debug.Log("Efecto de daño finalizado.");
+        // Se eliminó la lógica de duración y reversión
     }
 }

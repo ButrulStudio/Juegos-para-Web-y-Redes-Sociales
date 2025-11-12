@@ -44,6 +44,7 @@ public class MovementController : MonoBehaviour
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
 
         // Sprint
+        // Esta línea ya aplica el multiplicador de power-up permanentemente
         float targetSpeed = currentSpeed * speedMultiplier;
         if (Input.GetKey(KeyCode.LeftShift))
             targetSpeed *= sprintMultiplier;
@@ -62,19 +63,11 @@ public class MovementController : MonoBehaviour
     // ---------------- MÉTODOS PARA POWERUPS ----------------
 
     /// <summary>
-    /// Aplica un multiplicador de velocidad temporal por PowerUp
+    /// Establece un multiplicador de velocidad permanente por PowerUp
     /// </summary>
-    public void ApplySpeedMultiplier(float multiplier, float duration)
-    {
-        StopAllCoroutines();
-        StartCoroutine(SpeedCoroutine(multiplier, duration));
-    }
-
-    private IEnumerator SpeedCoroutine(float multiplier, float duration)
+    public void SetPermanentSpeedMultiplier(float multiplier)
     {
         speedMultiplier = multiplier;
-        yield return new WaitForSeconds(duration);
-        speedMultiplier = 1f;
     }
 
     // Velocidad base normal
