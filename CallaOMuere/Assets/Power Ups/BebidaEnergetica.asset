@@ -16,7 +16,7 @@ MonoBehaviour:
   powerUpName: "Bebida energ\xE9tica"
   description: Aumenta velocidad
   cost: 2000
-  duration: 10
+  duration: 0
   armorRestore: 0
   speedMultiplier: 1.5
   reloadMultiplier: 1

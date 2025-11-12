@@ -15,8 +15,8 @@ MonoBehaviour:
   powerUpType: 2
   powerUpName: Patatas bravas
   description: Aumenta la velocidad de recarga
-  cost: 2500
-  duration: 10
+  cost: 500
+  duration: 500
   armorRestore: 0
   speedMultiplier: 1
   reloadMultiplier: 0.5

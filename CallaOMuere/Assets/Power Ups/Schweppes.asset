@@ -16,7 +16,7 @@ MonoBehaviour:
   powerUpName: Schweppes
   description: "Aumenta el da\xF1o de las armas"
   cost: 3000
-  duration: 10
+  duration: 0
   armorRestore: 0
   speedMultiplier: 1
   reloadMultiplier: 1

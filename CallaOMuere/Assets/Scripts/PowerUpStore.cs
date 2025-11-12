@@ -21,6 +21,7 @@ public class PowerUpStore : MonoBehaviour
 
     private Transform player;
     private PowerUpManager playerPowerUpManager;
+    private PlayerHealth playerHealth; // ¡NUEVO! Referencia al estado de salud del jugador.
     private bool isPlayerNear = false;
 
     // Evita comprar varias veces el mismo power-up
@@ -40,8 +41,16 @@ public class PowerUpStore : MonoBehaviour
 
         // Obtener PowerUpManager del jugador
         playerPowerUpManager = playerGO.GetComponent<PowerUpManager>();
-        if (playerPowerUpManager == null) {
+        if (playerPowerUpManager == null)
+        {
             Debug.LogError("El jugador no tiene PowerUpManager! Agrégalo al jugador.");
+        }
+
+        // ¡NUEVO! Obtener PlayerHealth para la lógica de armadura.
+        playerHealth = playerGO.GetComponent<PlayerHealth>();
+        if (playerHealth == null)
+        {
+            Debug.LogError("El jugador no tiene PlayerHealth! Necesario para la tienda.");
         }
 
         // Renderer
@@ -72,9 +81,10 @@ public class PowerUpStore : MonoBehaviour
             if (!isPlayerNear)
             {
                 isPlayerNear = true;
-                ShowPowerUpInfo();
                 Highlight(true);
             }
+
+            ShowPowerUpInfo(); // Mover la actualización de info aquí asegura que el mensaje se actualice (ej. Armadura llena/vacía)
 
             if (Input.GetKeyDown(interactionKey))
                 TryPurchase();
@@ -91,6 +101,27 @@ public class PowerUpStore : MonoBehaviour
     {
         if (hudText == null || powerUpData == null) return;
 
+        bool isArmorPowerUp = powerUpData.powerUpType == PowerUpType.Armadura;
+
+        // 1. COMPROBAR SI LA ARMADURA ESTÁ AL MÁXIMO
+        if (isArmorPowerUp && playerHealth != null && playerHealth.currentArmor >= playerHealth.maxArmor)
+        {
+            hudText.gameObject.SetActive(true);
+            hudText.text = $"{powerUpData.powerUpName} — BLINDAJE COMPLETO";
+            return;
+        }
+
+        // 2. COMPROBAR SI YA ESTÁ COMPRADO (Solo aplica a PowerUps NO de Armadura)
+        bool alreadyOwned = ownedPowerUps.Contains(powerUpData.powerUpType);
+        if (!isArmorPowerUp && alreadyOwned)
+        {
+            hudText.gameObject.SetActive(true);
+            hudText.text = $"{powerUpData.powerUpName} — YA ADQUIRIDO";
+            return;
+        }
+
+
+        // 3. MENSAJE NORMAL DE COMPRA
         hudText.gameObject.SetActive(true);
         hudText.text =
             $"{powerUpData.powerUpName} — <color=yellow>{powerUpData.cost} pts</color>\nPulsa [{interactionKey}] para comprar";
@@ -110,23 +141,35 @@ public class PowerUpStore : MonoBehaviour
 
     private void TryPurchase()
     {
-        if (ScoreManager.Instance == null )
+        if (ScoreManager.Instance == null)
         {
             Debug.LogWarning("Faltan referencias al ScoreManager.");
             return;
         }
 
-        if ( playerPowerUpManager == null)
+        if (playerPowerUpManager == null)
         {
             Debug.LogWarning("Faltan referencias al PowerUpManager.");
             return;
         }
 
-        if (ownedPowerUps.Contains(powerUpData.powerUpType))
+        bool isArmorPowerUp = powerUpData.powerUpType == PowerUpType.Armadura;
+
+        // LÓGICA DE BLOQUEO DE COMPRA (NO REPETIBLE)
+        if (!isArmorPowerUp && ownedPowerUps.Contains(powerUpData.powerUpType))
         {
             Debug.Log($"{powerUpData.powerUpName} ya comprado.");
             return;
         }
+
+        // LÓGICA DE BLOQUEO DE ARMADURA LLENA (SOLO ARMADURA)
+        if (isArmorPowerUp && playerHealth != null && playerHealth.currentArmor >= playerHealth.maxArmor)
+        {
+            Debug.Log("Armadura ya al máximo, no se puede comprar.");
+            ShowPowerUpInfo(); // Asegurar que el mensaje de "completo" se muestre.
+            return;
+        }
+
 
         int currentPoints = ScoreManager.Instance.GetCurrentScore();
 
@@ -140,11 +183,24 @@ public class PowerUpStore : MonoBehaviour
 
         if (paid)
         {
-            ownedPowerUps.Add(powerUpData.powerUpType);
+            // Solo añadimos el PowerUp al set de "poseídos" si NO es el de Armadura (porque es repetible)
+            if (!isArmorPowerUp)
+            {
+                ownedPowerUps.Add(powerUpData.powerUpType);
+            }
+
             playerPowerUpManager.ApplyPowerUp(powerUpData);
             Debug.Log($"Has comprado {powerUpData.powerUpName} por {powerUpData.cost} puntos.");
-            HidePowerUpInfo();
-            Highlight(false);
+
+            // Re-evaluar el estado después de la compra (ej. para el caso de armadura llena)
+            ShowPowerUpInfo();
+
+            // Si la compra fue la armadura y ya está llena, desactivar el highlight y el HUD.
+            if (isArmorPowerUp && playerHealth.currentArmor >= playerHealth.maxArmor)
+            {
+                HidePowerUpInfo();
+                Highlight(false);
+            }
         }
         else
         {

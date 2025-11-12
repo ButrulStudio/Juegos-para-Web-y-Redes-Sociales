@@ -14,7 +14,7 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] public float maxArmor = 100f;
     public float currentArmor;
 
-    [Header("Regeneraci�n")]
+    [Header("Regeneracin")]
     [SerializeField] private float timeUntilRegenStarts = 3.0f;
     [SerializeField] private float regenRatePerSecond = 20.0f;
 
@@ -25,14 +25,14 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = maxHealth;
         currentArmor = 0f;
 
-        // Configuraci�n de la barra de salud
+        // Configuracin de la barra de salud
         if (healthSlider != null)
         {
             healthSlider.maxValue = maxHealth;
             healthSlider.value = currentHealth;
         }
 
-        // Configuraci�n de la barra de armadura (si existe)
+        // Configuracin de la barra de armadura (si existe)
         if (armorSlider != null)
         {
             armorSlider.maxValue = maxArmor;
@@ -44,7 +44,7 @@ public class PlayerHealth : MonoBehaviour
 
     void Update()
     {
-        // L�GICA DE REGENERACI�N (S�LO HEALTH)
+        // LGICA DE REGENERACIN (SLO HEALTH)
         if (Time.timeScale > 0 && Time.time >= lastDamageTime + timeUntilRegenStarts)
         {
             if (currentHealth < maxHealth)
@@ -62,12 +62,12 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
-        // El jugador no puede recibir da�o si el juego est� pausado (Time.timeScale = 0)
+        // El jugador no puede recibir dao si el juego est pausado (Time.timeScale = 0)
         if (Time.timeScale == 0) return;
 
         float damageRemaining = amount;
 
-        // 1. PRIORIDAD: DEDUCIR DA�O DE LA ARMADURA
+        // 1. PRIORIDAD: DEDUCIR DAO DE LA ARMADURA
         if (currentArmor > 0f)
         {
             if (currentArmor >= damageRemaining)
@@ -83,7 +83,7 @@ public class PlayerHealth : MonoBehaviour
             if (armorSlider != null) armorSlider.value = currentArmor;
         }
 
-        // 2. DEDUCIR DA�O RESTANTE DE LA VIDA
+        // 2. DEDUCIR DAO RESTANTE DE LA VIDA
         if (damageRemaining > 0f)
         {
             currentHealth -= damageRemaining;
@@ -112,7 +112,7 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // M�TODO DE COMPRA
+    // MTODO DE COMPRA
     public void BuyMaxArmor()
     {
         currentArmor = maxArmor;
@@ -125,5 +125,11 @@ public class PlayerHealth : MonoBehaviour
         currentArmor += amount;
         currentArmor = Mathf.Min(currentArmor, maxArmor);
         Debug.Log($"Armadura restaurada: +{amount}, actual: {currentArmor}");
+
+        // ¡ACTUALIZACIÓN CLAVE! Actualizar el slider inmediatamente.
+        if (armorSlider != null)
+        {
+            armorSlider.value = currentArmor;
+        }
     }
 }
