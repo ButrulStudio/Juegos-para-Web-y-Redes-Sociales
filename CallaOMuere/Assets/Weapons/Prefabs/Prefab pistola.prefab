@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2443055845840610435
+--- !u!1 &980548013178599543
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,9 +8,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7022166332911834035}
-  - component: {fileID: 4054735024113507058}
-  - component: {fileID: 9144953308671792560}
+  - component: {fileID: 7648557356453959398}
+  - component: {fileID: 157782084416301001}
+  - component: {fileID: 466363486702893457}
   m_Layer: 0
   m_Name: Point Light
   m_TagString: Untagged
@@ -18,28 +18,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7022166332911834035
+--- !u!4 &7648557356453959398
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2443055845840610435}
+  m_GameObject: {fileID: 980548013178599543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.33, y: 0, z: 1.26}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 2.3300016, y: 0, z: 1.2599998}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2394696399763334686}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!108 &4054735024113507058
+--- !u!108 &157782084416301001
 Light:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2443055845840610435}
+  m_GameObject: {fileID: 980548013178599543}
   m_Enabled: 0
   serializedVersion: 11
   m_Type: 2
@@ -98,13 +98,13 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!114 &9144953308671792560
+--- !u!114 &466363486702893457
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2443055845840610435}
+  m_GameObject: {fileID: 980548013178599543}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
@@ -210,7 +210,7 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 2465378170441385109, guid: a817e52580279324abe3f4467320cc76, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7022166332911834035}
+      addedObject: {fileID: 7648557356453959398}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a817e52580279324abe3f4467320cc76, type: 3}
 --- !u!4 &2394696399763334686 stripped

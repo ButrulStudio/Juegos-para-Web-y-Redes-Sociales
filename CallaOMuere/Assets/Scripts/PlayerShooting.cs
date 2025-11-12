@@ -29,9 +29,6 @@ public class PlayerShooting : MonoBehaviour
     private int totalAmmo;
     private bool isReloading = false;
 
-    public float reloadTimeMultiplier = 1f; 
-    public float damageMultiplier = 1f;     
-
     [Header("Muzzle Flash")]
     [Tooltip("Arrastra aquí el componente Light (Point Light) del cañón del arma equipada.")]
     private Light muzzleLight;
@@ -89,7 +86,7 @@ public class PlayerShooting : MonoBehaviour
         isReloading = true;
         if (ammoText != null) ammoText.text = "Recargando...";
 
-        yield return new WaitForSeconds(currentWeapon.reloadTime * reloadTimeMultiplier);
+        yield return new WaitForSeconds(currentWeapon.reloadTime);
 
         int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
         int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
@@ -155,7 +152,7 @@ public class PlayerShooting : MonoBehaviour
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-            HandleHit(hit, currentWeapon.damage * damageMultiplier);
+            HandleHit(hit, currentWeapon.damage);
 
         ApplyRecoil();
     }
@@ -178,7 +175,7 @@ public class PlayerShooting : MonoBehaviour
 
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-                HandleHit(hit, currentWeapon.damage * damageMultiplier);
+                HandleHit(hit, currentWeapon.damage);
 
             ApplyRecoil();
             yield return new WaitForSeconds(currentWeapon.fireRate);
@@ -205,7 +202,7 @@ public class PlayerShooting : MonoBehaviour
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-            HandleHit(hit, currentWeapon.damage * damageMultiplier);
+            HandleHit(hit, currentWeapon.damage);
 
         ApplyRecoil();
     }
@@ -236,7 +233,7 @@ public class PlayerShooting : MonoBehaviour
 
             Ray ray = new Ray(playerCamera.transform.position, direction);
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-                HandleHit(hit, currentWeapon.damage * damageMultiplier);
+                HandleHit(hit, currentWeapon.damage);
         }
 
         ApplyRecoil();
