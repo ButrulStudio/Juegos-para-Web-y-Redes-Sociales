@@ -15,7 +15,8 @@ MonoBehaviour:
   powerUpType: 0
   powerUpName: Bocata de calamares
   description: Rellena el escudo
-  cost: 0
+  cost: 1500
+  duration: 0
   armorRestore: 100
   speedMultiplier: 1
   reloadMultiplier: 1

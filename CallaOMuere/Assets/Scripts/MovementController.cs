@@ -62,11 +62,19 @@ public class MovementController : MonoBehaviour
     // ---------------- MÉTODOS PARA POWERUPS ----------------
 
     /// <summary>
-    /// Aplica un multiplicador de velocidad por PowerUp
+    /// Aplica un multiplicador de velocidad temporal por PowerUp
     /// </summary>
-    public void SetPermanentSpeedMultiplier(float multiplier)
+    public void ApplySpeedMultiplier(float multiplier, float duration)
+    {
+        StopAllCoroutines();
+        StartCoroutine(SpeedCoroutine(multiplier, duration));
+    }
+
+    private IEnumerator SpeedCoroutine(float multiplier, float duration)
     {
         speedMultiplier = multiplier;
+        yield return new WaitForSeconds(duration);
+        speedMultiplier = 1f;
     }
 
     // Velocidad base normal
