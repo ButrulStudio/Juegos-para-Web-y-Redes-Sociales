@@ -1018,7 +1018,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 687c68efdcd5634488d094ec68832253, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  transitionAnimator: {fileID: 0}
+  transitionAnimator: {fileID: 1829449137}
 --- !u!4 &1783569042
 Transform:
   m_ObjectHideFlags: 0

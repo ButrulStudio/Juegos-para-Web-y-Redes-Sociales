@@ -4,13 +4,13 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
+
     public Animator transitionAnimator;
 
 
     public void Start()
     {
-transitionAnimator = GetComponentInChildren<Animator>();
-
+        // transitionAnimator = GetComponentInChildren<Animator>(); // <-- Comentado para evitar NullReferenceException
     }
 
     public IEnumerator LoadGameScene()
@@ -19,6 +19,7 @@ transitionAnimator = GetComponentInChildren<Animator>();
         yield return new WaitForSeconds(0.3f);
         SceneManager.LoadScene("Game");
     }
+
 
     public void StartGameButton()
     {
@@ -32,6 +33,7 @@ transitionAnimator = GetComponentInChildren<Animator>();
         SceneManager.LoadScene("OptionsMenu");
     }
 
+
     public void StartOptionsButton()
     {
         StartCoroutine(LoadOptionsMenu());
@@ -43,6 +45,7 @@ transitionAnimator = GetComponentInChildren<Animator>();
         yield return new WaitForSeconds(0.3f);
         SceneManager.LoadScene("Credits");
     }
+
 
     public void StartCreditsButton()
     {
@@ -60,4 +63,5 @@ transitionAnimator = GetComponentInChildren<Animator>();
     {
         StartCoroutine(LoadMainMenu());
     }
+
 }

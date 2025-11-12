@@ -1,20 +1,22 @@
+﻿using System.Collections;
 using TMPro;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    // Patr�n Singleton
+    // Patrón Singleton
     public static GameManager Instance { get; private set; }
 
-    // Referencias a los componentes de UI del Canvas
-    // IMPORTANTE: Este GameObject debe contener todo (texto, bot�n, fondo)
+    [Header("UI (Paneles)")]
     [SerializeField] private GameObject gameOverPanel;
-    [SerializeField] private TMPro.TextMeshProUGUI gameOverText;
-    [SerializeField] private UnityEngine.UI.Button retryButton;
-
     [SerializeField] private GameObject pausePanel;
+
+    // ¡NUEVO! Arrastra aquí tu Panel_Fade (el que tiene el Animator)
+    [SerializeField] private Animator transitionAnimator;
+
+    [Header("UI (Componentes)")]
+    [SerializeField] private TMPro.TextMeshProUGUI gameOverText;
     [SerializeField] private TextMeshProUGUI pauseText;
 
     void Awake()
@@ -36,20 +38,14 @@ public class GameManager : MonoBehaviour
             gameOverPanel.SetActive(false);
         }
 
-        if(pausePanel != null)
+        if (pausePanel != null)
         {
             pausePanel.SetActive(false);
         }
 
+        // Estado inicial del juego
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
-
-        if (retryButton != null)
-        {
-            retryButton.onClick.RemoveAllListeners();
-            retryButton.onClick.AddListener(RestartGame);
-        }
-
         Time.timeScale = 1;
     }
 
@@ -64,47 +60,89 @@ public class GameManager : MonoBehaviour
     public void PlayerDied()
     {
         Debug.Log("Game Over. Player Died.");
-
-        Time.timeScale = 0;
+        Time.timeScale = 0; // Pausa el juego
 
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
-            if (gameOverText != null)
-            {
-                gameOverText.text = "�Has Muerto!";
-            }
         }
 
+        // Libera el cursor
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
-    }
-
-    public void RestartGame()
-    {
-        Time.timeScale = 1;
-
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
-
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void PanelOpen()
     {
         if (pausePanel.activeSelf)
         {
-            pausePanel.SetActive (false);
+            // Reanudar juego
+            pausePanel.SetActive(false);
             Time.timeScale = 1;
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
         }
         else
         {
-            pausePanel.SetActive (true);
+            // Pausar juego
+            pausePanel.SetActive(true);
             Time.timeScale = 0;
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
+    }
+
+    // --- ¡SECCIÓN MODIFICADA PARA LA TRANSICIÓN! ---
+
+    // Esta es la función que debe llamar tu botón "Salir al Menú".
+
+    public void QuitToMainMenu()
+    {
+        // Inicia la corrutina que hace el trabajo sucio
+        StartCoroutine(QuitToMainMenuCoroutine());
+    }
+
+    private IEnumerator QuitToMainMenuCoroutine()
+    {
+        // 1. Activa el fundido a negro
+        if (transitionAnimator != null)
+        {
+            transitionAnimator.SetTrigger("StartTransition");
+        }
+
+        // 2. Espera 0.3 segundos de TIEMPO REAL (ignora la pausa)
+        yield return new WaitForSecondsRealtime(0.3f);
+
+        // 3. Limpia el estado del juego (¡fundamental!)
+        Time.timeScale = 1;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        // 4. Carga la escena del menú
+        SceneManager.LoadScene("MainMenu");
+    }
+
+    public void RetryButton()
+    {
+        // Inicia la corrutina que hace el trabajo sucio
+        StartCoroutine(RetryCoroutine());
+    }
+
+    private IEnumerator RetryCoroutine()
+    {
+        // 1. Activa el fundido a negro
+        if (transitionAnimator != null)
+        {
+            transitionAnimator.SetTrigger("StartTransition");
+        }
+
+        // 2. Espera 0.3 segundos de TIEMPO REAL (ignora la pausa)
+        yield return new WaitForSecondsRealtime(0.3f);
+
+        // 3. Limpia el estado del juego (¡fundamental!)
+        Time.timeScale = 1;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
