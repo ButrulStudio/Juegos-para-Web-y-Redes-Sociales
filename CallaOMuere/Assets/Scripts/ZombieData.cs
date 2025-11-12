@@ -10,4 +10,5 @@ public class ZombieData : ScriptableObject
     public float damage = 10f;
     public float attackRange = 2f;
     public float attackCooldown = 1.5f;
+    public float detectionRange = 15f;
 }
