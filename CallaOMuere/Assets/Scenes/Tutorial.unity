@@ -5083,6 +5083,7 @@ MonoBehaviour:
   shotgunUpgradePellets: 8
   rifleUpgradeFireRate: 0.05
   pistolBurstFireRate: 0.1
+  sniperUpgradePenetration: 3
 --- !u!65 &1268747879
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7398,7 +7399,7 @@ MonoBehaviour:
   cameraController: {fileID: 1726440932}
   ammoText: {fileID: 1666018140}
   crosshairImage: {fileID: 986990805}
-  currentWeapon: {fileID: 11400000, guid: b54dae3deb2bb42409c38217fd1e3301, type: 2}
+  currentWeapon: {fileID: 11400000, guid: f67b1ee1f4bb3d94eb3d74c52d59cc46, type: 2}
   reloadTimeMultiplier: 1
   damageMultiplier: 1
   flashDuration: 0.05

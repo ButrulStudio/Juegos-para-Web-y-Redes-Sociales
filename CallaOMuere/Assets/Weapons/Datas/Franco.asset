@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a8d08586d887ca40939c1b07c163a91, type: 3}
   m_Name: Franco
   m_EditorClassIdentifier: 
-  weaponType: 0
+  weaponType: 3
   weaponName: Francotirador
   damage: 100
   range: 100
@@ -29,6 +29,7 @@ MonoBehaviour:
   crosshairIcon: {fileID: 21300000, guid: 6a9b37de87d370e42a71bb623b10af05, type: 3}
   pelletCount: 4
   spreadAngle: 10
+  penetrationCount: 1
   recoilVerticalMin: 1
   recoilVerticalMax: 2
   recoilHorizontalMin: -0.5
