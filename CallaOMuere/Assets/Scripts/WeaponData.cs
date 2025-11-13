@@ -13,6 +13,12 @@ public class WeaponData : ScriptableObject
 {
     public WeaponType weaponType = WeaponType.Pistol;
 
+    [Tooltip("El tamaño (Ancho, Alto) de la mira 'desde la cadera'")]
+    public Vector2 crosshairSize = new Vector2(50, 50);
+
+    [Tooltip("El tamaño (Ancho, Alto) de la mira al apuntar (ADS)")]
+    public Vector2 aimedCrosshairSize = new Vector2(100, 100);
+
     [Header("Atributos del arma")]
     public string weaponName;
     public float damage = 20f;
@@ -43,6 +49,15 @@ public class WeaponData : ScriptableObject
     public GameObject weaponModelPrefab;
     public GameObject bulletHolePrefab;
     public Sprite crosshairIcon;
+
+    // --- NUEVAS VARIABLES PARA APUNTADO ---
+    [Header("Apuntado (ADS - Aim Down Sights)")]
+    [Tooltip("¿Puede esta arma apuntar con el clic derecho?")]
+    public bool canAim = false;
+    [Tooltip("FOV de la cámara al apuntar (ej. 30 para sniper, 50 para rifle)")]
+    public float aimedFOV = 60f;
+    [Tooltip("Sprite de la mirilla del francotirador (si aplica)")]
+    public Sprite sniperScopeSprite;
 
     [Header("Parámetros de escopeta")]
     [Tooltip("Número de perdigones que se disparan en un tiro (solo para Shotgun)")]

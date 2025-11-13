@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 
 public class PlayerShooting : MonoBehaviour
 {
@@ -15,6 +16,8 @@ public class PlayerShooting : MonoBehaviour
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI ammoText;     // Texto del HUD de munición
     [SerializeField] private Image crosshairImage;         // Imagen de la mira (crosshair)
+
+    private RectTransform crosshairRectTransform;
 
     [Header("Arma actual")]
     public WeaponData currentWeapon;
@@ -44,9 +47,17 @@ public class PlayerShooting : MonoBehaviour
     [Tooltip("Duración en segundos del fogonazo. 0.05 es un buen valor para empezar.")]
     [SerializeField] private float flashDuration = 0.05f;
 
+    // --- APUNTADO ---
+    [Header("Apuntado (ADS)")]
+    [SerializeField] private float adsSpeed = 10f; // Velocidad de transición al apuntar
+    [SerializeField] private float defaultFOV = 60f; // FOV normal de la cámara
+    private bool isAiming = false;
+    private bool weaponHiddenForScope = false; // Bandera para saber si el arma está oculta
 
     void Start()
     {
+        if (crosshairImage != null) crosshairRectTransform = crosshairImage.GetComponent<RectTransform>();
+
         if (weaponHolder != null) weaponInitialLocalPos = weaponHolder.localPosition;
 
         // Si se va a cargar una partida, no hacer nada aquí.
@@ -71,6 +82,8 @@ public class PlayerShooting : MonoBehaviour
 
         UpdateAmmoUI();
         UpdateCrosshair();
+
+        playerCamera.fieldOfView = defaultFOV;
     }
 
     void Update()
@@ -79,6 +92,8 @@ public class PlayerShooting : MonoBehaviour
 
         HandleShooting();
         HandleReloadInput();
+
+        HandleAiming();
 
         // Movimiento de retorno del arma
         if (weaponHolder != null && currentWeapon != null) // Añadida comprobación de currentWeapon
@@ -90,6 +105,79 @@ public class PlayerShooting : MonoBehaviour
             );
             weaponHolder.localPosition = weaponInitialLocalPos + weaponCurrentOffset;
         }
+    }
+
+    // === APUNTADO ===
+    void HandleAiming()
+    {
+        if (currentWeapon == null || !currentWeapon.canAim)
+        {
+            // Si el arma no puede apuntar o no hay arma, asegura que no estamos apuntando
+            if (isAiming) StopAiming();
+            return;
+        }
+
+        if (Input.GetButtonDown("Fire2")) // Clic derecho
+        {
+            isAiming = true;
+        }
+        if (Input.GetButtonUp("Fire2"))
+        {
+            isAiming = false;
+        }
+
+        // Transición del FOV
+        float targetFOV = isAiming ? currentWeapon.aimedFOV : defaultFOV;
+        playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * adsSpeed);
+
+        // --- Lógica de la Mirilla y Ocultar Arma ---
+        if (isAiming && currentWeapon.sniperScopeSprite != null)
+        {
+            if (crosshairRectTransform != null)
+            {
+                
+                crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+                crosshairRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                crosshairRectTransform.pivot = new Vector2(0.5f, 0.5f);
+                crosshairRectTransform.anchoredPosition = Vector2.zero;
+
+                // 2. Aplica el TAMAÑO DE APUNTADO
+                crosshairRectTransform.sizeDelta = currentWeapon.aimedCrosshairSize;
+            }
+
+            crosshairImage.sprite = currentWeapon.sniperScopeSprite;
+            crosshairImage.enabled = true; // Asegura que la mirilla del scope está visible
+
+            // Oculta el arma 3D si se usa una mirilla de francotirador
+            if (!weaponHiddenForScope)
+            {
+                if (currentWeaponModel != null) currentWeaponModel.SetActive(false);
+                weaponHiddenForScope = true;
+            }
+        }
+        else
+        {
+            // Si no estamos apuntando con mirilla de sniper, mostrar crosshair normal
+            if (weaponHiddenForScope) // Si estaba oculta, vuelve a mostrarla
+            {
+                if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
+                weaponHiddenForScope = false;
+            }
+            UpdateCrosshair(); // Vuelve a la mirilla normal
+        }
+    }
+
+    // --- dejamos de apuntar ---
+    public void StopAiming()
+    {
+        isAiming = false;
+        playerCamera.fieldOfView = defaultFOV; // Resetea instantáneamente el FOV
+        if (weaponHiddenForScope)
+        {
+            if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
+            weaponHiddenForScope = false;
+        }
+        UpdateCrosshair();
     }
 
     // === RECARGA ===
@@ -383,6 +471,8 @@ public class PlayerShooting : MonoBehaviour
 
         currentWeapon = weaponData;
 
+        StopAiming();
+
         if (currentWeapon == null)
         {
             if (crosshairImage != null) crosshairImage.enabled = false;
@@ -445,10 +535,23 @@ public class PlayerShooting : MonoBehaviour
 
     private void UpdateCrosshair()
     {
-        if (crosshairImage == null) return;
+        // Usamos la referencia guardada 'crosshairRectTransform'
+        if (crosshairRectTransform == null) return;
+
         if (currentWeapon != null && currentWeapon.crosshairIcon != null)
         {
+            // 1. Pone el Sprite
             crosshairImage.sprite = currentWeapon.crosshairIcon;
+
+            // 2. Prepara el RectTransform para TAMAÑO DEFINIDO (centrado)
+            crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f); // Centro
+            crosshairRectTransform.anchorMax = new Vector2(0.5f, 0.5f); // Centro
+            crosshairRectTransform.pivot = new Vector2(0.5f, 0.5f); // Centro
+            crosshairRectTransform.anchoredPosition = Vector2.zero; // Posición 0,0 en el centro
+
+            // 3. Aplica el TAMAÑO del arma
+            crosshairRectTransform.sizeDelta = currentWeapon.crosshairSize;
+
             crosshairImage.enabled = true;
         }
         else
