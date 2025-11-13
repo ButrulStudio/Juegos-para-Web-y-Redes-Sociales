@@ -18,19 +18,29 @@ public class PowerUpStore : MonoBehaviour
     private Renderer rend;
 
     [Header("UI del HUD")]
-    [SerializeField] private TextMeshProUGUI hudText; 
+    [SerializeField] private TextMeshProUGUI hudText;
 
-    private Transform player;
+    // --- MODIFICADO ---
+    private Camera playerCamera; // NUEVO: Referencia a la cámara del jugador
     private PowerUpManager playerPowerUpManager;
-    private PlayerHealth playerHealth; 
-    private bool isPlayerNear = false;
+    private PlayerHealth playerHealth;
+    // private Transform player; // ELIMINADO: Ya no usamos la posición del jugador
+    private bool isPlayerLooking = false; // RENOMBRADO: de "isPlayerNear" a "isPlayerLooking"
 
-    // Evita comprar varias veces el mismo power-up
-    // Esta lógica es perfecta para los power-ups permanentes
+    // ... (El resto de las variables estáticas no cambian) ...
     private static System.Collections.Generic.HashSet<PowerUpType> ownedPowerUps = new System.Collections.Generic.HashSet<PowerUpType>();
 
     private void Start()
     {
+        // --- MODIFICADO ---
+        // Buscar Cámara
+        playerCamera = Camera.main;
+        if (playerCamera == null)
+        {
+            Debug.LogError("No se encontró una cámara con el tag 'MainCamera' en la escena!");
+            return;
+        }
+
         // Buscar jugador
         GameObject playerGO = GameObject.FindGameObjectWithTag("Player");
         if (playerGO == null)
@@ -39,65 +49,81 @@ public class PowerUpStore : MonoBehaviour
             return;
         }
 
-        player = playerGO.transform;
+        // player = playerGO.transform; // ELIMINADO: Ya no necesitamos esto
 
-        // Obtener PowerUpManager del jugador
+        // ... (El resto de Start() no cambia: GetComponent de PowerUpManager, PlayerHealth, Renderer, etc.) ...
         playerPowerUpManager = playerGO.GetComponent<PowerUpManager>();
         if (playerPowerUpManager == null)
         {
             Debug.LogError("El jugador no tiene PowerUpManager! Agrégalo al jugador.");
         }
 
-        // Obtener PlayerHealth para la lógica de armadura.
         playerHealth = playerGO.GetComponent<PlayerHealth>();
         if (playerHealth == null)
         {
             Debug.LogError("El jugador no tiene PlayerHealth! Necesario para la tienda.");
         }
 
-        // Renderer
         rend = GetComponent<Renderer>();
         if (rend != null) rend.material.color = baseColor;
 
-        // HUD
         if (hudText != null) hudText.gameObject.SetActive(false);
 
-        // ScoreManager
         if (ScoreManager.Instance == null)
             Debug.LogError("ScoreManager no encontrado en la escena!");
     }
 
     private void Update()
     {
-        CheckProximity();
+        // --- MODIFICADO ---
+        // CheckProximity(); // Renombrado
+        CheckForInteraction();
     }
 
-    private void CheckProximity()
+    // --- MODIFICADO ---
+    // El método CheckProximity() ha sido reemplazado por CheckForInteraction()
+    private void CheckForInteraction()
     {
-        if (player == null || powerUpData == null) return;
+        if (playerCamera == null || powerUpData == null) return;
 
-        float distance = Vector3.Distance(player.position, transform.position);
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        RaycastHit hit;
 
-        if (distance <= interactionDistance)
+        // 1. Lanzamos el Raycast
+        if (Physics.Raycast(ray, out hit, interactionDistance))
         {
-            if (!isPlayerNear)
+            // 2. Comprobamos si golpea ESTE objeto
+            if (hit.collider.gameObject == gameObject)
             {
-                isPlayerNear = true;
-                Highlight(true);
+                // 3. Estamos mirando el objeto
+                if (!isPlayerLooking)
+                {
+                    isPlayerLooking = true;
+                    Highlight(true);
+                }
+
+                ShowPowerUpInfo();
+
+                if (Input.GetKeyDown(interactionKey))
+                    TryPurchase();
+
+                return; // Importante: Salir para no ejecutar la lógica de "dejar de mirar"
             }
-
-            ShowPowerUpInfo(); // Mover la actualización de info aquí asegura que el mensaje se actualice (ej. Armadura llena/vacía)
-
-            if (Input.GetKeyDown(interactionKey))
-                TryPurchase();
         }
-        else if (isPlayerNear)
+
+        // 4. Si el Raycast falla O golpea otro objeto
+        //    (y estábamos mirando antes)
+        if (isPlayerLooking)
         {
-            isPlayerNear = false;
+            isPlayerLooking = false;
             HidePowerUpInfo();
             Highlight(false);
         }
     }
+
+    // --- NINGÚN CAMBIO DE AQUÍ EN ADELANTE ---
+    // Los métodos ShowPowerUpInfo(), HidePowerUpInfo(), Highlight(), TryPurchase()
+    // y los métodos estáticos (Reset, Get, Load) son idénticos.
 
     private void ShowPowerUpInfo()
     {
@@ -122,7 +148,6 @@ public class PowerUpStore : MonoBehaviour
             return;
         }
 
-
         // 3. MENSAJE NORMAL DE COMPRA
         hudText.gameObject.SetActive(true);
         hudText.text =
@@ -143,6 +168,7 @@ public class PowerUpStore : MonoBehaviour
 
     private void TryPurchase()
     {
+        // ... (Este método no cambia en absoluto) ...
         if (ScoreManager.Instance == null)
         {
             Debug.LogWarning("Faltan referencias al ScoreManager.");
@@ -157,21 +183,18 @@ public class PowerUpStore : MonoBehaviour
 
         bool isArmorPowerUp = powerUpData.powerUpType == PowerUpType.Armadura;
 
-        // LÓGICA DE BLOQUEO DE COMPRA (NO REPETIBLE)
         if (!isArmorPowerUp && ownedPowerUps.Contains(powerUpData.powerUpType))
         {
             Debug.Log($"{powerUpData.powerUpName} ya comprado.");
             return;
         }
 
-        // LÓGICA DE BLOQUEO DE ARMADURA LLENA (SOLO ARMADURA)
         if (isArmorPowerUp && playerHealth != null && playerHealth.currentArmor >= playerHealth.maxArmor)
         {
             Debug.Log("Armadura ya al máximo, no se puede comprar.");
-            ShowPowerUpInfo(); // Asegurar que el mensaje de "completo" se muestre.
+            ShowPowerUpInfo();
             return;
         }
-
 
         int currentPoints = ScoreManager.Instance.GetCurrentScore();
 
@@ -185,7 +208,6 @@ public class PowerUpStore : MonoBehaviour
 
         if (paid)
         {
-            // Solo añadimos el PowerUp al set de "poseídos" si NO es el de Armadura (porque es repetible)
             if (!isArmorPowerUp)
             {
                 ownedPowerUps.Add(powerUpData.powerUpType);
@@ -194,10 +216,8 @@ public class PowerUpStore : MonoBehaviour
             playerPowerUpManager.ApplyPowerUp(powerUpData);
             Debug.Log($"Has comprado {powerUpData.powerUpName} por {powerUpData.cost} puntos.");
 
-            // Re-evaluar el estado después de la compra (ej. para el caso de armadura llena)
             ShowPowerUpInfo();
 
-            // Si la compra fue la armadura y ya está llena, desactivar el highlight y el HUD.
             if (isArmorPowerUp && playerHealth.currentArmor >= playerHealth.maxArmor)
             {
                 HidePowerUpInfo();
@@ -210,9 +230,6 @@ public class PowerUpStore : MonoBehaviour
         }
     }
 
-    // Limpia la lista estática de power-ups.
-    // Debe llamarse al reiniciar la partida o volver al menú.
-
     public static void ResetOwnedPowerUps()
     {
         if (ownedPowerUps != null)
@@ -222,16 +239,11 @@ public class PowerUpStore : MonoBehaviour
         Debug.Log("Datos estáticos de PowerUps reseteados.");
     }
 
-    // Devuelve el HashSet estático para que SaveLoadManager pueda leerlo.
-
     public static HashSet<PowerUpType> GetOwnedPowerUps()
     {
         return ownedPowerUps;
     }
 
-
-    // Limpia el HashSet y lo rellena con los datos cargados.
- 
     public static void LoadOwnedPowerUps(List<PowerUpType> loadedPowerUps)
     {
         ownedPowerUps.Clear();

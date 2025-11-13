@@ -12,7 +12,7 @@ public class WeaponUpgradeShop : MonoBehaviour
 
     [Header("Valores de mejora")]
     [SerializeField] private int shotgunUpgradePellets = 8;
-    [SerializeField] private float rifleUpgradeFireRate = 0.05f;
+    [SerializeField] private float rifleUpgradeFireRate = 0.1f;
     [SerializeField] private float pistolBurstFireRate = 0.1f;
 
     [SerializeField] private int sniperUpgradePenetration = 3;
