@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.AI;
 using System.Collections;
 
 public class ZombieController : MonoBehaviour
@@ -7,31 +6,28 @@ public class ZombieController : MonoBehaviour
     [Header("Datos del zombi")]
     [SerializeField] private ZombieData zombieData;
 
-    private NavMeshAgent agent;
+    private CharacterController zombie;
     private Transform player;
+    private Animator animator;
     private float currentHp;
     private float lastAttackTime = 0f;
     private bool isDead = false;
     private bool isAttacking = false;
+    private Vector3 verticalVelocity;
 
     private WaveManager waveManager;
     private ScoreManager scoreManager;
 
     void Start()
     {
-        // --- Inicialización ---
-        agent = GetComponent<NavMeshAgent>();
-        player = GameObject.FindGameObjectWithTag("Player")?.transform;
+        zombie = GetComponent<CharacterController>();
+        animator = GetComponent<Animator>();
+        player = GameObject.FindGameObjectWithTag("Player").transform;
 
         waveManager = FindAnyObjectByType<WaveManager>();
         scoreManager = FindAnyObjectByType<ScoreManager>();
 
         ApplyZombieData(zombieData);
-
-        // Configurar el agente según datos del zombi
-        agent.speed = zombieData.speed;
-        agent.stoppingDistance = zombieData.attackRange * 0.8f;
-        agent.autoBraking = true;
     }
 
     public void ApplyZombieData(ZombieData data)
@@ -47,7 +43,8 @@ public class ZombieController : MonoBehaviour
 
     void Update()
     {
-        if (isDead || player == null) return;
+        // Si está muerto, atacando, o no hay jugador, no hacer nada.
+        if (isDead || player == null || isAttacking) return;
 
         float distance = Vector3.Distance(transform.position, player.position);
 
@@ -63,24 +60,41 @@ public class ZombieController : MonoBehaviour
 
     private void FollowPlayer()
     {
-        if (isAttacking) return;
+        animator.SetBool("isWalking", true);
 
-        if (agent.isActiveAndEnabled)
+        // --- Lógica de Gravedad ---
+        if (zombie.isGrounded)
         {
-            agent.isStopped = false;
-            agent.SetDestination(player.position);
+            verticalVelocity.y = -2f;
         }
+        else
+        {
+            verticalVelocity.y += Physics.gravity.y * Time.deltaTime;
+        }
+
+        Vector3 dir = player.position - transform.position;
+        dir.y = 0;
+        dir = dir.normalized;
+
+        Vector3 horizontalMovement = dir * zombieData.speed;
+        Vector3 finalMovement = horizontalMovement + verticalVelocity;
+
+        zombie.Move(finalMovement * Time.deltaTime);
+
+        transform.LookAt(new Vector3(player.position.x, transform.position.y, player.position.z));
     }
 
     private void StopAndAttack()
     {
-        if (isAttacking) return;
+        animator.SetBool("isWalking", false); 
 
-        if (agent.isActiveAndEnabled)
+        if (!zombie.isGrounded)
         {
-            agent.isStopped = true;
-            transform.LookAt(new Vector3(player.position.x, transform.position.y, player.position.z));
+            verticalVelocity.y += Physics.gravity.y * Time.deltaTime;
+            zombie.Move(verticalVelocity * Time.deltaTime);
         }
+
+        transform.LookAt(new Vector3(player.position.x, transform.position.y, player.position.z));
 
         if (Time.time - lastAttackTime >= zombieData.attackCooldown)
         {
@@ -93,37 +107,45 @@ public class ZombieController : MonoBehaviour
         isAttacking = true;
         lastAttackTime = Time.time;
 
-        yield return new WaitForSeconds(0.3f);
+        animator.SetTrigger("Attack");
 
-        if (player != null)
+
+        yield return new WaitForSeconds(1.0f);
+
+        if (Vector3.Distance(transform.position, player.position) <= zombieData.attackRange)
         {
             PlayerHealth ph = player.GetComponent<PlayerHealth>();
             if (ph != null) ph.TakeDamage(zombieData.damage);
         }
 
-        yield return new WaitForSeconds(zombieData.attackCooldown - 0.3f);
-        isAttacking = false;
+        // Esperar el resto del cooldown
+        yield return new WaitForSeconds(zombieData.attackCooldown - 1.0f);
+
+        isAttacking = false; // Desbloquea Update()
     }
 
     public void TakeDamage(float amount)
     {
         if (isDead) return;
         currentHp -= amount;
-        if (currentHp <= 0) Die();
+        if (currentHp <= 0)
+        {
+            Die();
+        }
     }
 
     private void Die()
     {
         isDead = true;
-
-        if (agent != null)
-        {
-            agent.isStopped = true;
-            agent.enabled = false;
-        }
+        animator.SetTrigger("Die");
 
         CapsuleCollider capsule = GetComponent<CapsuleCollider>();
-        if (capsule != null) capsule.enabled = false;
+        if (capsule != null)
+        {
+            capsule.enabled = false;
+        }
+
+        zombie.enabled = false; // Desactiva el CharacterController
 
         if (scoreManager != null) scoreManager.ZombieKilled();
         if (waveManager != null) waveManager.ZombieDied();

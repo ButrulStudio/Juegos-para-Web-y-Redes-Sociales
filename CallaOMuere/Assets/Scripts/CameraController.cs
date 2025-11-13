@@ -18,6 +18,9 @@ public class CameraController : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+
+        // Carga la sensibilidad guardada al INICIAR la partida
+        sensibility = PlayerPrefs.GetFloat("MasterSensitivity", this.sensibility);
     }
 
     void Update()
@@ -44,5 +47,12 @@ public class CameraController : MonoBehaviour
     public void AddRecoil(float vertical, float horizontal)
     {
         recoilOffset += new Vector2(vertical, horizontal) * recoilMultiplier;
+    }
+
+    // --- Setter para modificar la sensibilidad dentro del juego ---
+
+    public void SetSensibility(float newSensibility)
+    {
+        sensibility = newSensibility;
     }
 }

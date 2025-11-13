@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Zombie_tanque
   m_EditorClassIdentifier: 
   zombieName: 
-  prefab: {fileID: 6807299748907565382, guid: cb9b0f69e89cf2d4ea3d7863d9fd383a, type: 3}
+  prefab: {fileID: 2670437097619204035, guid: 6fb076549eff9a14ca9ecb0780f9f12c, type: 3}
   speed: 2
   maxHp: 200
   damage: 15
   attackRange: 3
   attackCooldown: 2
+  detectionRange: 15
