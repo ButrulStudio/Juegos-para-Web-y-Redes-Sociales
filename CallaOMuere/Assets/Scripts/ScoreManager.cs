@@ -3,7 +3,6 @@ using TMPro;
 
 public class ScoreManager : MonoBehaviour
 {
-    // Propiedad estática para el patrón Singleton
     public static ScoreManager Instance { get; private set; }
 
     [SerializeField] private TextMeshProUGUI scoreText;
@@ -65,5 +64,13 @@ public class ScoreManager : MonoBehaviour
         {
             Debug.LogError("El TextMeshProUGUI (scoreText) no está asignado en el Inspector del ScoreManager.");
         }
+    }
+
+    // Establece la puntuación al cargar una partida guardada.
+
+    public void SetScore(int newScore)
+    {
+        currentScore = newScore;
+        UpdateScoreDisplay();
     }
 }

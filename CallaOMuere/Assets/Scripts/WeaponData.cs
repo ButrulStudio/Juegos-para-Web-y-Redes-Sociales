@@ -17,7 +17,14 @@ public class WeaponData : ScriptableObject
     public float damage = 20f;
     public float range = 100f;
     public float fireRate = 0.2f;
+
+    [Header("Precios de la Tienda")]
+    [Tooltip("Precio para comprar el arma por primera vez")]
     public float price = 0;
+
+    [Tooltip("Precio para rellenar la munición (si ya la tienes)")]
+    public int ammoPrice = 50;
+
 
     [Header("Munición")]
     [Tooltip("Balas que caben en el cargador")]
@@ -44,14 +51,12 @@ public class WeaponData : ScriptableObject
     public float spreadAngle = 10f;
 
     [Header("Recoil / Kickback")]
-    public float recoilVerticalMin = 1f;     // mínimo recoil vertical
-    public float recoilVerticalMax = 2f;     // máximo recoil vertical
-    public float recoilHorizontalMin = -0.5f;// mínimo recoil horizontal
-    public float recoilHorizontalMax = 0.5f; // máximo recoil horizontal
-
+    public float recoilVerticalMin = 1f;
+    public float recoilVerticalMax = 2f;
+    public float recoilHorizontalMin = -0.5f;
+    public float recoilHorizontalMax = 0.5f;
     [Tooltip("Distancia que retrocede el arma al disparar")]
     public float weaponKickbackDistance = 0.05f;
-
     [Tooltip("Velocidad de regreso del arma a la posición original")]
     public float weaponKickbackReturnSpeed = 8f;
 }

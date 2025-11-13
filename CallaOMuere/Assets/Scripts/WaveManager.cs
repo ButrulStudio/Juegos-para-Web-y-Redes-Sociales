@@ -8,34 +8,35 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float timeBetweenWaves = 10f;
     [SerializeField] private TextMeshProUGUI waveText;
 
-    // --- CAMPOS PARA EL LÍMITE ---
+
     [Header("Límite de Zombis Activos")]
     [Tooltip("Máximo número de zombis que pueden estar vivos en la escena a la vez.")]
     [SerializeField] private int maxActiveZombies = 20;
     private int currentActiveZombies = 0;
-    // ------------------------------------
-
 
     [Header("Configuración de Zombies")]
     [SerializeField] private int initialZombieCount = 5;
-    [SerializeField][Range(1.0f, 2.0f)] private float zombieCountMultiplier = 1.05f; // 5% de aumento
+    [SerializeField][Range(1.0f, 2.0f)] private float zombieCountMultiplier = 1.05f; 
     [SerializeField] private float baseZombieHealth = 60f; // La vida de la ronda 1
     [SerializeField] private float healthIncreasePerWave = 30f; // Puntos de vida a añadir por ronda
 
     [Header("Referencias")]
     [SerializeField] private ZombieSpawner zombieSpawner;
 
-    private int currentWaveIndex = 0; // Se inicializa en 0 (Ronda 1)
-    private int zombiesRemainingInWave; // Zombis totales que el spawner debe generar
+    private int currentWaveIndex = 0;
+    private int zombiesRemainingInWave;
     private float nextWaveTime;
     private bool isWaitingForNextWave = true;
-    private bool hasFinishedSpawning = false; // 👈 NUEVA VARIABLE CLAVE
+    private bool hasFinishedSpawning = false;
 
 
     // Variables para llevar la cuenta de la progresión
     private int currentZombieCount;
 
+    //  PROPIEDADES PÚBLICAS 
     public int currentWave => currentWaveIndex + 1;
+    public int ZombiesRemainingInWave => zombiesRemainingInWave;
+
 
     void Start()
     {
@@ -45,6 +46,7 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
+        // Este es el Start() original
         currentZombieCount = initialZombieCount;
         nextWaveTime = Time.time + 3f;
     }
@@ -67,7 +69,15 @@ public class WaveManager : MonoBehaviour
 
     void StartNextWave()
     {
-        // 1. Resetear el flag y calcular la cuenta de la oleada
+        // Al empezar la oleada, guarda el progreso.
+        // Ignora la oleada 1 (index 0) para no guardar al inicio de la partida.
+        if (currentWaveIndex > 0 && SaveLoadManager.Instance != null)
+        {
+            Debug.Log($"--- AUTOSAVE: Iniciando Oleada {currentWave} ---");
+            SaveLoadManager.Instance.SaveGame();
+        }
+
+        // Resetear el flag y calcular la cuenta de la oleada
         hasFinishedSpawning = false; // RESETEAR AL INICIO
 
         if (currentWaveIndex > 0)
@@ -76,11 +86,11 @@ public class WaveManager : MonoBehaviour
         }
         zombiesRemainingInWave = currentZombieCount; // Este es el total a spawnear
 
-        // 2. Calcular la vida
+        //  Calcular la vida
         float currentHealth = baseZombieHealth + (healthIncreasePerWave * currentWaveIndex);
         float healthMultiplier = currentHealth / baseZombieHealth;
 
-        // 3. Intervalo
+        // Intervalo
         float spawnInterval = 1f;
 
         Debug.Log($"Iniciando Oleada {currentWave}: Spawneando {zombiesRemainingInWave} zombies");
@@ -88,31 +98,27 @@ public class WaveManager : MonoBehaviour
         zombieSpawner.StartWaveSpawn(zombiesRemainingInWave, spawnInterval, healthMultiplier);
     }
 
-    /// <summary>
-    /// Llamado por ZombieController al morir.
-    /// </summary>
+ 
+    // Llamado por ZombieController al morir.
+
     public void ZombieDied()
     {
         currentActiveZombies--;
         zombiesRemainingInWave--;
 
         // 2. CONDICIÓN DE FIN DE OLEADA: 
-        // Se han terminado de generar todos (hasFinishedSpawning)
-        // Y todos los activos han muerto.
-        if (hasFinishedSpawning && currentActiveZombies <= 0) // 👈 CORRECCIÓN DE LA CONDICIÓN
+        if (hasFinishedSpawning && currentActiveZombies <= 0)
         {
             EndWave();
         }
         else
         {
-            // Ahora el log tiene sentido: cuánto queda por spawnear vs. cuántos están vivos.
             Debug.Log($"Zombis restantes en Oleada {currentWave}: {zombiesRemainingInWave} | Activos: {currentActiveZombies}");
         }
     }
 
-    /// <summary>
-    /// NUEVO MÉTODO: Llamado por ZombieSpawner cuando ha generado su cuota total.
-    /// </summary>
+    // Llamado por ZombieSpawner cuando ha generado su cuota total.
+
     public void SpawnerFinished()
     {
         hasFinishedSpawning = true;
@@ -150,4 +156,32 @@ public class WaveManager : MonoBehaviour
     {
         return currentActiveZombies < maxActiveZombies;
     }
+
+    //Forza al WaveManager a un estado específico al cargar una partida.
+
+    public void SetWave(int waveNumber)
+    {
+        // Resetea el estado para que la próxima oleada sea la cargada
+        currentWaveIndex = waveNumber - 1; // Si waveNumber es 5, index es 4
+
+        // Re-calcular la cuenta de zombies para esta oleada
+        currentZombieCount = initialZombieCount;
+        for (int i = 0; i < currentWaveIndex; i++)
+        {
+            currentZombieCount = Mathf.CeilToInt(currentZombieCount * zombieCountMultiplier);
+        }
+
+        // Forzar el estado de "entre oleadas"
+        nextWaveTime = Time.time + 3f; // Un breve retraso antes de empezar
+        isWaitingForNextWave = true;
+        hasFinishedSpawning = true;
+        currentActiveZombies = 0;
+        zombiesRemainingInWave = 0;
+
+        if (waveText != null)
+        {
+            waveText.text = $"{currentWave}";
+        }
+    }
+
 }

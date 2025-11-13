@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.UI; // Necesario para los Sliders
+using UnityEngine.UI;
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -67,7 +67,6 @@ public class PlayerHealth : MonoBehaviour
 
         float damageRemaining = amount;
 
-        // 1. PRIORIDAD: DEDUCIR DAO DE LA ARMADURA
         if (currentArmor > 0f)
         {
             if (currentArmor >= damageRemaining)
@@ -83,7 +82,6 @@ public class PlayerHealth : MonoBehaviour
             if (armorSlider != null) armorSlider.value = currentArmor;
         }
 
-        // 2. DEDUCIR DAO RESTANTE DE LA VIDA
         if (damageRemaining > 0f)
         {
             currentHealth -= damageRemaining;
@@ -97,7 +95,6 @@ public class PlayerHealth : MonoBehaviour
             lastDamageTime = Time.time;
         }
 
-        // 3. COMPROBAR MUERTE
         if (currentHealth <= 0f)
         {
             // Llama al GameManager para manejar la muerte del jugador y el Game Over
@@ -126,10 +123,20 @@ public class PlayerHealth : MonoBehaviour
         currentArmor = Mathf.Min(currentArmor, maxArmor);
         Debug.Log($"Armadura restaurada: +{amount}, actual: {currentArmor}");
 
-        // ¡ACTUALIZACIÓN CLAVE! Actualizar el slider inmediatamente.
         if (armorSlider != null)
         {
             armorSlider.value = currentArmor;
         }
+    }
+
+    // Establece la vida y armadura al cargar una partida guardada.
+    public void SetHealthAndArmor(float newHealth, float newArmor)
+    {
+        currentHealth = Mathf.Clamp(newHealth, 0, maxHealth);
+        currentArmor = Mathf.Clamp(newArmor, 0, maxArmor);
+
+        // Actualiza los sliders inmediatamente
+        if (healthSlider != null) healthSlider.value = currentHealth;
+        if (armorSlider != null) armorSlider.value = currentArmor;
     }
 }

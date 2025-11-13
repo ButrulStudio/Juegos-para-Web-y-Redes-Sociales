@@ -4819,7 +4819,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &944614576
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5454,7 +5454,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1321314504}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: QuitToMainMenu
+        m_MethodName: SaveAndQuit
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -6448,7 +6448,7 @@ MonoBehaviour:
   pausePanel: {fileID: 669818074}
   transitionAnimator: {fileID: 944614578}
   gameOverText: {fileID: 1752821484}
-  pauseText: {fileID: 0}
+  pauseText: {fileID: 170279188}
   sensitivitySlider_Pause: {fileID: 1472258964}
   musicSlider_Pause: {fileID: 1656826713}
   sfxSlider_Pause: {fileID: 420612553}

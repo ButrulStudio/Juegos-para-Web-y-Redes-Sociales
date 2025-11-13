@@ -1,6 +1,15 @@
 using System.Collections.Generic;
+using UnityEngine;
 
-// ¡Clave! Esto permite que Unity lo convierta a/desde JSON.
+[System.Serializable]
+public class WeaponAmmoData
+{
+    public WeaponType weaponType;
+    public int currentMagAmmo;
+    public int currentTotalAmmo;
+}
+
+
 [System.Serializable]
 public class SaveData
 {
@@ -11,16 +20,13 @@ public class SaveData
     // Datos de la partida
     public int currentScore;
     public int currentWave;
-    public int zombiesRemainingInWave; // Para saber en qué punto de la oleada estaba
+    public int zombiesRemainingInWave;
 
     // Datos de inventario
-    // Usamos enums simples porque se guardan fácil en JSON
     public List<PowerUpType> ownedPowerUps;
     public List<WeaponType> ownedWeapons;
     public List<WeaponType> upgradedWeapons;
+    public WeaponType equippedWeaponType; 
 
-    // Munición actual (¡lo más complejo!)
-    // Esto es opcional pero ideal para un buen guardado
-    // public Dictionary<WeaponType, int> ammoInMags;
-    // public Dictionary<WeaponType, int> totalAmmo;
+    public List<WeaponAmmoData> ammoData;
 }

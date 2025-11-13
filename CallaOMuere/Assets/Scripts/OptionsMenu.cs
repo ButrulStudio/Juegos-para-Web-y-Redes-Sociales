@@ -1,8 +1,7 @@
 using UnityEngine;
-using UnityEngine.UI; // Necesario para el Slider
-using UnityEngine.Audio; // Necesario para el AudioMixer
+using UnityEngine.UI;
+using UnityEngine.Audio;
 
-// Se eliminó 'UnityEngine.SceneManagement' porque ya no es necesario aquí
 public class OptionsMenu : MonoBehaviour
 {
     [Header("Componentes UI")]
@@ -30,30 +29,22 @@ public class OptionsMenu : MonoBehaviour
         musicSlider.onValueChanged.AddListener(SetMusicVolume);
         sfxSlider.onValueChanged.AddListener(SetSFXVolume);
 
-        // --- Se eliminó la lógica del botón "Volver" de aquí ---
     }
 
-    /// <summary>
-    /// Carga los PlayerPrefs y los aplica a los sliders/mixers
-    /// </summary>
+    // Carga los PlayerPrefs y los aplica a los sliders/mixers
     private void LoadSettings()
     {
-        // Cargar Sensibilidad (con un valor por defecto de 100 si no existe)
         float sensitivity = PlayerPrefs.GetFloat(SENS_KEY, 100f);
         sensitivitySlider.value = sensitivity;
 
-        // Cargar Música (con un valor por defecto de 0.75 si no existe)
         float musicVol = PlayerPrefs.GetFloat(MUSIC_VOL_KEY, 0.75f);
         musicSlider.value = musicVol;
         SetMusicVolume(musicVol); // Aplicarlo al AudioMixer
 
-        // Cargar SFX (con un valor por defecto de 0.75 si no existe)
         float sfxVol = PlayerPrefs.GetFloat(SFX_VOL_KEY, 0.75f);
         sfxSlider.value = sfxVol;
         SetSFXVolume(sfxVol); // Aplicarlo al AudioMixer
     }
-
-    // --- MÉTODOS PÚBLICOS (para los Sliders) ---
 
     public void SetSensitivity(float value)
     {

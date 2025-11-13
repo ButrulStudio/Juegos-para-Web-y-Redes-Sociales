@@ -2,8 +2,8 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI; // ¡NUEVO! Necesario para los Sliders
-using UnityEngine.Audio; // ¡NUEVO! Necesario para el AudioMixer
+using UnityEngine.UI;
+using UnityEngine.Audio;
 
 public class GameManager : MonoBehaviour
 {
@@ -20,19 +20,14 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMPro.TextMeshProUGUI gameOverText;
     [SerializeField] private TextMeshProUGUI pauseText;
 
-    // --- ¡NUEVAS VARIABLES PARA LOS AJUSTES DE PAUSA! ---
+    // --- Variables para los Ajustes de Pausa ---
     [Header("Ajustes del Menú de Pausa")]
-    [Tooltip("Arrastra el slider de Sensibilidad de tu pausePanel")]
     [SerializeField] private Slider sensitivitySlider_Pause;
-    [Tooltip("Arrastra el slider de Música de tu pausePanel")]
     [SerializeField] private Slider musicSlider_Pause;
-    [Tooltip("Arrastra el slider de SFX de tu pausePanel")]
     [SerializeField] private Slider sfxSlider_Pause;
-    [Tooltip("Arrastra tu 'MainMixer' (el mismo que en OptionsMenu)")]
     [SerializeField] private AudioMixer mainAudioMixer;
-    [Tooltip("Arrastra el objeto 'Camera' que tiene el CameraController")]
     [SerializeField] private CameraController cameraController;
-    // --- FIN NUEVAS VARIABLES ---
+
 
     void Awake()
     {
@@ -63,9 +58,16 @@ public class GameManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Time.timeScale = 1;
 
-        // --- ¡NUEVA LLAMADA! ---
         // Configura los sliders del menú de pausa
         SetupPauseMenuSliders();
+
+        // Comprueba si el SaveLoadManager (desde el Menú Principal)
+        // ha marcado que debemos cargar una partida guardada.
+        if (SaveLoadManager.ShouldLoadGame)
+        {
+            // Si es así, llama al método LoadGame() del SaveLoadManager.
+            SaveLoadManager.Instance.LoadGame();
+        }
     }
 
     private void Update()
@@ -89,6 +91,13 @@ public class GameManager : MonoBehaviour
         // Libera el cursor
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
+
+        // Si el jugador muere, busca el SaveLoadManager
+        // y llama a su función para borrar el archivo de guardado.
+        if (SaveLoadManager.Instance != null)
+        {
+            SaveLoadManager.Instance.DeleteSave();
+        }
     }
 
     public void PanelOpen()
@@ -104,13 +113,12 @@ public class GameManager : MonoBehaviour
         else
         {
             // Pausar juego
-            // --- ¡NUEVA LLAMADA! ---
-            // Actualiza los sliders a los valores guardados CADA VEZ que abres el menú
-            if (sensitivitySlider_Pause != null) // Solo si los has asignado
+            // Carga los valores actuales en los sliders CADA VEZ que abres el menú
+            if (sensitivitySlider_Pause != null)
             {
                 LoadCurrentSettingsToSliders();
             }
-            // ---
+
             pausePanel.SetActive(true);
             Time.timeScale = 0;
             Cursor.visible = true;
@@ -118,45 +126,30 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // --- ¡SECCIÓN DE MÉTODOS COMPLETAMENTE NUEVA! ---
-
-    //  Se llama en Start() para configurar los listeners de los sliders
+    // --- MÉTODOS PARA LOS SLIDERS DE PAUSA (ya implementados) ---
 
     private void SetupPauseMenuSliders()
     {
-        // Si no has asignado los sliders en el inspector, no hagas nada
         if (sensitivitySlider_Pause == null || musicSlider_Pause == null || sfxSlider_Pause == null)
         {
-            Debug.LogWarning("No se han asignado todos los Sliders de opciones en el GameManager. Las opciones del menú de pausa no funcionarán.");
             return;
         }
-
-        // Carga los valores iniciales (por si acaso)
         LoadCurrentSettingsToSliders();
-
-        // Asigna los "listeners" (qué pasa cuando se mueven)
         sensitivitySlider_Pause.onValueChanged.AddListener(SetSensitivity_Pause);
         musicSlider_Pause.onValueChanged.AddListener(SetMusicVolume_Pause);
         sfxSlider_Pause.onValueChanged.AddListener(SetSFXVolume_Pause);
     }
 
-    // Lee los PlayerPrefs y actualiza los sliders del menú de pausa
-
     private void LoadCurrentSettingsToSliders()
     {
-        // Usamos las MISMAS claves que en OptionsMenu.cs para que estén sincronizados
         sensitivitySlider_Pause.value = PlayerPrefs.GetFloat("MasterSensitivity", 100f);
         musicSlider_Pause.value = PlayerPrefs.GetFloat("MasterMusicVolume", 0.75f);
         sfxSlider_Pause.value = PlayerPrefs.GetFloat("MasterSFXVolume", 0.75f);
     }
 
-    // Esta función debe llamarse desde el OnValueChanged() del SLIDER DE SENSIBILIDAD
-
     public void SetSensitivity_Pause(float value)
     {
         PlayerPrefs.SetFloat("MasterSensitivity", value);
-
-        // Actualiza la cámara en tiempo real
         if (cameraController != null)
         {
             cameraController.SetSensibility(value);
@@ -166,7 +159,6 @@ public class GameManager : MonoBehaviour
     public void SetMusicVolume_Pause(float value)
     {
         if (mainAudioMixer == null) return;
-        // Convierte el valor lineal (0.0001-1) a logarítmico (decibelios)
         mainAudioMixer.SetFloat("MusicVolume", Mathf.Log10(value) * 20);
         PlayerPrefs.SetFloat("MasterMusicVolume", value);
     }
@@ -176,6 +168,20 @@ public class GameManager : MonoBehaviour
         if (mainAudioMixer == null) return;
         mainAudioMixer.SetFloat("SFXVolume", Mathf.Log10(value) * 20);
         PlayerPrefs.SetFloat("MasterSFXVolume", value);
+    }
+
+    // Debes crear un nuevo botón "Guardar y Salir" en tu
+    // 'pausePanel' y conectarlo a esta función.
+    public void SaveAndQuit()
+    {
+        // Primero, le dice al SaveLoadManager que guarde el estado actual.
+        if (SaveLoadManager.Instance != null)
+        {
+            SaveLoadManager.Instance.SaveGame();
+        }
+
+        // Después, simplemente llama a la función de salir al menú.
+        QuitToMainMenu();
     }
 
     public void QuitToMainMenu()

@@ -19,7 +19,7 @@ public class CameraController : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Locked;
 
-        // Carga la sensibilidad guardada al INICIAR la partida
+        // Carga la sensibilidad guardada al iniciar la partida
         sensibility = PlayerPrefs.GetFloat("MasterSensitivity", this.sensibility);
     }
 

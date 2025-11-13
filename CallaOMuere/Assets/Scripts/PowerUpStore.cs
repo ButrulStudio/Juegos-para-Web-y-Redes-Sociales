@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(Collider))]
 public class PowerUpStore : MonoBehaviour
@@ -17,11 +18,11 @@ public class PowerUpStore : MonoBehaviour
     private Renderer rend;
 
     [Header("UI del HUD")]
-    [SerializeField] private TextMeshProUGUI hudText; // Texto del Canvas HUD
+    [SerializeField] private TextMeshProUGUI hudText; 
 
     private Transform player;
     private PowerUpManager playerPowerUpManager;
-    private PlayerHealth playerHealth; // Referencia al estado de salud del jugador.
+    private PlayerHealth playerHealth; 
     private bool isPlayerNear = false;
 
     // Evita comprar varias veces el mismo power-up
@@ -208,10 +209,10 @@ public class PowerUpStore : MonoBehaviour
             Debug.Log($"No se pudo gastar los puntos. (Saldo actual: {currentPoints})");
         }
     }
-    /// <summary>
-    /// Limpia la lista estática de power-ups.
-    /// Debe llamarse al reiniciar la partida o volver al menú.
-    /// </summary>
+
+    // Limpia la lista estática de power-ups.
+    // Debe llamarse al reiniciar la partida o volver al menú.
+
     public static void ResetOwnedPowerUps()
     {
         if (ownedPowerUps != null)
@@ -219,5 +220,25 @@ public class PowerUpStore : MonoBehaviour
             ownedPowerUps.Clear();
         }
         Debug.Log("Datos estáticos de PowerUps reseteados.");
+    }
+
+    // Devuelve el HashSet estático para que SaveLoadManager pueda leerlo.
+
+    public static HashSet<PowerUpType> GetOwnedPowerUps()
+    {
+        return ownedPowerUps;
+    }
+
+
+    // Limpia el HashSet y lo rellena con los datos cargados.
+ 
+    public static void LoadOwnedPowerUps(List<PowerUpType> loadedPowerUps)
+    {
+        ownedPowerUps.Clear();
+        foreach (var type in loadedPowerUps)
+        {
+            ownedPowerUps.Add(type);
+        }
+        Debug.Log("Power-ups cargados en la tienda estática.");
     }
 }

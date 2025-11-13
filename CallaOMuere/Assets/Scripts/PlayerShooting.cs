@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class PlayerShooting : MonoBehaviour
 {
@@ -28,9 +29,10 @@ public class PlayerShooting : MonoBehaviour
     private int currentAmmoInMag;
     private int totalAmmo;
     private bool isReloading = false;
+    private Dictionary<WeaponType, int> ammoInMagCache = new Dictionary<WeaponType, int>();
+    private Dictionary<WeaponType, int> totalAmmoCache = new Dictionary<WeaponType, int>();
 
     // === MULTIPLICADORES DE POWER-UP ===
-    // Estas variables son modificadas por PowerUpManager
     [HideInInspector] public float reloadTimeMultiplier = 1f;
     [HideInInspector] public float damageMultiplier = 1f;
 
@@ -40,19 +42,31 @@ public class PlayerShooting : MonoBehaviour
 
     [Tooltip("Duración en segundos del fogonazo. 0.05 es un buen valor para empezar.")]
     [SerializeField] private float flashDuration = 0.05f;
+
+
     void Start()
     {
-        if (currentWeapon != null)
-        {
-            currentWeapon = Instantiate(currentWeapon);
-        }
-
-        EquipWeapon(currentWeapon);
         if (weaponHolder != null) weaponInitialLocalPos = weaponHolder.localPosition;
 
-        // Inicializar munición
-        currentAmmoInMag = currentWeapon.magCapacity;
-        totalAmmo = currentWeapon.maxAmmo - currentAmmoInMag;
+        // Si se va a cargar una partida, no hacer nada aquí.
+        // SaveLoadManager lo gestionará todo.
+        if (SaveLoadManager.ShouldLoadGame)
+        {
+            return;
+        }
+
+        // --- LÓGICA DE PARTIDA NUEVA ---
+        if (currentWeapon != null)
+        {
+            // 1. Instanciamos el arma inicial (para que se pueda mejorar)
+            currentWeapon = Instantiate(currentWeapon);
+
+            // 2. La equipamos
+            EquipWeapon(currentWeapon);
+
+            // 3. Le decimos a la Tienda que esta arma ya nos pertenece.
+            WeaponStore.RegisterStartingWeapon(currentWeapon);
+        }
 
         UpdateAmmoUI();
         UpdateCrosshair();
@@ -66,7 +80,7 @@ public class PlayerShooting : MonoBehaviour
         HandleReloadInput();
 
         // Movimiento de retorno del arma
-        if (weaponHolder != null)
+        if (weaponHolder != null && currentWeapon != null) // Añadida comprobación de currentWeapon
         {
             weaponCurrentOffset = Vector3.Lerp(
                 weaponCurrentOffset,
@@ -80,6 +94,7 @@ public class PlayerShooting : MonoBehaviour
     // === RECARGA ===
     void HandleReloadInput()
     {
+        if (currentWeapon == null) return; // No se puede recargar si no hay arma
         if (Input.GetKeyDown(KeyCode.R) && !isReloading && currentAmmoInMag < currentWeapon.magCapacity && totalAmmo > 0)
         {
             StartCoroutine(ReloadCoroutine());
@@ -91,7 +106,6 @@ public class PlayerShooting : MonoBehaviour
         isReloading = true;
         if (ammoText != null) ammoText.text = "Recargando...";
 
-        // MODIFICACIÓN CLAVE: Usa el multiplicador de recarga
         yield return new WaitForSeconds(currentWeapon.reloadTime * reloadTimeMultiplier);
 
         int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
@@ -156,7 +170,6 @@ public class PlayerShooting : MonoBehaviour
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
-        // MODIFICACIÓN CLAVE: Usa el multiplicador de daño
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
             HandleHit(hit, currentWeapon.damage * damageMultiplier);
 
@@ -179,7 +192,6 @@ public class PlayerShooting : MonoBehaviour
 
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
-            // MODIFICACIÓN CLAVE: Usa el multiplicador de daño
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
                 HandleHit(hit, currentWeapon.damage * damageMultiplier);
 
@@ -206,7 +218,6 @@ public class PlayerShooting : MonoBehaviour
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
-        // MODIFICACIÓN CLAVE: Usa el multiplicador de daño
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
             HandleHit(hit, currentWeapon.damage * damageMultiplier);
 
@@ -237,7 +248,6 @@ public class PlayerShooting : MonoBehaviour
 
             Ray ray = new Ray(playerCamera.transform.position, direction);
 
-            // MODIFICACIÓN CLAVE: Usa el multiplicador de daño
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
                 HandleHit(hit, currentWeapon.damage * damageMultiplier);
         }
@@ -248,7 +258,6 @@ public class PlayerShooting : MonoBehaviour
     // === GESTIÓN DE IMPACTOS ===
     void HandleHit(RaycastHit hit, float damage)
     {
-        // ... (El resto de este método no cambia)
         ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
 
         if (zombieHealth != null)
@@ -278,33 +287,51 @@ public class PlayerShooting : MonoBehaviour
     // === CAMBIO DE ARMA ===
     public void EquipWeapon(WeaponData weaponData)
     {
+        // Guardar munición del arma actual (si hay una)
+        if (currentWeapon != null && currentWeaponModel != null)
+        {
+            ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
+            totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
+        }
+
         if (currentWeaponModel != null)
             Destroy(currentWeaponModel);
 
-        // Esta lógica funciona con tu WeaponStore
-        // porque le pasas una instancia
         currentWeapon = weaponData;
+
+        if (currentWeapon == null)
+        {
+            if (crosshairImage != null) crosshairImage.enabled = false;
+            if (ammoText != null) ammoText.text = "";
+            return;
+        }
 
         if (currentWeapon.weaponModelPrefab != null && weaponHolder != null)
         {
             currentWeaponModel = Instantiate(currentWeapon.weaponModelPrefab, weaponHolder);
             currentWeaponModel.transform.localPosition = Vector3.zero;
             currentWeaponModel.transform.localRotation = Quaternion.identity;
-
             Light newMuzzleLight = currentWeaponModel.GetComponentInChildren<Light>();
-
             muzzleLight = newMuzzleLight;
-
-            if (muzzleLight == null)
-            {
-                Debug.LogWarning($"El arma {weaponData.weaponName} no tiene un componente Light (Muzzle Flash) como hijo o en su jerarquía.");
-            }
+            if (muzzleLight == null) Debug.LogWarning($"El arma {weaponData.weaponName} no tiene un componente Light.");
         }
 
-        // Reinicia la munición
-        currentAmmoInMag = currentWeapon.magCapacity;
-        totalAmmo = currentWeapon.maxAmmo - currentAmmoInMag;
+        // Cargar munición en lugar de resetear
+        if (ammoInMagCache.ContainsKey(currentWeapon.weaponType))
+        {
+            currentAmmoInMag = ammoInMagCache[currentWeapon.weaponType];
+            totalAmmo = totalAmmoCache[currentWeapon.weaponType];
+        }
+        else
+        {
+            // Primera vez que la cogemos
+            currentAmmoInMag = currentWeapon.magCapacity;
+            totalAmmo = currentWeapon.maxAmmo - currentAmmoInMag;
+            ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
+            totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
+        }
 
+        isReloading = false;
         UpdateAmmoUI();
         UpdateCrosshair();
     }
@@ -312,7 +339,6 @@ public class PlayerShooting : MonoBehaviour
     // === RECOIL ===
     private void ApplyRecoil()
     {
-        // ... (Sin cambios)
         if (cameraController != null)
         {
             float vertical = Random.Range(currentWeapon.recoilVerticalMin, currentWeapon.recoilVerticalMax);
@@ -329,17 +355,13 @@ public class PlayerShooting : MonoBehaviour
     // === ACTUALIZACIÓN DE HUD ===
     private void UpdateAmmoUI()
     {
-        // ... (Sin cambios)
         if (ammoText != null && currentWeapon != null)
             ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
     }
 
-    // === ACTUALIZACIÓN DE LA MIRA ===
     private void UpdateCrosshair()
     {
-        // ... (Sin cambios)
         if (crosshairImage == null) return;
-
         if (currentWeapon != null && currentWeapon.crosshairIcon != null)
         {
             crosshairImage.sprite = currentWeapon.crosshairIcon;
@@ -354,7 +376,6 @@ public class PlayerShooting : MonoBehaviour
     // === EFECTO LUMINOSO DE FOGONAZO ===
     private IEnumerator MuzzleFlashRoutine()
     {
-        // ... (Sin cambios)
         if (muzzleLight == null)
         {
             yield break;
@@ -362,5 +383,103 @@ public class PlayerShooting : MonoBehaviour
         muzzleLight.enabled = true;
         yield return new WaitForSeconds(flashDuration);
         muzzleLight.enabled = false;
+    }
+
+    public List<WeaponAmmoData> GetAmmoData()
+    {
+        if (currentWeapon != null)
+        {
+            ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
+            totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
+        }
+
+        List<WeaponAmmoData> dataList = new List<WeaponAmmoData>();
+        foreach (var key in ammoInMagCache.Keys)
+        {
+            dataList.Add(new WeaponAmmoData
+            {
+                weaponType = key,
+                currentMagAmmo = ammoInMagCache[key],
+                currentTotalAmmo = totalAmmoCache[key]
+            });
+        }
+        return dataList;
+    }
+
+    public void LoadAmmoData(List<WeaponAmmoData> dataList)
+    {
+        ammoInMagCache.Clear();
+        totalAmmoCache.Clear();
+
+        if (dataList == null) return;
+
+        foreach (var data in dataList)
+        {
+            ammoInMagCache[data.weaponType] = data.currentMagAmmo;
+            totalAmmoCache[data.weaponType] = data.currentTotalAmmo;
+        }
+        Debug.Log("Datos de munición cargados en el caché de PlayerShooting.");
+    }
+
+    public void ForceCurrentWeaponAmmoToFull()
+    {
+        if (currentWeapon == null) return;
+
+        currentAmmoInMag = currentWeapon.magCapacity;
+        totalAmmo = currentWeapon.maxAmmo - currentWeapon.magCapacity;
+
+        ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
+        totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
+
+        UpdateAmmoUI();
+        Debug.Log($"Munición de {currentWeapon.weaponName} restaurada al comprar.");
+    }
+
+    // Comprueba si el jugador tiene la munición al máximo para un arma específica.
+
+    public bool IsAmmoFull(WeaponData weaponData)
+    {
+        if (weaponData == null) return true;
+
+        int currentMag = 0;
+        int currentTotal = 0;
+
+        // Comprueba si el arma es la que lleva en la mano
+        if (currentWeapon != null && weaponData.weaponType == currentWeapon.weaponType)
+        {
+            currentMag = currentAmmoInMag;
+            currentTotal = totalAmmo;
+        }
+        // Si no, comprueba si la tiene en el caché (en el bolsillo)
+        else if (ammoInMagCache.ContainsKey(weaponData.weaponType))
+        {
+            currentMag = ammoInMagCache[weaponData.weaponType];
+            currentTotal = totalAmmoCache[weaponData.weaponType];
+        }
+        else
+        {
+            // Si no la tiene ni equipada ni en el caché, es que no la ha comprado.
+            return false;
+        }
+
+        // Definir los máximos
+        int maxMag = weaponData.magCapacity;
+        int maxTotal = weaponData.maxAmmo - weaponData.magCapacity;
+
+        bool isFull = currentMag >= maxMag && currentTotal >= maxTotal;
+        return isFull;
+    }
+
+    //Devuelve el tipo del arma que el jugador tiene equipada.
+    // Si no tiene ninguna, devuelve -1
+
+    public WeaponType GetEquippedWeaponType()
+    {
+        if (currentWeapon != null)
+        {
+            return currentWeapon.weaponType;
+        }
+        // Devuelve un valor que no coincida con ningún arma
+        return (WeaponType)(-1);
     }
 }

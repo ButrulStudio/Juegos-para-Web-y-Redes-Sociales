@@ -145,7 +145,7 @@ public class ZombieController : MonoBehaviour
             capsule.enabled = false;
         }
 
-        zombie.enabled = false; // Desactiva el CharacterController
+        zombie.enabled = false;
 
         if (scoreManager != null) scoreManager.ZombieKilled();
         if (waveManager != null) waveManager.ZombieDied();

@@ -17,7 +17,8 @@ MonoBehaviour:
   damage: 20
   range: 100
   fireRate: 0.1
-  price: 0
+  price: 500
+  ammoPrice: 50
   magCapacity: 30
   maxAmmo: 150
   reloadTime: 2
