@@ -15,6 +15,8 @@ public class WeaponUpgradeShop : MonoBehaviour
     [SerializeField] private float rifleUpgradeFireRate = 0.05f;
     [SerializeField] private float pistolBurstFireRate = 0.1f;
 
+    [SerializeField] private int sniperUpgradePenetration = 3;
+
     private Camera playerCamera;
     private PlayerShooting playerShooting;
     private bool playerLooking = false;
@@ -113,6 +115,11 @@ public class WeaponUpgradeShop : MonoBehaviour
                 weapon.isUpgraded = true;
                 weapon.pelletCount = shotgunUpgradePellets;
                 Debug.Log("Escopeta mejorada: ahora dispara más perdigones.");
+                break;
+            case WeaponType.Sniper:
+                weapon.isUpgraded = true;
+                weapon.penetrationCount = sniperUpgradePenetration;
+                Debug.Log("Sniper mejorado: ahora atraviesa enemigos.");    
                 break;
         }
 

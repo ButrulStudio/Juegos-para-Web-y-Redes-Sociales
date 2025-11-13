@@ -4,7 +4,8 @@ public enum WeaponType
 {
     Pistol,
     Rifle,
-    Shotgun
+    Shotgun,
+    Sniper
 }
 
 [CreateAssetMenu(fileName = "NewWeapon", menuName = "Weapons/Weapon Data")]
@@ -49,6 +50,9 @@ public class WeaponData : ScriptableObject
     [Tooltip("Ángulo máximo (grados) de dispersión desde la dirección de la mira")]
     [Range(0f, 45f)]
     public float spreadAngle = 10f;
+
+    [Header("Parámetros de Sniper")]
+    public int penetrationCount = 1;
 
     [Header("Recoil / Kickback")]
     public float recoilVerticalMin = 1f;
