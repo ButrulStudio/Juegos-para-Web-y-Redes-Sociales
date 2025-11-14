@@ -110,7 +110,7 @@ public class ZombieController : MonoBehaviour
         animator.SetTrigger("Attack");
 
 
-        yield return new WaitForSeconds(1.0f);
+        yield return new WaitForSeconds(0.9f);
 
         if (Vector3.Distance(transform.position, player.position) <= zombieData.attackRange)
         {
@@ -119,7 +119,7 @@ public class ZombieController : MonoBehaviour
         }
 
         // Esperar el resto del cooldown
-        yield return new WaitForSeconds(zombieData.attackCooldown - 1.0f);
+        yield return new WaitForSeconds(zombieData.attackCooldown - 0.9f);
 
         isAttacking = false; // Desbloquea Update()
     }

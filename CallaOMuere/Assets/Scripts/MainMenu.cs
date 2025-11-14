@@ -5,11 +5,16 @@ using UnityEngine.UI;
 
 public class MainMenu : MonoBehaviour
 {
+    [Header("Animador de Transición de Escena")]
     public Animator transitionAnimator;
+
+    [Header("Animador del Panel del Mapa")]
+    public Animator mapPanelAnimator; 
+
 
     public void Start()
     {
- 
+
     }
 
     public IEnumerator LoadGameScene()
@@ -19,21 +24,16 @@ public class MainMenu : MonoBehaviour
         SceneManager.LoadScene("Tutorial");
     }
 
-    // Conecta tu botón "Jugar" (o "Start") a esta función.
     public void StartGameButton()
     {
-        // Comprueba si el SaveLoadManager existe Y si tiene un archivo guardado
         if (SaveLoadManager.Instance != null && SaveLoadManager.Instance.DoesSaveExist())
         {
             SaveLoadManager.Instance.SetLoadGameFlag(true);
         }
         else
         {
-            // NO HAY GUARDADO: le decimos al GameManager que NO debe cargar (empezar de cero).
             SaveLoadManager.Instance.SetLoadGameFlag(false);
         }
-
-        // En cualquier caso, cargamos la escena del juego.
         StartCoroutine(LoadGameScene());
     }
 
@@ -44,11 +44,11 @@ public class MainMenu : MonoBehaviour
         SceneManager.LoadScene("OptionsMenu");
     }
 
-
     public void StartOptionsButton()
     {
         StartCoroutine(LoadOptionsMenu());
     }
+
 
     public IEnumerator LoadCreditsScene()
     {
@@ -57,11 +57,11 @@ public class MainMenu : MonoBehaviour
         SceneManager.LoadScene("Credits");
     }
 
-
     public void StartCreditsButton()
     {
         StartCoroutine(LoadCreditsScene());
     }
+
 
     public IEnumerator LoadMainMenu()
     {
@@ -75,8 +75,11 @@ public class MainMenu : MonoBehaviour
         StartCoroutine(LoadMainMenu());
     }
 
+ 
+
     public IEnumerator LoadMapSelector()
     {
+
         transitionAnimator.SetTrigger("StartTransition");
         yield return new WaitForSeconds(0.3f);
         SceneManager.LoadScene("MapSelector");
@@ -85,6 +88,32 @@ public class MainMenu : MonoBehaviour
     public void StartMapSelector()
     {
         StartCoroutine(LoadMapSelector());
+    }
+
+    public void ShowPanel()
+    {
+        if (mapPanelAnimator != null)
+        {
+            // Usa el animador del PANEL
+            mapPanelAnimator.SetBool("IsOpen", true);
+        }
+        else
+        {
+            Debug.LogError("¡No has asignado el 'mapPanelAnimator' en el Inspector!");
+        }
+    }
+
+    public void HidePanel()
+    {
+        if (mapPanelAnimator != null)
+        {
+            // Usa el animador del PANEL
+            mapPanelAnimator.SetBool("IsOpen", false);
+        }
+        else
+        {
+            Debug.LogError("¡No has asignado el 'mapPanelAnimator' en el Inspector!");
+        }
     }
 
 }
