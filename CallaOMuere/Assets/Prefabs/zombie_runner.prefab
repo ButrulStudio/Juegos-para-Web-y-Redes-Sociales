@@ -9,12 +9,24 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.74262995
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.74262995
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.74262995
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -10.867569
+      value: -10.867
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.208
+      value: 1.3849
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
       propertyPath: m_LocalPosition.z
@@ -101,9 +113,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5
-  m_Height: 1.4334049
+  m_Height: 1.3032888
   m_Direction: 1
-  m_Center: {x: 0, y: 0.7149888, z: 0}
+  m_Center: {x: 0, y: 0.75317967, z: 0}
 --- !u!114 &2861911678726899246
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -124,7 +136,7 @@ NavMeshAgent:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2909164642969342993}
-  m_Enabled: 1
+  m_Enabled: 0
   m_AgentTypeID: 0
   m_Radius: 0.5
   m_Speed: 3.5
@@ -157,7 +169,7 @@ CharacterController:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Height: 1.44
+  m_Height: 1.2
   m_Radius: 0.5
   m_SlopeLimit: 45
   m_StepOffset: 0.3

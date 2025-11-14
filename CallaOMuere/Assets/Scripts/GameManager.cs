@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
     [Header("UI (Paneles)")]
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject pausePanel;
+    [SerializeField] private Animator animator; // El Animator del pausePanel
 
     [SerializeField] private Animator transitionAnimator;
 
@@ -27,6 +28,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Slider sfxSlider_Pause;
     [SerializeField] private AudioMixer mainAudioMixer;
     [SerializeField] private CameraController cameraController;
+
+    // Variable de seguridad para evitar "spam" de la tecla Esc
+    private bool isTogglingPause = false;
 
 
     void Awake()
@@ -61,20 +65,20 @@ public class GameManager : MonoBehaviour
         // Configura los sliders del menú de pausa
         SetupPauseMenuSliders();
 
-        // Comprueba si el SaveLoadManager (desde el Menú Principal)
-        // ha marcado que debemos cargar una partida guardada.
+        // Comprueba si el SaveLoadManager...
         if (SaveLoadManager.ShouldLoadGame)
         {
-            // Si es así, llama al método LoadGame() del SaveLoadManager.
             SaveLoadManager.Instance.LoadGame();
         }
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        // Comprueba si se pulsa Escape Y si no estamos ya en mitad de una animación
+        if (Input.GetKeyDown(KeyCode.Escape) && !isTogglingPause)
         {
-            PanelOpen();
+            // Llama a la corrutina correctamente
+            StartCoroutine(TogglePauseCoroutine());
         }
     }
 
@@ -88,45 +92,67 @@ public class GameManager : MonoBehaviour
             gameOverPanel.SetActive(true);
         }
 
-        // Libera el cursor
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
-        // Si el jugador muere, busca el SaveLoadManager
-        // y llama a su función para borrar el archivo de guardado.
         if (SaveLoadManager.Instance != null)
         {
             SaveLoadManager.Instance.DeleteSave();
         }
     }
 
-    public void PanelOpen()
+    // Corrutina que maneja la lógica de pausa con animación
+    public IEnumerator TogglePauseCoroutine()
     {
+        // 1. Ponemos el "seguro"
+        isTogglingPause = true;
+
         if (pausePanel.activeSelf)
         {
-            // Reanudar juego
-            pausePanel.SetActive(false);
+            // --- REANUDAR JUEGO ---
+
+            // Inicia animación de salida
+            animator.SetBool("Mobile", false);
+
+            // Reanuda el juego INMEDIATAMENTE
             Time.timeScale = 1;
+
+            // Espera a que termine la animación de salida (usando tiempo real)
+            yield return new WaitForSecondsRealtime(0.3f);
+
+            // Termina de reanudar
+            pausePanel.SetActive(false);
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
         }
         else
         {
-            // Pausar juego
-            // Carga los valores actuales en los sliders CADA VEZ que abres el menú
+            // --- PAUSAR JUEGO ---
+
             if (sensitivitySlider_Pause != null)
             {
                 LoadCurrentSettingsToSliders();
             }
 
+            // Muestra el panel e inicia la animación
             pausePanel.SetActive(true);
+            animator.SetBool("Mobile", true);
+
+            // Espera a que termine la animación de entrada (usando tiempo real)
+            yield return new WaitForSecondsRealtime(0.3f);
+
+            // Termina de pausar
             Time.timeScale = 0;
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
+
+        // 2. Quitamos el "seguro"
+        isTogglingPause = false;
     }
 
-    // --- MÉTODOS PARA LOS SLIDERS DE PAUSA (ya implementados) ---
+
+    // --- MÉTODOS PARA LOS SLIDERS DE PAUSA (sin cambios) ---
 
     private void SetupPauseMenuSliders()
     {
@@ -170,17 +196,14 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetFloat("MasterSFXVolume", value);
     }
 
-    // Debes crear un nuevo botón "Guardar y Salir" en tu
-    // 'pausePanel' y conectarlo a esta función.
+    // --- MÉTODOS DE NAVEGACIÓN (sin cambios) ---
+
     public void SaveAndQuit()
     {
-        // Primero, le dice al SaveLoadManager que guarde el estado actual.
         if (SaveLoadManager.Instance != null)
         {
             SaveLoadManager.Instance.SaveGame();
         }
-
-        // Después, simplemente llama a la función de salir al menú.
         QuitToMainMenu();
     }
 
