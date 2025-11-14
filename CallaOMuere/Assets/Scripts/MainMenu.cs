@@ -21,7 +21,7 @@ public class MainMenu : MonoBehaviour
     {
         transitionAnimator.SetTrigger("StartTransition");
         yield return new WaitForSeconds(0.3f);
-        SceneManager.LoadScene("Tutorial");
+        SceneManager.LoadScene("Game");
     }
 
     public void StartGameButton()
