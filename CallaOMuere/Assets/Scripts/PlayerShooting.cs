@@ -60,6 +60,9 @@ public class PlayerShooting : MonoBehaviour
 
     private Vector3 weaponInitialLocalRot;
 
+    //======AUDIO=======
+    [SerializeField] private AudioSource audioSource;
+
     void Start()
     {
         if (crosshairImage != null) crosshairRectTransform = crosshairImage.GetComponent<RectTransform>();
@@ -200,6 +203,8 @@ public class PlayerShooting : MonoBehaviour
     IEnumerator ReloadCoroutine()
     {
         isReloading = true;
+        PlaySound(currentWeapon.reloadSound);
+
         if (ammoText != null) ammoText.text = "Recargando...";
 
         float reloadTime = currentWeapon.reloadTime * reloadTimeMultiplier;
@@ -218,11 +223,11 @@ public class PlayerShooting : MonoBehaviour
             yield return null;
         }
 
-        // 🕒 2. Esperar la recarga (menos lo ya usado por la animación)
+        // 2. Esperar la recarga (menos lo ya usado por la animación)
         float waitTime = Mathf.Max(0, reloadTime - animTime * 2f);
         yield return new WaitForSeconds(waitTime);
 
-        // 🔼 3. Volver a rotación original
+        // 3. Volver a rotación original
         t = 0;
         while (t < 1f)
         {
@@ -707,5 +712,16 @@ public class PlayerShooting : MonoBehaviour
         }
         // Devuelve un valor que no coincida con ningún arma
         return (WeaponType)(-1);
+    }
+
+    /// <summary>
+    /// Reproduce un sonido "one-shot" usando el AudioSource principal.
+    /// </summary>
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
     }
 }

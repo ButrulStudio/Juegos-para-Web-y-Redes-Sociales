@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weaponType: 3
   crosshairSize: {x: 1, y: 1}
-  aimedCrosshairSize: {x: 15, y: 15}
+  aimedCrosshairSize: {x: 12, y: 10}
   weaponName: Francotirador
   damage: 100
   range: 100
@@ -31,7 +31,7 @@ MonoBehaviour:
   crosshairIcon: {fileID: 21300000, guid: 6a9b37de87d370e42a71bb623b10af05, type: 3}
   canAim: 1
   aimedFOV: 10
-  sniperScopeSprite: {fileID: 21300000, guid: c0942516057c8c04fb8ce0c975211281, type: 3}
+  sniperScopeSprite: {fileID: 21300000, guid: 6f9532cea3a02e2409b4169fb74afdd5, type: 3}
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1
