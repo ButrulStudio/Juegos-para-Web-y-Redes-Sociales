@@ -2,10 +2,10 @@ using UnityEngine;
 
 public enum PowerUpType
 {
-    Armadura,   // Restaura armadura
-    Velocidad,  // Aumenta velocidad temporal
-    Recarga,    // Aumenta velocidad de recarga temporal
-    Daño        // Aumenta daño temporal
+    Armadura,   // Restaura armadura (INSTANTÁNEO)
+    Velocidad,  // Aumenta velocidad (TEMPORAL/PERMANENTE)
+    Recarga,    // Aumenta velocidad de recarga (TEMPORAL/PERMANENTE)
+    Daño        // Aumenta daño (TEMPORAL/PERMANENTE)
 }
 
 [CreateAssetMenu(fileName = "NewPowerUp", menuName = "PowerUps/PowerUp Data")]
@@ -17,8 +17,12 @@ public class PowerUpData : ScriptableObject
     [TextArea] public string description;
     public int cost = 0;
     
+    [Header("Duración")]
+    [Tooltip("Tiempo que dura el efecto en segundos. Si es 0 o menos, se considera PERMANENTE (o instantáneo como Armadura).")]
+    public float duration = 0f;
+    
     [Header("UI")]
-    public Sprite icon; // El icono que se mostrará en el HUD
+    public Sprite icon;
 
     [Header("Valores de efectos")]
     public float armorRestore = 0f;
