@@ -54,11 +54,18 @@ public class PlayerShooting : MonoBehaviour
     private bool isAiming = false;
     private bool weaponHiddenForScope = false; // Bandera para saber si el arma está oculta
 
+    [Header("Animación de Recarga")]
+    [SerializeField] private Vector3 reloadRotation = new Vector3(35f, 0f, 0f);
+    [SerializeField] private float reloadAnimSpeed = 8f;
+
+    private Vector3 weaponInitialLocalRot;
+
     void Start()
     {
         if (crosshairImage != null) crosshairRectTransform = crosshairImage.GetComponent<RectTransform>();
 
         if (weaponHolder != null) weaponInitialLocalPos = weaponHolder.localPosition;
+        if (weaponHolder != null) weaponInitialLocalRot = weaponHolder.localEulerAngles;
 
         // Si se va a cargar una partida, no hacer nada aquí.
         // SaveLoadManager lo gestionará todo.
@@ -195,8 +202,40 @@ public class PlayerShooting : MonoBehaviour
         isReloading = true;
         if (ammoText != null) ammoText.text = "Recargando...";
 
-        yield return new WaitForSeconds(currentWeapon.reloadTime * reloadTimeMultiplier);
+        float reloadTime = currentWeapon.reloadTime * reloadTimeMultiplier;
+        float animTime = 1f / reloadAnimSpeed;
 
+        // 🔽 1. Animación: inclinar arma hacia abajo
+        float t = 0;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * reloadAnimSpeed;
+            weaponHolder.localRotation = Quaternion.Lerp(
+                Quaternion.Euler(weaponInitialLocalRot),
+                Quaternion.Euler(reloadRotation),
+                t
+            );
+            yield return null;
+        }
+
+        // 🕒 2. Esperar la recarga (menos lo ya usado por la animación)
+        float waitTime = Mathf.Max(0, reloadTime - animTime * 2f);
+        yield return new WaitForSeconds(waitTime);
+
+        // 🔼 3. Volver a rotación original
+        t = 0;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * reloadAnimSpeed;
+            weaponHolder.localRotation = Quaternion.Lerp(
+                Quaternion.Euler(reloadRotation),
+                Quaternion.Euler(weaponInitialLocalRot),
+                t
+            );
+            yield return null;
+        }
+
+        // --- Lógica original de recarga ---
         int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
         int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
 
