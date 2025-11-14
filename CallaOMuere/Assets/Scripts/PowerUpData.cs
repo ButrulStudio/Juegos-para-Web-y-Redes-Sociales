@@ -12,16 +12,17 @@ public enum PowerUpType
 public class PowerUpData : ScriptableObject
 {
     [Header("Datos básicos")]
-    public PowerUpType powerUpType;    // Tipo de Power-Up
-    public string powerUpName;         // Nombre a mostrar en la UI
-    [TextArea] public string description;  // Descripción para la tienda o HUD
-    public int cost = 0;               // Precio del Power-Up
-
-    // Se eliminó la variable 'duration' de aquí
+    public PowerUpType powerUpType;
+    public string powerUpName;
+    [TextArea] public string description;
+    public int cost = 0;
+    
+    [Header("UI")]
+    public Sprite icon; // El icono que se mostrará en el HUD
 
     [Header("Valores de efectos")]
-    public float armorRestore = 0f;      // Solo BocataDeCalamares
-    public float speedMultiplier = 1f;   // Solo BebidaEnergetica
-    public float reloadMultiplier = 1f;  // Solo PatatasBravas
-    public float damageMultiplier = 1f;  // Solo Schpeppes
+    public float armorRestore = 0f;
+    public float speedMultiplier = 1f;
+    public float reloadMultiplier = 1f;
+    public float damageMultiplier = 1f;
 }
