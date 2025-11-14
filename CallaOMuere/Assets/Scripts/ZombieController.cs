@@ -62,26 +62,80 @@ public class ZombieController : MonoBehaviour
     {
         animator.SetBool("isWalking", true);
 
-        // --- Lógica de Gravedad ---
+        // --- Gravedad ---
         if (zombie.isGrounded)
-        {
             verticalVelocity.y = -2f;
-        }
         else
-        {
             verticalVelocity.y += Physics.gravity.y * Time.deltaTime;
+
+        // Dirección objetivo hacia el jugador
+        Vector3 targetDir = (player.position - transform.position);
+        targetDir.y = 0;
+        targetDir.Normalize();
+
+        // --- Steering avanzado con análisis de múltiples direcciones ---
+        float rayDistance = 1.2f;
+        float angleRange = 120f;
+        int rayCount = 15;
+
+        Vector3 bestDirection = Vector3.zero;
+        float bestScore = -9999f;
+
+        Vector3 origin = transform.position + Vector3.up * 0.5f;
+
+        for (int i = 0; i < rayCount; i++)
+        {
+            // generar el ángulo del rayo
+            float t = (float)i / (rayCount - 1);
+            float angle = Mathf.Lerp(-angleRange / 2, angleRange / 2, t);
+
+            Vector3 dir = Quaternion.Euler(0, angle, 0) * transform.forward;
+
+            // hacemos raycast
+            bool blocked = Physics.Raycast(origin, dir, rayDistance, ~0, QueryTriggerInteraction.Ignore);
+
+            // calcular la alineación con el jugador (preferimos ángulos cercanos a targetDir)
+            float alignment = Vector3.Dot(dir, targetDir);
+
+            // puntuación de esta dirección
+            float score = alignment - (blocked ? 2.0f : 0f);
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestDirection = dir;
+            }
         }
 
-        Vector3 dir = player.position - transform.position;
-        dir.y = 0;
-        dir = dir.normalized;
+        // Seguridad: si todo fallara, sigue hacia el jugador
+        if (bestDirection == Vector3.zero)
+            bestDirection = targetDir;
 
-        Vector3 horizontalMovement = dir * zombieData.speed;
+        // --- Separación entre zombies ---
+        Collider[] nearby = Physics.OverlapSphere(transform.position, 0.6f);
+        foreach (var col in nearby)
+        {
+            if (col.CompareTag("Zombie") && col.gameObject != this.gameObject)
+            {
+                Vector3 away = transform.position - col.transform.position;
+                away.y = 0;
+                bestDirection += away.normalized * 0.4f;
+            }
+        }
+        bestDirection.Normalize();
+
+        // --- Movimiento final ---
+        Vector3 horizontalMovement = bestDirection * zombieData.speed;
         Vector3 finalMovement = horizontalMovement + verticalVelocity;
-
         zombie.Move(finalMovement * Time.deltaTime);
 
-        transform.LookAt(new Vector3(player.position.x, transform.position.y, player.position.z));
+        // --- Rotación suave ---
+        Vector3 lookDir = new Vector3(player.position.x, transform.position.y, player.position.z) - transform.position;
+        if (lookDir != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(lookDir);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
+        }
     }
 
     private void StopAndAttack()
@@ -108,7 +162,6 @@ public class ZombieController : MonoBehaviour
         lastAttackTime = Time.time;
 
         animator.SetTrigger("Attack");
-
 
         yield return new WaitForSeconds(0.9f);
 
