@@ -282,14 +282,16 @@ public class PlayerShooting : MonoBehaviour
                 if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    ShootShotgun();
+                    
+                    StartCoroutine(ShootShotgunCoroutine());
                 }
                 break;
             case WeaponType.Sniper:
                 if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime && !isBursting)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    ShootSniper();
+                    
+                    StartCoroutine(ShootSniperCoroutine());
                 }
                 break;
         }
@@ -301,10 +303,12 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentAmmoInMag <= 0)
         {
+            PlaySound(currentWeapon.emptyClipSound);
             if (ammoText != null) ammoText.text = "R para recargar";
             return;
         }
 
+        PlaySound(currentWeapon.shootSound);
         currentAmmoInMag--;
         UpdateAmmoUI();
         StartCoroutine(MuzzleFlashRoutine());
@@ -326,7 +330,13 @@ public class PlayerShooting : MonoBehaviour
         int burstCount = 3;
         for (int i = 0; i < burstCount; i++)
         {
-            if (currentAmmoInMag <= 0) break;
+            if (currentAmmoInMag <= 0)
+            {
+                PlaySound(currentWeapon.emptyClipSound);
+                break;
+            }
+
+            PlaySound(currentWeapon.shootSound);
             currentAmmoInMag--;
             UpdateAmmoUI();
             StartCoroutine(MuzzleFlashRoutine());
@@ -349,10 +359,12 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentAmmoInMag <= 0)
         {
+            PlaySound(currentWeapon.emptyClipSound);
             if (ammoText != null) ammoText.text = "R para recargar";
             return;
         }
 
+        PlaySound(currentWeapon.shootSound);
         currentAmmoInMag--;
         UpdateAmmoUI();
         StartCoroutine(MuzzleFlashRoutine());
@@ -366,14 +378,19 @@ public class PlayerShooting : MonoBehaviour
     }
 
     // === DISPARO ESCOPETA ===
-    void ShootShotgun()
+    IEnumerator ShootShotgunCoroutine()
     {
         if (currentAmmoInMag <= 0)
         {
-            if (ammoText != null) ammoText.text = "R para recargar";
-            return;
+            if (ammoText != null)
+            {
+                PlaySound(currentWeapon.emptyClipSound);
+                ammoText.text = "R para recargar";
+                yield break;
+            }
         }
 
+        PlaySound(currentWeapon.shootSound);
         currentAmmoInMag--;
         UpdateAmmoUI();
         StartCoroutine(MuzzleFlashRoutine());
@@ -394,18 +411,27 @@ public class PlayerShooting : MonoBehaviour
         }
 
         ApplyRecoil();
+
+        if (currentWeapon.pumpActionSound != null)
+        {
+            // Espera el delay definido en el WeaponData
+            yield return new WaitForSeconds(currentWeapon.actionSoundDelay);
+            PlaySound(currentWeapon.pumpActionSound);
+        }
     }
 
     // === DISPARO SNIPER ===
-    void ShootSniper()
+    IEnumerator ShootSniperCoroutine()
     {
         // 1. Comprobar munición
         if (currentAmmoInMag <= 0)
         {
+            PlaySound(currentWeapon.emptyClipSound); // <-- SONIDO SIN BALAS
             if (ammoText != null) ammoText.text = "R para recargar";
-            return;
+            yield break; // Termina la corrutina
         }
 
+        PlaySound(currentWeapon.shootSound); // <-- SONIDO DE DISPARO
         currentAmmoInMag--;
         UpdateAmmoUI();
         StartCoroutine(MuzzleFlashRoutine());
@@ -415,59 +441,63 @@ public class PlayerShooting : MonoBehaviour
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         RaycastHit[] hits = Physics.RaycastAll(ray, currentWeapon.range);
 
-        // Si no golpea nada, no sigas
-        if (hits.Length == 0) return;
-
-        // 3. Ordenar los impactos por distancia
-        var sortedHits = hits.OrderBy(h => h.distance);
-
-        // 4. Procesar los impactos (CON LÓGICA ANTI-DUPLICADOS)
-
-        // ¡NUEVO! Un Set para guardar los zombies que ya hemos golpeado EN ESTE DISPARO
-        HashSet<ZombieController> alreadyDamaged = new HashSet<ZombieController>();
-        int targetsHit = 0; // El contador de penetración
-
-        foreach (var hit in sortedHits)
+        // Si no golpea nada, no sigas procesando impactos
+        if (hits.Length > 0)
         {
-            // Obtenemos el componente de salud ANTES de llamar a HandleHit
-            ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
+            // 3. Ordenar los impactos por distancia
+            var sortedHits = hits.OrderBy(h => h.distance);
 
-            // ¿Es un zombie?
-            if (zombieHealth != null)
+            // 4. Procesar los impactos (CON LÓGICA ANTI-DUPLICADOS)
+            HashSet<ZombieController> alreadyDamaged = new HashSet<ZombieController>();
+            int targetsHit = 0; // El contador de penetración
+
+            foreach (var hit in sortedHits)
             {
-                // ¿Es un zombie que NO hemos golpeado ya?
-                if (!alreadyDamaged.Contains(zombieHealth))
+                // Obtenemos el componente de salud ANTES de llamar a HandleHit
+                ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
+
+                // ¿Es un zombie?
+                if (zombieHealth != null)
                 {
-                    // ¡Es un objetivo nuevo!
-                    // 1. Llama a HandleHit para aplicar daño y efectos de agujero
+                    // ¿Es un zombie que NO hemos golpeado ya?
+                    if (!alreadyDamaged.Contains(zombieHealth))
+                    {
+                        // ¡Es un objetivo nuevo!
+                        // 1. Llama a HandleHit para aplicar daño y efectos de agujero
+                        HandleHit(hit, currentWeapon.damage * damageMultiplier);
+
+                        // 2. Añádelo al Set para no volver a golpearlo
+                        alreadyDamaged.Add(zombieHealth);
+
+                        // 3. Suma al contador de penetración
+                        targetsHit++;
+
+                        // 4. Comprueba si hemos alcanzado el límite de penetración
+                        if (targetsHit >= currentWeapon.penetrationCount)
+                        {
+                            break; // Deja de atravesar, has alcanzado el límite
+                        }
+                    }
+                    // Si SÍ lo contenía, no hace nada y el rayo "atraviesa" gratis
+                }
+                else
+                {
+                    // No es un zombie 
+                    // Llama a HandleHit para poner el agujero de bala
                     HandleHit(hit, currentWeapon.damage * damageMultiplier);
 
-                    // 2. Añádelo al Set para no volver a golpearlo
-                    alreadyDamaged.Add(zombieHealth);
-
-                    // 3. Suma al contador de penetración
-                    targetsHit++;
-
-                    // 4. Comprueba si hemos alcanzado el límite de penetración
-                    if (targetsHit >= currentWeapon.penetrationCount)
-                    {
-                        break; // Deja de atravesar, has alcanzado el límite
-                    }
+                    // break; 
                 }
-                // Si SÍ lo contenía, no hace nada y el rayo "atraviesa" gratis
             }
-            else
-            {
-                // No es un zombie (es una pared, suelo, etc.)
-                // Llama a HandleHit para poner el agujero de bala
-                HandleHit(hit, currentWeapon.damage * damageMultiplier);
+        }
 
-                // IMPORTANTE: Si quieres que la bala se detenga en las paredes
-                // (y no atraviese paredes para golpear a un zombie detrás),
-                // añade 'break;' en la línea de abajo.
-
-                // break; // <-- Descomenta esto si las balas no deben atravesar muros
-            }
+        // --- NUEVA LÓGICA DE SONIDO DE ACCIÓN ---
+        // Esto se ejecutará siempre después del disparo (haya acertado o no)
+        if (currentWeapon.boltActionSound != null)
+        {
+            // Espera el delay definido en el WeaponData
+            yield return new WaitForSeconds(currentWeapon.actionSoundDelay);
+            PlaySound(currentWeapon.boltActionSound);
         }
     }
 

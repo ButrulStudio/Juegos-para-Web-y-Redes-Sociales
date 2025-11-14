@@ -18,7 +18,7 @@ MonoBehaviour:
   weaponName: Francotirador
   damage: 100
   range: 100
-  fireRate: 1
+  fireRate: 1.6
   price: 0
   ammoPrice: 50
   magCapacity: 6
@@ -41,3 +41,9 @@ MonoBehaviour:
   recoilHorizontalMax: 0.5
   weaponKickbackDistance: 0.05
   weaponKickbackReturnSpeed: 8
+  shootSound: {fileID: 8300000, guid: cc49a5698401211429ca89620b9bd574, type: 3}
+  reloadSound: {fileID: 8300000, guid: e6cde911cc95b924caf2911250ca4669, type: 3}
+  emptyClipSound: {fileID: 8300000, guid: c108c6e93fff29f47a2a779d1644af0f, type: 3}
+  actionSoundDelay: 0.6
+  boltActionSound: {fileID: 8300000, guid: 00a8856296d98ac4fb24ba46f5e2605e, type: 3}
+  pumpActionSound: {fileID: 0}

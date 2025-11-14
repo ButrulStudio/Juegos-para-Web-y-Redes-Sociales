@@ -41,3 +41,9 @@ MonoBehaviour:
   recoilHorizontalMax: 0.08
   weaponKickbackDistance: 0.05
   weaponKickbackReturnSpeed: 8
+  shootSound: {fileID: 8300000, guid: c91c07e48f4c18a49ab7024938ad2fec, type: 3}
+  reloadSound: {fileID: 8300000, guid: 38c806a719e3dc441b03d8047cb41629, type: 3}
+  emptyClipSound: {fileID: 8300000, guid: c108c6e93fff29f47a2a779d1644af0f, type: 3}
+  actionSoundDelay: 0.4
+  boltActionSound: {fileID: 0}
+  pumpActionSound: {fileID: 0}

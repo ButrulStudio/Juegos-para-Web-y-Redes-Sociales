@@ -18,12 +18,12 @@ MonoBehaviour:
   weaponName: Escopeta
   damage: 20
   range: 20
-  fireRate: 0.5
+  fireRate: 0.9
   price: 0
   ammoPrice: 50
   magCapacity: 6
   maxAmmo: 24
-  reloadTime: 2
+  reloadTime: 3
   isUpgraded: 0
   upgradeCost: 500
   weaponModelPrefab: {fileID: 6104136574561444166, guid: 06c8b456b26cfe44590f62a034eee270, type: 3}
@@ -41,3 +41,9 @@ MonoBehaviour:
   recoilHorizontalMax: 0.2
   weaponKickbackDistance: 0.05
   weaponKickbackReturnSpeed: 8
+  shootSound: {fileID: 8300000, guid: 2672b254ea4da5b4a8cdd35b67277ec4, type: 3}
+  reloadSound: {fileID: 8300000, guid: 7a22d2ada3724f840b2494aff20513a3, type: 3}
+  emptyClipSound: {fileID: 8300000, guid: c108c6e93fff29f47a2a779d1644af0f, type: 3}
+  actionSoundDelay: 0.4
+  boltActionSound: {fileID: 0}
+  pumpActionSound: {fileID: 8300000, guid: df81b8c5c70a7f24da0ee880662a4503, type: 3}
