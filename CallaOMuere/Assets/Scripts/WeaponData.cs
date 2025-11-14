@@ -78,4 +78,15 @@ public class WeaponData : ScriptableObject
     public float weaponKickbackDistance = 0.05f;
     [Tooltip("Velocidad de regreso del arma a la posición original")]
     public float weaponKickbackReturnSpeed = 8f;
+
+    [Header("Sonidos (SFX)")]
+    public AudioClip shootSound;
+    public AudioClip reloadSound;
+    public AudioClip emptyClipSound; // Sonido de "clic" cuando no hay balas
+
+    [Header("Sonidos Específicos (Delay)")]
+    [Tooltip("Delay (en segundos) tras disparar para reproducir el sonido de 'acción' (cerrojo, cartucho)")]
+    public float actionSoundDelay = 0.4f;
+    public AudioClip boltActionSound; // Para el cerrojo del Sniper
+    public AudioClip pumpActionSound; // Para el cartucho de la Escopeta
 }
