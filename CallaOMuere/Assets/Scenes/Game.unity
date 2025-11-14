@@ -7995,10 +7995,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b30f76fcb0812474a80394b8bddb4824, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerMovement: {fileID: 0}
   playerShooting: {fileID: 1837902158}
-  uiDisplay: {fileID: 1417427427}
-  uiAnimator: {fileID: 0}
 --- !u!1 &1102457156
 GameObject:
   m_ObjectHideFlags: 0

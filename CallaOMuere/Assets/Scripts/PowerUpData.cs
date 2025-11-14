@@ -17,9 +17,6 @@ public class PowerUpData : ScriptableObject
     [TextArea] public string description;
     public int cost = 0;
     
-    [Header("Duración")]
-    [Tooltip("Tiempo que dura el efecto en segundos. Si es 0 o menos, se considera PERMANENTE (o instantáneo como Armadura).")]
-    public float duration = 0f;
     
     [Header("UI")]
     public Sprite icon;

@@ -168,7 +168,7 @@ public class PowerUpStore : MonoBehaviour
 
     private void TryPurchase()
     {
-        // ... (Este método no cambia en absoluto) ...
+        
         if (ScoreManager.Instance == null)
         {
             Debug.LogWarning("Faltan referencias al ScoreManager.");
