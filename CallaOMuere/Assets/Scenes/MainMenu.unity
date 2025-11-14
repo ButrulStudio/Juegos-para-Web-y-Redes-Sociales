@@ -131,8 +131,9 @@ GameObject:
   - component: {fileID: 73798789}
   - component: {fileID: 73798788}
   - component: {fileID: 73798787}
+  - component: {fileID: 73798790}
   m_Layer: 5
-  m_Name: OptionsButton
+  m_Name: ShopButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -203,7 +204,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1783569041}
         m_TargetAssemblyTypeName: MainMenu, Assembly-CSharp
-        m_MethodName: 
+        m_MethodName: StartShop
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -251,6 +252,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 73798785}
   m_CullTransparentMesh: 1
+--- !u!114 &73798790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 73798785}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d70ca5675b79d14097450c913fb9784, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  normalScale: {x: 0.11, y: 0.24, z: 0.071}
+  hoverScale: {x: 0.12, y: 0.27, z: 0.09}
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  hoverColor: {r: 1, g: 0.9808378, b: 0.76792455, a: 1}
+  speed: 10
 --- !u!1 &538501531
 GameObject:
   m_ObjectHideFlags: 0
@@ -263,6 +281,7 @@ GameObject:
   - component: {fileID: 538501535}
   - component: {fileID: 538501534}
   - component: {fileID: 538501533}
+  - component: {fileID: 538501536}
   m_Layer: 5
   m_Name: PlayButton
   m_TagString: Untagged
@@ -383,6 +402,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 538501531}
   m_CullTransparentMesh: 1
+--- !u!114 &538501536
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 538501531}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d70ca5675b79d14097450c913fb9784, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  normalScale: {x: 0.11, y: 0.24, z: 0.071}
+  hoverScale: {x: 0.12, y: 0.27, z: 0.09}
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  hoverColor: {r: 1, g: 0.9808378, b: 0.76792455, a: 1}
+  speed: 10
 --- !u!1 &903983233
 GameObject:
   m_ObjectHideFlags: 0
@@ -946,6 +982,7 @@ GameObject:
   - component: {fileID: 1759960222}
   - component: {fileID: 1759960221}
   - component: {fileID: 1759960220}
+  - component: {fileID: 1759960223}
   m_Layer: 5
   m_Name: CreditsButton
   m_TagString: Untagged
@@ -1066,6 +1103,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1759960218}
   m_CullTransparentMesh: 1
+--- !u!114 &1759960223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1759960218}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d70ca5675b79d14097450c913fb9784, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  normalScale: {x: 0.11, y: 0.24, z: 0.071}
+  hoverScale: {x: 0.12, y: 0.27, z: 0.09}
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  hoverColor: {r: 1, g: 0.9808378, b: 0.76792455, a: 1}
+  speed: 10
 --- !u!1 &1783569040
 GameObject:
   m_ObjectHideFlags: 0
@@ -1096,6 +1150,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   transitionAnimator: {fileID: 1829449137}
+  mapPanelAnimator: {fileID: 0}
 --- !u!4 &1783569042
 Transform:
   m_ObjectHideFlags: 0
@@ -1147,7 +1202,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -67.458}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -381, y: 288}
+  m_AnchoredPosition: {x: -353, y: 191}
   m_SizeDelta: {x: 21.6, y: 21.6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1812957954
@@ -1485,8 +1540,9 @@ GameObject:
   - component: {fileID: 2074880636}
   - component: {fileID: 2074880635}
   - component: {fileID: 2074880634}
+  - component: {fileID: 2074880637}
   m_Layer: 5
-  m_Name: OptionsButton (1)
+  m_Name: OptionsButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1605,6 +1661,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2074880632}
   m_CullTransparentMesh: 1
+--- !u!114 &2074880637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2074880632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d70ca5675b79d14097450c913fb9784, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  normalScale: {x: 0.11, y: 0.24, z: 0.071}
+  hoverScale: {x: 0.12, y: 0.27, z: 0.09}
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  hoverColor: {r: 1, g: 0.9808378, b: 0.76792455, a: 1}
+  speed: 10
 --- !u!1 &2122723167
 GameObject:
   m_ObjectHideFlags: 0

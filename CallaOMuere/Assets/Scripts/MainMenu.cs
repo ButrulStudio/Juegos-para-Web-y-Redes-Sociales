@@ -90,6 +90,19 @@ public class MainMenu : MonoBehaviour
         StartCoroutine(LoadMapSelector());
     }
 
+    public IEnumerator LoadShop()
+    {
+
+        transitionAnimator.SetTrigger("StartTransition");
+        yield return new WaitForSeconds(0.3f);
+        SceneManager.LoadScene("Shop");
+    }
+
+    public void StartShop()
+    {
+        StartCoroutine(LoadShop());
+    }
+
     public void ShowPanel()
     {
         if (mapPanelAnimator != null)
