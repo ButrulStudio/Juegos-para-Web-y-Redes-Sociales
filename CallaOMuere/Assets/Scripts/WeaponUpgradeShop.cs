@@ -14,7 +14,6 @@ public class WeaponUpgradeShop : MonoBehaviour
     [SerializeField] private int shotgunUpgradePellets = 8;
     [SerializeField] private float rifleUpgradeFireRate = 1f;
     [SerializeField] private float pistolBurstFireRate = 0.1f;
-
     [SerializeField] private int sniperUpgradePenetration = 3;
 
     private Camera playerCamera;
@@ -108,6 +107,7 @@ public class WeaponUpgradeShop : MonoBehaviour
             case WeaponType.Rifle:
                 weapon.isUpgraded = true;
                 weapon.fireRate = rifleUpgradeFireRate;
+                Debug.Log($"Rifle mejorado. Valor asignado a fireRate: {weapon.fireRate}.");
                 Debug.Log("Rifle mejorado: ahora dispara más rápido.");
                 break;
 
