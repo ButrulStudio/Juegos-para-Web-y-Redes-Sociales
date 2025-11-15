@@ -12104,7 +12104,7 @@ MonoBehaviour:
   interactionKey: 101
   interactionText: {fileID: 718913011}
   shotgunUpgradePellets: 8
-  rifleUpgradeFireRate: 0.05
+  rifleUpgradeFireRate: 0.1
   pistolBurstFireRate: 0.1
   sniperUpgradePenetration: 3
 --- !u!65 &1268747879
@@ -20056,7 +20056,7 @@ PrefabInstance:
     - target: {fileID: 8705484057191545052, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: 'footstepSounds.Array.data[0]'
       value: 
-      objectReference: {fileID: 8300000, guid: c9c99bf1b9cee9946a1eb18fd087f405, type: 3}
+      objectReference: {fileID: 8300000, guid: 979a3be3a1202424bae9cc901016b021, type: 3}
     - target: {fileID: 8899087253987033341, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.42000008
