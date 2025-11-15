@@ -13,8 +13,8 @@ public class MovementController : MonoBehaviour
     [Header("Sonidos de Movimiento")]
     [Tooltip("El AudioSource para los sonidos de pasos, saltos, etc.")]
     [SerializeField] private AudioSource audioSource;
-    [SerializeField] private float walkStepInterval = 0.5f;
-    [SerializeField] private float sprintStepInterval = 0.3f;
+    [SerializeField] private float walkStepInterval = 1f;
+    [SerializeField] private float sprintStepInterval = 0.5f;
     [Tooltip("Array de sonidos de pasos para que suenen aleatorios")]
     [SerializeField] private AudioClip[] footstepSounds;
 
