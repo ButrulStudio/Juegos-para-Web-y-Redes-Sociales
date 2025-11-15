@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Rifle
   m_EditorClassIdentifier: 
   weaponType: 1
-  crosshairSize: {x: 1, y: 1}
+  crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: Rifle
   damage: 20
@@ -27,8 +27,8 @@ MonoBehaviour:
   isUpgraded: 0
   upgradeCost: 500
   weaponModelPrefab: {fileID: 8773701669380745142, guid: 34f0217aa88a1ea40a8310915be3fa20, type: 3}
-  bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
-  crosshairIcon: {fileID: 21300000, guid: 6a9b37de87d370e42a71bb623b10af05, type: 3}
+  bulletHolePrefab: {fileID: 2212925028312433708, guid: edc92b779abc45d478d8dfeda3fc979a, type: 3}
+  crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}
   canAim: 0
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
