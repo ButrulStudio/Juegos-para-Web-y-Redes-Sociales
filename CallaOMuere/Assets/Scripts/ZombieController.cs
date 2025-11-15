@@ -18,6 +18,10 @@ public class ZombieController : MonoBehaviour
     private WaveManager waveManager;
     private ScoreManager scoreManager;
 
+    [Header("Configuración de Evasión")]
+    [Tooltip("Máscara de la capa que bloquea la entrada al metro.")]
+    public LayerMask metroEntranceMask;
+
     void Start()
     {
         zombie = GetComponent<CharacterController>();
@@ -62,7 +66,6 @@ public class ZombieController : MonoBehaviour
     {
         animator.SetBool("isWalking", true);
 
-        // Gravedad
         if (zombie.isGrounded)
             verticalVelocity.y = -2f;
         else
@@ -70,44 +73,48 @@ public class ZombieController : MonoBehaviour
 
         // Dirección objetivo hacia el jugador (Target Direction)
         Vector3 targetDir = (player.position - transform.position);
-        targetDir.y = 0;
+        targetDir.y = 0; // Ignoramos el eje Y para la persecución horizontal
         targetDir.Normalize();
-
-        // Steering y Evasión de Obstáculos
         
         // Configuración del Raycasting
-        float rayDistance = 3.5f; // Distancia para empezar a reaccionar
+        float rayDistance = 2.0f; // Distancia para empezar a reaccionar (Ajustado para mejor evasión)
         int rayCount = 15;
-        float maxAngle = 90f; // Solo analizamos 90 grados a cada lado
+        float maxAngle = 90f; 
         
         // Variables de Puntuación
         Vector3 bestDirection = Vector3.zero;
-        float bestScore = float.MinValue; // Usamos MinValue para un punto de partida seguro
+        float bestScore = float.MinValue; 
         Vector3 origin = transform.position + Vector3.up * 0.5f;
 
         for (int i = 0; i < rayCount; i++)
         {
-            // Generar Rayos en un arco centrado en la dirección actual del zombie
+            // Generar Rayos en un arco centrado en la dirección actual del zombi
             float t = (float)i / (rayCount - 1);
             float angle = Mathf.Lerp(-maxAngle, maxAngle, t);
             
-            // Crear la dirección del rayo relativa a la rotación del Zombi
             Vector3 dir = Quaternion.Euler(0, angle, 0) * transform.forward;
 
-            // Verificar bloqueo: Ignoramos triggers (como PowerUps)
-            bool blocked = Physics.Raycast(origin, dir, rayDistance, ~0, QueryTriggerInteraction.Ignore);
-            // Debug.DrawRay(origin, dir * rayDistance, blocked ? Color.red : Color.green); // Descomentar para ver los rayos
-
-            // Sistema de Puntuación (Scoring)
-            // Puntuación base: Queremos ir hacia el jugador.
-            float alignmentScore = Vector3.Dot(dir, targetDir); 
-
-            // Puntuación de evasión: Es el factor más importante.
-            float avoidanceScore = blocked ? -5.0f : 1.0f; // Puntuación negativa alta si está bloqueado
+            RaycastHit hit;
             
-            // Puntuación combinada
-            // Le damos más peso a la evasión que a la persecución.
-            float score = (alignmentScore * 1.0f) + (avoidanceScore * 3.0f); 
+            // Raycast principal para verificar BLOQUEO físico (Ignoramos Triggers)
+            bool blocked = Physics.Raycast(origin, dir, rayDistance, ~0, QueryTriggerInteraction.Ignore);
+            // Debug.DrawRay(origin, dir * rayDistance, blocked ? Color.red : Color.green); 
+
+            // --- Sistema de Puntuación (Scoring) ---
+            float alignmentScore = Vector3.Dot(dir, targetDir); 
+            
+            float avoidanceScore = blocked ? -8.0f : 1.0f; 
+            
+            float metroPenalty = 0f;
+            // Raycast específico para golpear la capa de la zona prohibida (Debe ser un Trigger en esa capa)
+            if (Physics.Raycast(origin, dir, out hit, rayDistance, metroEntranceMask))
+            {
+                // Castigo MUY ALTO para forzar al zombi a girar y buscar otra ruta.
+                metroPenalty = -15.0f; 
+            }
+
+            // Puntuación combinada (El peso de 3.0f prioriza la evasión sobre la persecución)
+            float score = (alignmentScore * 1.0f) + (avoidanceScore * 3.0f) + metroPenalty; 
 
             if (score > bestScore)
             {
@@ -116,21 +123,20 @@ public class ZombieController : MonoBehaviour
             }
         }
 
-        // Seguridad: Si todos los rayos están bloqueados (bestScore sigue siendo bajo), usamos la dirección más alineada con el jugador
-        if (bestDirection == Vector3.zero || bestScore < 0) 
+        // Seguridad: Si todos los rayos están bloqueados (score es muy bajo), el zombi sigue hacia el jugador.
+        if (bestDirection == Vector3.zero || bestScore < -5.0f) 
             bestDirection = targetDir;
 
 
-        // Separación entre zombies (Flocking)
-        Collider[] nearby = Physics.OverlapSphere(transform.position, 0.8f); // Aumentamos un poco el radio
+        Collider[] nearby = Physics.OverlapSphere(transform.position, 1.0f); // Radio más amplio
         foreach (var col in nearby)
         {
             if (col.CompareTag("Zombie") && col.gameObject != this.gameObject)
             {
                 Vector3 away = transform.position - col.transform.position;
                 away.y = 0;
-                // Se normaliza la dirección y se le da un peso para influir en bestDirection
-                bestDirection += away.normalized * 0.6f; // Aumentamos la fuerza de separación (0.6f)
+                // Mayor fuerza de separación para evitar amontonamiento en obstáculos
+                bestDirection += away.normalized * 1.0f; 
             }
         }
         bestDirection.Normalize();
@@ -139,13 +145,14 @@ public class ZombieController : MonoBehaviour
         Vector3 finalMovement = horizontalMovement + verticalVelocity;
         zombie.Move(finalMovement * Time.deltaTime);
 
+        // El zombi mira en la dirección calculada de movimiento (Steering)
         if (horizontalMovement.magnitude > 0.1f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(horizontalMovement);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f); // Rotación más rápida
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f); 
         }
     }
-
+    
     private void StopAndAttack()
     {
         // Detiene la animación de caminar

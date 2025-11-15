@@ -126,6 +126,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   zombieData: {fileID: 11400000, guid: 281066ff5f545e84684795b2dc5550b9, type: 2}
+  metroEntranceMask:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!143 &4578298791249010432
 CharacterController:
   m_ObjectHideFlags: 0
