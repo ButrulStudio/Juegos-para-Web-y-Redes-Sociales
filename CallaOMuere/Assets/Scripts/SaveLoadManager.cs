@@ -157,6 +157,7 @@ public class SaveLoadManager : MonoBehaviour
         int shotgunUpgradePellets = 8;
         float rifleUpgradeFireRate = 0.05f;
         float pistolBurstFireRate = 0.1f;
+        int sniperUpgradePenetration = 3;
         switch (weapon.weaponType)
         {
             case WeaponType.Pistol:
@@ -170,6 +171,10 @@ public class SaveLoadManager : MonoBehaviour
             case WeaponType.Shotgun:
                 weapon.isUpgraded = true;
                 weapon.pelletCount = shotgunUpgradePellets;
+                break;
+            case WeaponType.Sniper:
+                weapon.isUpgraded = true;
+                weapon.penetrationCount = sniperUpgradePenetration;
                 break;
         }
     }

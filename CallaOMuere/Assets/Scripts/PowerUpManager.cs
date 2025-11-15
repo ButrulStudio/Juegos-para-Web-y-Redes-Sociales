@@ -17,8 +17,11 @@ public class PowerUpManager : MonoBehaviour
     {
         // Obtener referencias a otros componentes en el mismo GameObject
         playerHealth = GetComponent<PlayerHealth>();
-        playerMovement = GetComponent<MovementController>();    
-        
+        playerMovement = GetComponent<MovementController>();
+
+        uiDisplay = FindObjectOfType<PowerUpUIDisplay>();
+        uiAnimator = FindObjectOfType<PowerUpUIAnimator>();
+
         // Mensajes de advertencia si las referencias de UI no están asignadas
         if (uiDisplay == null) Debug.LogWarning("PowerUpManager: PowerUpUIDisplay no asignado en el Inspector.");
         if (uiAnimator == null) Debug.LogWarning("PowerUpManager: PowerUpUIAnimator no asignado en el Inspector.");
@@ -64,8 +67,8 @@ public class PowerUpManager : MonoBehaviour
     {
         if (playerMovement == null) return;
 
-        GameObject icon = null;
-        if (uiDisplay != null) icon = uiDisplay.AddPowerUpIcon(data);
+        
+        if (uiDisplay != null) { uiDisplay.AddPowerUpIcon(data); Debug.Log("polla"); }
         
         playerMovement.speedMultiplier = data.speedMultiplier;
         Debug.Log($"Bebida energética PERMANENTE: velocidad x{data.speedMultiplier}.");
