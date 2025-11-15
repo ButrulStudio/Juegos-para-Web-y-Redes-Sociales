@@ -62,43 +62,52 @@ public class ZombieController : MonoBehaviour
     {
         animator.SetBool("isWalking", true);
 
-        // --- Gravedad ---
+        // Gravedad
         if (zombie.isGrounded)
             verticalVelocity.y = -2f;
         else
             verticalVelocity.y += Physics.gravity.y * Time.deltaTime;
 
-        // Dirección objetivo hacia el jugador
+        // Dirección objetivo hacia el jugador (Target Direction)
         Vector3 targetDir = (player.position - transform.position);
         targetDir.y = 0;
         targetDir.Normalize();
 
-        // --- Steering avanzado con análisis de múltiples direcciones ---
-        float rayDistance = 1.2f;
-        float angleRange = 120f;
+        // Steering y Evasión de Obstáculos
+        
+        // Configuración del Raycasting
+        float rayDistance = 3.5f; // Distancia para empezar a reaccionar
         int rayCount = 15;
-
+        float maxAngle = 90f; // Solo analizamos 90 grados a cada lado
+        
+        // Variables de Puntuación
         Vector3 bestDirection = Vector3.zero;
-        float bestScore = -9999f;
-
+        float bestScore = float.MinValue; // Usamos MinValue para un punto de partida seguro
         Vector3 origin = transform.position + Vector3.up * 0.5f;
 
         for (int i = 0; i < rayCount; i++)
         {
-            // generar el ángulo del rayo
+            // Generar Rayos en un arco centrado en la dirección actual del zombie
             float t = (float)i / (rayCount - 1);
-            float angle = Mathf.Lerp(-angleRange / 2, angleRange / 2, t);
-
+            float angle = Mathf.Lerp(-maxAngle, maxAngle, t);
+            
+            // Crear la dirección del rayo relativa a la rotación del Zombi
             Vector3 dir = Quaternion.Euler(0, angle, 0) * transform.forward;
 
-            // hacemos raycast
+            // Verificar bloqueo: Ignoramos triggers (como PowerUps)
             bool blocked = Physics.Raycast(origin, dir, rayDistance, ~0, QueryTriggerInteraction.Ignore);
+            // Debug.DrawRay(origin, dir * rayDistance, blocked ? Color.red : Color.green); // Descomentar para ver los rayos
 
-            // calcular la alineación con el jugador (preferimos ángulos cercanos a targetDir)
-            float alignment = Vector3.Dot(dir, targetDir);
+            // Sistema de Puntuación (Scoring)
+            // Puntuación base: Queremos ir hacia el jugador.
+            float alignmentScore = Vector3.Dot(dir, targetDir); 
 
-            // puntuación de esta dirección
-            float score = alignment - (blocked ? 2.0f : 0f);
+            // Puntuación de evasión: Es el factor más importante.
+            float avoidanceScore = blocked ? -5.0f : 1.0f; // Puntuación negativa alta si está bloqueado
+            
+            // Puntuación combinada
+            // Le damos más peso a la evasión que a la persecución.
+            float score = (alignmentScore * 1.0f) + (avoidanceScore * 3.0f); 
 
             if (score > bestScore)
             {
@@ -107,39 +116,39 @@ public class ZombieController : MonoBehaviour
             }
         }
 
-        // Seguridad: si todo fallara, sigue hacia el jugador
-        if (bestDirection == Vector3.zero)
+        // Seguridad: Si todos los rayos están bloqueados (bestScore sigue siendo bajo), usamos la dirección más alineada con el jugador
+        if (bestDirection == Vector3.zero || bestScore < 0) 
             bestDirection = targetDir;
 
-        // --- Separación entre zombies ---
-        Collider[] nearby = Physics.OverlapSphere(transform.position, 0.6f);
+
+        // Separación entre zombies (Flocking)
+        Collider[] nearby = Physics.OverlapSphere(transform.position, 0.8f); // Aumentamos un poco el radio
         foreach (var col in nearby)
         {
             if (col.CompareTag("Zombie") && col.gameObject != this.gameObject)
             {
                 Vector3 away = transform.position - col.transform.position;
                 away.y = 0;
-                bestDirection += away.normalized * 0.4f;
+                // Se normaliza la dirección y se le da un peso para influir en bestDirection
+                bestDirection += away.normalized * 0.6f; // Aumentamos la fuerza de separación (0.6f)
             }
         }
         bestDirection.Normalize();
 
-        // --- Movimiento final ---
         Vector3 horizontalMovement = bestDirection * zombieData.speed;
         Vector3 finalMovement = horizontalMovement + verticalVelocity;
         zombie.Move(finalMovement * Time.deltaTime);
 
-        // --- Rotación suave ---
-        Vector3 lookDir = new Vector3(player.position.x, transform.position.y, player.position.z) - transform.position;
-        if (lookDir != Vector3.zero)
+        if (horizontalMovement.magnitude > 0.1f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(lookDir);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
+            Quaternion targetRotation = Quaternion.LookRotation(horizontalMovement);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f); // Rotación más rápida
         }
     }
 
     private void StopAndAttack()
     {
+        // Detiene la animación de caminar
         animator.SetBool("isWalking", false); 
 
         if (!zombie.isGrounded)
@@ -148,8 +157,10 @@ public class ZombieController : MonoBehaviour
             zombie.Move(verticalVelocity * Time.deltaTime);
         }
 
+        // Rotación: Asegura que el zombi mire al jugador mientras está parado o atacando.
         transform.LookAt(new Vector3(player.position.x, transform.position.y, player.position.z));
 
+        // Si el cooldown ha terminado, inicia el ataque
         if (Time.time - lastAttackTime >= zombieData.attackCooldown)
         {
             StartCoroutine(AttackRoutine());
@@ -170,11 +181,22 @@ public class ZombieController : MonoBehaviour
             PlayerHealth ph = player.GetComponent<PlayerHealth>();
             if (ph != null) ph.TakeDamage(zombieData.damage);
         }
+        
+        float animationTime = 1.2f; // <-- REEMPLAZA ESTE VALOR con la duración real de tu animación.
+        float waitAfterHitPoint = animationTime - 0.9f; // Tiempo restante de la animación
 
-        // Esperar el resto del cooldown
-        yield return new WaitForSeconds(zombieData.attackCooldown - 0.9f);
+        // Esperar el resto de la animación
+        yield return new WaitForSeconds(waitAfterHitPoint);
+        
+        // Esperar el resto del cooldown si es mayor que la duración de la animación
+        float remainingCooldown = zombieData.attackCooldown - animationTime;
+        if (remainingCooldown > 0)
+        {
+            yield return new WaitForSeconds(remainingCooldown);
+        }
 
-        isAttacking = false; // Desbloquea Update()
+        // El zombi está listo para volver a caminar y atacar
+        isAttacking = false; // Desbloquea Update() y reanuda FollowPlayer()
     }
 
     public void TakeDamage(float amount)
