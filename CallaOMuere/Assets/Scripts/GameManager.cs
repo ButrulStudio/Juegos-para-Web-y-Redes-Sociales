@@ -32,6 +32,9 @@ public class GameManager : MonoBehaviour
     // Variable de seguridad para evitar "spam" de la tecla Esc
     private bool isTogglingPause = false;
 
+    [Header("Música de Ambiente")]
+    [SerializeField] private AudioSource musicAudioSource; // El componente que añadiste
+    [SerializeField] private AudioClip backgroundMusic;
 
     void Awake()
     {
@@ -64,6 +67,14 @@ public class GameManager : MonoBehaviour
 
         // Configura los sliders del menú de pausa
         SetupPauseMenuSliders();
+
+        // --- AÑADE ESTAS LÍNEAS PARA LA MÚSICA ---
+        if (musicAudioSource != null && backgroundMusic != null)
+        {
+            musicAudioSource.clip = backgroundMusic;
+            musicAudioSource.loop = true; // Asegúrate de que se repita
+            musicAudioSource.Play();
+        }
 
         // Comprueba si el SaveLoadManager...
         if (SaveLoadManager.ShouldLoadGame)

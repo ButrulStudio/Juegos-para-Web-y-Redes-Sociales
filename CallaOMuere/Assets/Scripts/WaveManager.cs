@@ -23,6 +23,10 @@ public class WaveManager : MonoBehaviour
     [Header("Referencias")]
     [SerializeField] private ZombieSpawner zombieSpawner;
 
+    [Header("Sonido")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip waveEndSound;
+
     private int currentWaveIndex = 0;
     private int zombiesRemainingInWave;
     private float nextWaveTime;
@@ -135,6 +139,8 @@ public class WaveManager : MonoBehaviour
     {
         Debug.Log($"¡Oleada {currentWave} completada!");
 
+        PlaySound(waveEndSound);
+
         currentWaveIndex++;
 
         nextWaveTime = Time.time + timeBetweenWaves;
@@ -181,6 +187,17 @@ public class WaveManager : MonoBehaviour
         if (waveText != null)
         {
             waveText.text = $"{currentWave}";
+        }
+    }
+
+    /// <summary>
+    /// Reproduce un sonido "one-shot" usando el AudioSource.
+    /// </summary>
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.PlayOneShot(clip);
         }
     }
 

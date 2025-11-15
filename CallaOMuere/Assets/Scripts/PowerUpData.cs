@@ -20,6 +20,7 @@ public class PowerUpData : ScriptableObject
     
     [Header("UI")]
     public Sprite icon;
+    public AudioClip applySound;
 
     [Header("Valores de efectos")]
     public float armorRestore = 0f;

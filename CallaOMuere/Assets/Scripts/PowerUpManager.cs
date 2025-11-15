@@ -10,8 +10,10 @@ public class PowerUpManager : MonoBehaviour
     [Header("UI Managers")]
     // Referencias a los scripts que controlan la interfaz de usuario
     private PowerUpUIDisplay uiDisplay; 
-    private PowerUpUIAnimator uiAnimator; 
+    private PowerUpUIAnimator uiAnimator;
 
+    [Header("Sonido")]
+    [SerializeField] private AudioSource audioSource;
 
     void Start()
     {
@@ -31,6 +33,8 @@ public class PowerUpManager : MonoBehaviour
     public void ApplyPowerUp(PowerUpData powerUp)
     {
         if (powerUp == null) return;
+
+        PlaySound(powerUp.applySound);
 
         if (uiAnimator != null)
         {
@@ -96,6 +100,17 @@ public class PowerUpManager : MonoBehaviour
         
         playerShooting.damageMultiplier = data.damageMultiplier;
         Debug.Log($"Schpeppes PERMANENTE: daño x{data.damageMultiplier}.");
+    }
+
+    /// <summary>
+    /// Reproduce un sonido "one-shot" usando el AudioSource.
+    /// </summary>
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
     }
 
 }

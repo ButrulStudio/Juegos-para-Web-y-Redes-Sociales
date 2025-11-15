@@ -10,6 +10,16 @@ public class MovementController : MonoBehaviour
     [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private float gravity = -9.81f;
 
+    [Header("Sonidos de Movimiento")]
+    [Tooltip("El AudioSource para los sonidos de pasos, saltos, etc.")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private float walkStepInterval = 0.5f;
+    [SerializeField] private float sprintStepInterval = 0.3f;
+    [Tooltip("Array de sonidos de pasos para que suenen aleatorios")]
+    [SerializeField] private AudioClip[] footstepSounds;
+
+    private float nextStepTime = 0f;
+
     private CharacterController controller;
     private Vector3 velocity;
     private bool isGrounded;
@@ -20,6 +30,11 @@ public class MovementController : MonoBehaviour
 
     void Start()
     {
+        if (audioSource == null)
+        {
+            Debug.LogWarning("MovementController: No se ha asignado un AudioSource para los pasos.");
+        }
+
         controller = GetComponent<CharacterController>();
         defaultSpeed = moveSpeed;
         currentSpeed = moveSpeed;
@@ -43,10 +58,30 @@ public class MovementController : MonoBehaviour
         float moveZ = Input.GetAxis("Vertical");
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
 
+        // Comprobar si nos estamos moviendo (magnitud > 0)
+        bool isMoving = move.magnitude > 0.1f;
+        bool isSprinting = Input.GetKey(KeyCode.LeftShift);
+
+        // --- AÑADIR: Lógica de Sonido de Pasos ---
+        if (isMoving && isGrounded)
+        {
+            // Comprobar si es hora de un nuevo paso
+            if (Time.time > nextStepTime)
+            {
+                // Elegir el intervalo correcto
+                float interval = isSprinting ? sprintStepInterval : walkStepInterval;
+
+                // Reproducir sonido
+                PlayRandomFootstep();
+
+                // Asignar el tiempo para el siguiente paso
+                nextStepTime = Time.time + interval;
+            }
+        }
         // Sprint
         // Esta línea ya aplica el multiplicador de power-up permanentemente
         float targetSpeed = currentSpeed * speedMultiplier;
-        if (Input.GetKey(KeyCode.LeftShift))
+        if (isSprinting)
             targetSpeed *= sprintMultiplier;
 
         controller.Move(move * targetSpeed * Time.deltaTime);
@@ -58,6 +93,22 @@ public class MovementController : MonoBehaviour
         // Gravedad
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
+    }
+
+    private void PlayRandomFootstep()
+    {
+        if (audioSource != null && footstepSounds != null && footstepSounds.Length > 0)
+        {
+            // Elige un clip aleatorio del array
+            int index = Random.Range(0, footstepSounds.Length);
+            AudioClip clip = footstepSounds[index];
+
+            // Reproduce ese clip
+            if (clip != null)
+            {
+                audioSource.PlayOneShot(clip);
+            }
+        }
     }
 
     // ---------------- MÉTODOS PARA POWERUPS ----------------

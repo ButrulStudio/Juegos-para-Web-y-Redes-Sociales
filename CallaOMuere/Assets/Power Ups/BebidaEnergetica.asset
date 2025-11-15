@@ -17,6 +17,7 @@ MonoBehaviour:
   description: Aumenta velocidad
   cost: 0
   icon: {fileID: 21300000, guid: d5e361b3d2f9eaa418fc12ae94c9fe72, type: 3}
+  applySound: {fileID: 8300000, guid: 0e86bd8f62956be458794a982c83e90e, type: 3}
   armorRestore: 0
   speedMultiplier: 30
   reloadMultiplier: 1

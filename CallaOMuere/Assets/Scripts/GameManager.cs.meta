@@ -1,2 +1,24 @@
 fileFormatVersion: 2
 guid: c50f9bfde1cabf743848636cbd030162
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - gameOverPanel: {instanceID: 0}
+  - pausePanel: {instanceID: 0}
+  - animator: {instanceID: 0}
+  - transitionAnimator: {instanceID: 0}
+  - gameOverText: {instanceID: 0}
+  - pauseText: {instanceID: 0}
+  - sensitivitySlider_Pause: {instanceID: 0}
+  - musicSlider_Pause: {instanceID: 0}
+  - sfxSlider_Pause: {instanceID: 0}
+  - mainAudioMixer: {instanceID: 0}
+  - cameraController: {instanceID: 0}
+  - musicAudioSource: {instanceID: 0}
+  - backgroundMusic: {fileID: 8300000, guid: aecfba89f3eae694681275554b7d6f60, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
