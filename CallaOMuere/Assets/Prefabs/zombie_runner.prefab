@@ -80,9 +80,6 @@ PrefabInstance:
       addedObject: {fileID: 2861911678726899246}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1265280773000176004}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 8206455530417517290}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
       insertIndex: -1
@@ -112,10 +109,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1.3032888
+  m_Radius: 0.2739597
+  m_Height: 1.3032887
   m_Direction: 1
-  m_Center: {x: 0, y: 0.75317967, z: 0}
+  m_Center: {x: -0.008341424, y: 0.7531797, z: 0}
 --- !u!114 &2861911678726899246
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -132,28 +129,6 @@ MonoBehaviour:
   metroEntranceMask:
     serializedVersion: 2
     m_Bits: 128
---- !u!195 &1265280773000176004
-NavMeshAgent:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2909164642969342993}
-  m_Enabled: 0
-  m_AgentTypeID: 0
-  m_Radius: 0.5
-  m_Speed: 3.5
-  m_Acceleration: 8
-  avoidancePriority: 50
-  m_AngularSpeed: 120
-  m_StoppingDistance: 0
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
-  m_Height: 1.46
-  m_BaseOffset: 0
-  m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
 --- !u!143 &8206455530417517290
 CharacterController:
   m_ObjectHideFlags: 0

@@ -728,8 +728,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d70ca5675b79d14097450c913fb9784, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalScale: {x: 2.085017, y: 3.50262, z: 2.085017}
-  hoverScale: {x: 2.33, y: 3.94, z: 1.1}
+  normalScale: {x: 1.66, y: 6.21, z: 3.96}
+  hoverScale: {x: 2.33, y: 7.8, z: 4.63}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   hoverColor: {r: 0.9924528, g: 0.9699225, b: 0.7096974, a: 1}
   speed: 10
@@ -1080,10 +1080,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d70ca5675b79d14097450c913fb9784, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalScale: {x: 2.085017, y: 3.50262, z: 2.085017}
-  hoverScale: {x: 2.33, y: 3.94, z: 1.1}
+  normalScale: {x: 1.66, y: 6.21, z: 3.96}
+  hoverScale: {x: 2.33, y: 7.8, z: 4.63}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
-  hoverColor: {r: 1, g: 0.97549427, b: 0.6924528, a: 1}
+  hoverColor: {r: 0.9924528, g: 0.9699225, b: 0.7096974, a: 1}
   speed: 10
 --- !u!1 &894776345
 GameObject:
