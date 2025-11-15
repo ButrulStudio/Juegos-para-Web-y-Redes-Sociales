@@ -13477,9 +13477,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8a23826334ad8c4fb9cb3f8df640bf4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  exitDirection: {x: 0, y: -1, z: 1}
-  escapeForce: 8
-  playerTag: 
+  exitDirection: {x: 0, y: -1, z: 0}
+  escapeForce: 10
+  playerTag: Player
   zombieTag: Zombie
 --- !u!1 &1373721291 stripped
 GameObject:
