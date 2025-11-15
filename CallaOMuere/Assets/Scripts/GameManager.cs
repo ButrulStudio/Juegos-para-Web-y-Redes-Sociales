@@ -197,7 +197,7 @@ public class GameManager : MonoBehaviour
     {
         if (mainAudioMixer == null) return;
         mainAudioMixer.SetFloat("MusicVolume", Mathf.Log10(value) * 20);
-        PlayerPrefs.SetFloat("MasterMusicVolume", value);
+        PlayerPrefs.SetFloat("MasterMusicVolume", value);   
     }
 
     public void SetSFXVolume_Pause(float value)
