@@ -47,6 +47,12 @@ public class MovementController : MonoBehaviour
 
     private void HandleMovement()
     {
+        // --- ¡AÑADIDO! ---
+        // Si el juego está pausado o terminado, no hacer nada.
+        if (GameManager.IsPaused || GameManager.GameIsOver)
+            return;
+        // -----------------
+
         // Comprobar si está tocando el suelo
         isGrounded = controller.isGrounded;
 

@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.Audio;
 
 public class MainMenu : MonoBehaviour
 {
@@ -9,12 +10,32 @@ public class MainMenu : MonoBehaviour
     public Animator transitionAnimator;
 
     [Header("Animador del Panel del Mapa")]
-    public Animator mapPanelAnimator; 
+    public Animator mapPanelAnimator;
 
+    [Header("Audio")]
+    [SerializeField] private AudioMixer mainAudioMixer;
 
-    public void Start()
+    public const string MUSIC_VOL_KEY = "MasterMusicVolume";
+    public const string SFX_VOL_KEY = "MasterSFXVolume";
+
+    void Start()
     {
+        LoadAudioSettings();
+    }
 
+    private void LoadAudioSettings()
+    {
+        if (mainAudioMixer == null)
+        {
+            Debug.LogWarning("MainMenu: No se ha asignado el AudioMixer.");
+            return;
+        }
+
+        float musicVol = PlayerPrefs.GetFloat(MUSIC_VOL_KEY, 0.75f);
+        mainAudioMixer.SetFloat("MusicVolume", Mathf.Log10(musicVol) * 20);
+
+        float sfxVol = PlayerPrefs.GetFloat(SFX_VOL_KEY, 0.75f);
+        mainAudioMixer.SetFloat("SFXVolume", Mathf.Log10(sfxVol) * 20);
     }
 
     public IEnumerator LoadGameScene()
@@ -49,7 +70,6 @@ public class MainMenu : MonoBehaviour
         StartCoroutine(LoadOptionsMenu());
     }
 
-
     public IEnumerator LoadCreditsScene()
     {
         transitionAnimator.SetTrigger("StartTransition");
@@ -61,7 +81,6 @@ public class MainMenu : MonoBehaviour
     {
         StartCoroutine(LoadCreditsScene());
     }
-
 
     public IEnumerator LoadMainMenu()
     {
@@ -75,11 +94,8 @@ public class MainMenu : MonoBehaviour
         StartCoroutine(LoadMainMenu());
     }
 
- 
-
     public IEnumerator LoadMapSelector()
     {
-
         transitionAnimator.SetTrigger("StartTransition");
         yield return new WaitForSeconds(0.3f);
         SceneManager.LoadScene("MapSelector");
@@ -92,7 +108,6 @@ public class MainMenu : MonoBehaviour
 
     public IEnumerator LoadShop()
     {
-
         transitionAnimator.SetTrigger("StartTransition");
         yield return new WaitForSeconds(0.3f);
         SceneManager.LoadScene("Shop");
@@ -107,7 +122,6 @@ public class MainMenu : MonoBehaviour
     {
         if (mapPanelAnimator != null)
         {
-            // Usa el animador del PANEL
             mapPanelAnimator.SetBool("IsOpen", true);
         }
         else
@@ -120,7 +134,6 @@ public class MainMenu : MonoBehaviour
     {
         if (mapPanelAnimator != null)
         {
-            // Usa el animador del PANEL
             mapPanelAnimator.SetBool("IsOpen", false);
         }
         else
@@ -128,5 +141,4 @@ public class MainMenu : MonoBehaviour
             Debug.LogError("¡No has asignado el 'mapPanelAnimator' en el Inspector!");
         }
     }
-
 }

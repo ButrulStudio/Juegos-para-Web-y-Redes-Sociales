@@ -104,6 +104,12 @@ public class PlayerShooting : MonoBehaviour
 
     void Update()
     {
+        // --- ¡AÑADIDO! ---
+        // Si el juego está pausado o terminado, no hacer nada.
+        if (GameManager.IsPaused || GameManager.GameIsOver)
+            return;
+        // -----------------
+
         if (isReloading) return;
 
         HandleShooting();
@@ -151,7 +157,7 @@ public class PlayerShooting : MonoBehaviour
         {
             if (crosshairRectTransform != null)
             {
-                
+
                 crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
                 crosshairRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
                 crosshairRectTransform.pivot = new Vector2(0.5f, 0.5f);
@@ -206,11 +212,12 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
+    // --- CORRUTINA DE RECARGA CORREGIDA ---
     IEnumerator ReloadCoroutine()
     {
         isReloading = true;
         PlaySound(currentWeapon.reloadSound);
-        
+
         float reloadTime = currentWeapon.reloadTime * reloadTimeMultiplier;
         float animTime = 1f / reloadAnimSpeed;
 
@@ -230,34 +237,32 @@ public class PlayerShooting : MonoBehaviour
         // Lógica de espera y llenado incremental (Solo Escopeta)
         int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
         int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
-        
-        // --- ELIMINADA LA DECLARACIÓN DUPLICADA DE waitTime ---
-        // float waitTime = Mathf.Max(0, reloadTime - animTime * 2f); // ESTA LÍNEA ES EL PROBLEMA
-        
-        // La declararemos y asignaremos SÓLO una vez aquí:
-        float waitTime = Mathf.Max(0, reloadTime - animTime * 2f); 
-        // --------------------------------------------------------
+
+        // ¡CORRECCIÓN! Declaramos waitTime aquí, una sola vez.
+        float waitTime = Mathf.Max(0, reloadTime - animTime * 2f);
 
         // --- LÓGICA DE CARGA ESPECÍFICA ---
         if (currentWeapon.weaponType == WeaponType.Shotgun && ammoToLoad > 0)
         {
             // --- Carga Incremental (Solo Escopeta) ---
-            float timePerBullet = waitTime / ammoToLoad;
+            float timePerBullet = (waitTime > 0 && ammoToLoad > 0) ? waitTime / ammoToLoad : 0; // Evita división por cero
 
             for (int i = 0; i < ammoToLoad; i++)
             {
-                yield return new WaitForSeconds(timePerBullet);
-                
+                // Solo espera si el tiempo por bala es mayor que 0
+                if (timePerBullet > 0)
+                    yield return new WaitForSeconds(timePerBullet);
+
                 currentAmmoInMag++;
                 totalAmmo--;
-                UpdateAmmoUI(); 
+                UpdateAmmoUI();
             }
         }
         else
         {
             // --- Carga Instantánea (Pistola, Rifle, Sniper) ---
-            
-            yield return new WaitForSeconds(waitTime);
+            if (waitTime > 0)
+                yield return new WaitForSeconds(waitTime);
 
             currentAmmoInMag += ammoToLoad;
             totalAmmo -= ammoToLoad;
@@ -276,16 +281,16 @@ public class PlayerShooting : MonoBehaviour
             );
             yield return null;
         }
-        
+
         isReloading = false;
-        
+
         // Solo las armas sin recarga incremental necesitan la actualización final.
         if (currentWeapon.weaponType != WeaponType.Shotgun)
         {
-             UpdateAmmoUI();
+            UpdateAmmoUI();
         }
     }
-    
+
     // === DISPARO PRINCIPAL ===
     void HandleShooting()
     {
@@ -317,7 +322,7 @@ public class PlayerShooting : MonoBehaviour
                 if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    
+
                     StartCoroutine(ShootShotgunCoroutine());
                 }
                 break;
@@ -325,13 +330,13 @@ public class PlayerShooting : MonoBehaviour
                 if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime && !isBursting)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    
+
                     StartCoroutine(ShootSniperCoroutine());
                 }
                 break;
         }
     }
-    
+
 
     // === DISPARO PISTOLA ===
     void Shoot()
@@ -347,7 +352,7 @@ public class PlayerShooting : MonoBehaviour
                     ammoText.color = defaultAmmoColor;
                 }
             }
-            
+
             return;
         }
 
@@ -359,7 +364,7 @@ public class PlayerShooting : MonoBehaviour
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-            HandleHit(hit, currentWeapon.damage * damageMultiplier);
+            HandleHit(hit, currentWeapon.damage * damageMultiplier); // damageMultiplier ya está aplicado
 
         ApplyRecoil();
     }
@@ -397,7 +402,7 @@ public class PlayerShooting : MonoBehaviour
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-                HandleHit(hit, currentWeapon.damage * damageMultiplier);
+                HandleHit(hit, currentWeapon.damage * damageMultiplier); // damageMultiplier ya está aplicado
 
             ApplyRecoil();
             yield return new WaitForSeconds(currentWeapon.fireRate);
@@ -421,8 +426,8 @@ public class PlayerShooting : MonoBehaviour
                     ammoText.color = defaultAmmoColor;
                 }
             }
-            
-            return;    
+
+            return;
         }
 
         PlaySound(currentWeapon.shootSound);
@@ -433,7 +438,7 @@ public class PlayerShooting : MonoBehaviour
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-            HandleHit(hit, currentWeapon.damage * damageMultiplier);
+            HandleHit(hit, currentWeapon.damage * damageMultiplier); // damageMultiplier ya está aplicado
 
         ApplyRecoil();
     }
@@ -453,7 +458,7 @@ public class PlayerShooting : MonoBehaviour
                     ammoText.color = defaultAmmoColor;
                 }
             }
-            
+
             yield break;
         }
 
@@ -474,7 +479,7 @@ public class PlayerShooting : MonoBehaviour
             Ray ray = new Ray(playerCamera.transform.position, direction);
 
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-                HandleHit(hit, currentWeapon.damage * damageMultiplier);
+                HandleHit(hit, currentWeapon.damage * damageMultiplier); // damageMultiplier ya está aplicado
         }
 
         ApplyRecoil();
@@ -493,7 +498,7 @@ public class PlayerShooting : MonoBehaviour
         if (currentAmmoInMag <= 0)
         {
             PlaySound(currentWeapon.emptyClipSound); // <-- SONIDO SIN BALAS
-            
+
             if (totalAmmo > 0)
             {
                 if (ammoText != null)
@@ -502,7 +507,7 @@ public class PlayerShooting : MonoBehaviour
                     ammoText.color = defaultAmmoColor;
                 }
             }
-            
+
             yield break;
         }
 
@@ -529,7 +534,19 @@ public class PlayerShooting : MonoBehaviour
             foreach (var hit in sortedHits)
             {
                 // Obtenemos el componente de salud ANTES de llamar a HandleHit
-                ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
+                // ¡MODIFICADO! Buscamos la Hitbox primero
+                ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
+                ZombieController zombieHealth = null;
+
+                // Intentamos obtener el ZombieController (ya sea por la hitbox o directo)
+                if (hitbox != null)
+                {
+                    zombieHealth = hitbox.zombieController;
+                }
+                else
+                {
+                    zombieHealth = hit.collider.GetComponent<ZombieController>();
+                }
 
                 // ¿Es un zombie?
                 if (zombieHealth != null)
@@ -539,7 +556,7 @@ public class PlayerShooting : MonoBehaviour
                     {
                         // ¡Es un objetivo nuevo!
                         // 1. Llama a HandleHit para aplicar daño y efectos de agujero
-                        HandleHit(hit, currentWeapon.damage * damageMultiplier);
+                        HandleHit(hit, currentWeapon.damage * damageMultiplier); // damageMultiplier ya está aplicado
 
                         // 2. Añádelo al Set para no volver a golpearlo
                         alreadyDamaged.Add(zombieHealth);
@@ -559,8 +576,9 @@ public class PlayerShooting : MonoBehaviour
                 {
                     // No es un zombie 
                     // Llama a HandleHit para poner el agujero de bala
-                    HandleHit(hit, currentWeapon.damage * damageMultiplier);
+                    HandleHit(hit, currentWeapon.damage * damageMultiplier); // damageMultiplier ya está aplicado
 
+                    // Si quieres que las balas no atraviesen paredes, descomenta esto:
                     // break; 
                 }
             }
@@ -576,18 +594,47 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // === GESTIÓN DE IMPACTOS ===
+    // === GESTIÓN DE IMPACTOS (¡MODIFICADO!) ===
     void HandleHit(RaycastHit hit, float damage)
     {
-        ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
+        // 1. Intentamos encontrar el nuevo script ZombieHitbox
+        ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
+        ZombieController zombieHealth = null;
+
+        if (hitbox != null)
+        {
+            // 2. ¡Éxito! El golpe fue en una hitbox.
+            // Obtenemos el controlador principal desde la hitbox
+            zombieHealth = hitbox.zombieController;
+
+            if (zombieHealth != null)
+            {
+                // 3. Llamamos a la NUEVA función TakeDamage, pasando el tipo de hitbox
+                // (El 'damage' que llega a esta función ya incluye el damageMultiplier)
+                zombieHealth.TakeDamage(damage, hitbox.hitboxType);
+            }
+        }
+        else
+        {
+            // 4. FALLBACK: Si no golpeamos una hitbox (quizás un error o un zombi sin configurar)
+            // Intentamos el método antiguo
+            zombieHealth = hit.collider.GetComponent<ZombieController>();
+            if (zombieHealth != null)
+            {
+                // 5. Llamamos a la función de daño antigua (que ahora redirige a "Body")
+                zombieHealth.TakeDamage(damage);
+            }
+        }
+
+        // --- El resto de tu lógica (logs, agujeros de bala) no cambia ---
 
         if (zombieHealth != null)
         {
-            zombieHealth.TakeDamage(damage);
             float remainingHealth = zombieHealth.GetHP();
             Debug.Log($"El Zombie {hit.collider.name} ha recibido {damage} de daño y le quedan {remainingHealth:F1} de vida.");
         }
 
+        // Lógica de agujeros de bala (sin cambios)
         if (hit.collider.CompareTag("Zombie") && currentWeapon.bulletHolePrefab != null)
         {
             Quaternion hitRotation = Quaternion.FromToRotation(Vector3.forward, hit.normal) * Quaternion.Euler(0, 180f, 0);
@@ -604,6 +651,7 @@ public class PlayerShooting : MonoBehaviour
             Destroy(hole, 5f);
         }
     }
+
 
     // === CAMBIO DE ARMA ===
     public void EquipWeapon(WeaponData weaponData)
@@ -681,7 +729,7 @@ public class PlayerShooting : MonoBehaviour
         if (ammoText != null && currentWeapon != null)
         {
             ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
-            
+
             if (currentAmmoInMag == 0 && totalAmmo == 0)
             {
                 ammoText.color = Color.red;
@@ -736,6 +784,7 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentWeapon != null)
         {
+            // Asegúrate de que las claves existen antes de asignar
             ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
             totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
         }

@@ -10,6 +10,12 @@ public class GameManager : MonoBehaviour
     // Patrón Singleton
     public static GameManager Instance { get; private set; }
 
+    // --- ¡AÑADIDO! ---
+    // Banderas estáticas para que otros scripts sepan el estado del juego.
+    public static bool IsPaused { get; private set; } = false;
+    public static bool GameIsOver { get; private set; } = false;
+    // -----------------
+
     [Header("UI (Paneles)")]
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject pausePanel;
@@ -65,6 +71,12 @@ public class GameManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Time.timeScale = 1;
 
+        // --- ¡AÑADIDO! ---
+        // Resetea las banderas al empezar la escena
+        IsPaused = false;
+        GameIsOver = false;
+        // -----------------
+
         // Configura los sliders del menú de pausa
         SetupPauseMenuSliders();
 
@@ -98,6 +110,8 @@ public class GameManager : MonoBehaviour
         Debug.Log("Game Over. Player Died.");
         Time.timeScale = 0; // Pausa el juego
 
+        GameIsOver = true; // <-- ¡AÑADIDO!
+
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
@@ -127,6 +141,7 @@ public class GameManager : MonoBehaviour
 
             // Reanuda el juego INMEDIATAMENTE
             Time.timeScale = 1;
+            IsPaused = false; // <-- ¡AÑADIDO!
 
             // Espera a que termine la animación de salida (usando tiempo real)
             yield return new WaitForSecondsRealtime(0.3f);
@@ -154,6 +169,7 @@ public class GameManager : MonoBehaviour
 
             // Termina de pausar
             Time.timeScale = 0;
+            IsPaused = true; // <-- ¡AÑADIDO!
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
@@ -197,7 +213,7 @@ public class GameManager : MonoBehaviour
     {
         if (mainAudioMixer == null) return;
         mainAudioMixer.SetFloat("MusicVolume", Mathf.Log10(value) * 20);
-        PlayerPrefs.SetFloat("MasterMusicVolume", value);   
+        PlayerPrefs.SetFloat("MasterMusicVolume", value);
     }
 
     public void SetSFXVolume_Pause(float value)
