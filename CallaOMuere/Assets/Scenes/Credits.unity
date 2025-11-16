@@ -267,14 +267,14 @@ RectTransform:
   m_GameObject: {fileID: 41329839}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 52.06, y: 52.58, z: 1.6298811}
+  m_LocalScale: {x: 85.19099, y: 86.041916, z: 2.6671374}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 431033690}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 508, y: -7}
+  m_AnchoredPosition: {x: 508, y: -191}
   m_SizeDelta: {x: 10.8, y: 19.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &41329841
@@ -448,14 +448,14 @@ RectTransform:
   m_GameObject: {fileID: 827589833}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.42, y: 1.42, z: 1.7034999}
+  m_LocalScale: {x: 1.4282063, y: 1.42, z: 1.7034999}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 431033690}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -18}
   m_SizeDelta: {x: -562.80005, y: -287.18164}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!225 &827589835
@@ -490,7 +490,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a6723fa4c0920934f82c23cabf42e1bb, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d62fc02f124da244397eacf97348909f, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -617,14 +617,14 @@ RectTransform:
   m_GameObject: {fileID: 1382438531}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.9041859, y: 4.8960714, z: 1.6941473}
+  m_LocalScale: {x: 3.1160102, y: 8.011932, z: 2.7723026}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 431033690}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 505, y: 199}
+  m_AnchoredPosition: {x: 503.08636, y: 72.46036}
   m_SizeDelta: {x: 160, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1382438533
@@ -639,8 +639,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d70ca5675b79d14097450c913fb9784, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalScale: {x: 1.5, y: 3.75, z: 1.5}
-  hoverScale: {x: 2, y: 5, z: 2}
+  normalScale: {x: 3, y: 8, z: 2.7}
+  hoverScale: {x: 4.2, y: 10.4, z: 2}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   speed: 10

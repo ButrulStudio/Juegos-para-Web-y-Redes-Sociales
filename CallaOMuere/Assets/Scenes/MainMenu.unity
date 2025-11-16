@@ -1700,6 +1700,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b54dae3deb2bb42409c38217fd1e3301, type: 2}
   - {fileID: 11400000, guid: a826e72a8f016824ea82656d0015f5ec, type: 2}
   - {fileID: 11400000, guid: f67b1ee1f4bb3d94eb3d74c52d59cc46, type: 2}
+  startingWeaponAsset: {fileID: 11400000, guid: b54dae3deb2bb42409c38217fd1e3301, type: 2}
 --- !u!4 &1833486758
 Transform:
   m_ObjectHideFlags: 0
@@ -1846,6 +1847,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1979484212}
   - component: {fileID: 1979484213}
+  - component: {fileID: 1979484214}
   m_Layer: 0
   m_Name: MusicaFondo
   m_TagString: Music
@@ -1887,7 +1889,7 @@ AudioSource:
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
-  Priority: 250
+  Priority: 1
   DopplerLevel: 1
   MinDistance: 1
   MaxDistance: 500
@@ -1965,6 +1967,28 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1979484214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1979484211}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd64aef8f7516574a99fec4128afe926, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneMusicMap:
+  - sceneName: MainMenu
+    musicClip: {fileID: 8300000, guid: 73cb51423beef964cb85e16232fa506e, type: 3}
+    musicPitch: 1
+  - sceneName: Shop
+    musicClip: {fileID: 8300000, guid: 2cec880057fd9194c8e809eba7e812b0, type: 3}
+    musicPitch: 1
+  - sceneName: Game
+    musicClip: {fileID: 8300000, guid: aecfba89f3eae694681275554b7d6f60, type: 3}
+    musicPitch: 1
 --- !u!1 &2074880632
 GameObject:
   m_ObjectHideFlags: 0

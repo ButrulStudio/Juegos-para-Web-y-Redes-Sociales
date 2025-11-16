@@ -10,11 +10,8 @@ public class GameManager : MonoBehaviour
     // Patrón Singleton
     public static GameManager Instance { get; private set; }
 
-    // --- ¡AÑADIDO! ---
-    // Banderas estáticas para que otros scripts sepan el estado del juego.
     public static bool IsPaused { get; private set; } = false;
     public static bool GameIsOver { get; private set; } = false;
-    // -----------------
 
     [Header("UI (Paneles)")]
     [SerializeField] private GameObject gameOverPanel;
@@ -71,16 +68,12 @@ public class GameManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Time.timeScale = 1;
 
-        // --- ¡AÑADIDO! ---
-        // Resetea las banderas al empezar la escena
         IsPaused = false;
         GameIsOver = false;
-        // -----------------
 
         // Configura los sliders del menú de pausa
         SetupPauseMenuSliders();
 
-        // --- AÑADE ESTAS LÍNEAS PARA LA MÚSICA ---
         if (musicAudioSource != null && backgroundMusic != null)
         {
             musicAudioSource.clip = backgroundMusic;
@@ -88,10 +81,32 @@ public class GameManager : MonoBehaviour
             musicAudioSource.Play();
         }
 
-        // Comprueba si el SaveLoadManager...
+        // --- ¡LÓGICA DE CARGA MODIFICADA! ---
         if (SaveLoadManager.ShouldLoadGame)
         {
+            // Si hay que cargar, llama al SaveLoadManager
+            Debug.Log("GameManager: Detectada bandera de carga. Iniciando LoadGame().");
             SaveLoadManager.Instance.LoadGame();
+        }
+        else
+        {
+            // Si NO hay que cargar, es partida nueva.
+            Debug.Log("GameManager: No hay bandera de carga. Iniciando partida nueva.");
+
+            PlayerShooting playerShooting = FindObjectOfType<PlayerShooting>();
+
+            // ¡NUEVO! Pide el arma inicial al SaveLoadManager
+            WeaponData startingWeapon = SaveLoadManager.Instance.GetStartingWeapon();
+
+            if (playerShooting != null && startingWeapon != null)
+            {
+                // ¡MODIFICADO! Le pasamos el arma al jugador
+                playerShooting.InitializeNewGame(startingWeapon);
+            }
+            else
+            {
+                Debug.LogError("GameManager: No se pudo encontrar PlayerShooting O el 'Starting Weapon Asset' no está asignado en el SaveLoadManager.");
+            }
         }
     }
 
@@ -110,7 +125,7 @@ public class GameManager : MonoBehaviour
         Debug.Log("Game Over. Player Died.");
         Time.timeScale = 0; // Pausa el juego
 
-        GameIsOver = true; // <-- ¡AÑADIDO!
+        GameIsOver = true;
 
         if (gameOverPanel != null)
         {
@@ -135,18 +150,12 @@ public class GameManager : MonoBehaviour
         if (pausePanel.activeSelf)
         {
             // --- REANUDAR JUEGO ---
-
-            // Inicia animación de salida
             animator.SetBool("Mobile", false);
-
-            // Reanuda el juego INMEDIATAMENTE
             Time.timeScale = 1;
-            IsPaused = false; // <-- ¡AÑADIDO!
+            IsPaused = false;
 
-            // Espera a que termine la animación de salida (usando tiempo real)
             yield return new WaitForSecondsRealtime(0.3f);
 
-            // Termina de reanudar
             pausePanel.SetActive(false);
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
@@ -154,22 +163,18 @@ public class GameManager : MonoBehaviour
         else
         {
             // --- PAUSAR JUEGO ---
-
             if (sensitivitySlider_Pause != null)
             {
                 LoadCurrentSettingsToSliders();
             }
 
-            // Muestra el panel e inicia la animación
             pausePanel.SetActive(true);
             animator.SetBool("Mobile", true);
 
-            // Espera a que termine la animación de entrada (usando tiempo real)
             yield return new WaitForSecondsRealtime(0.3f);
 
-            // Termina de pausar
             Time.timeScale = 0;
-            IsPaused = true; // <-- ¡AÑADIDO!
+            IsPaused = true;
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
@@ -177,9 +182,6 @@ public class GameManager : MonoBehaviour
         // 2. Quitamos el "seguro"
         isTogglingPause = false;
     }
-
-
-    // --- MÉTODOS PARA LOS SLIDERS DE PAUSA (sin cambios) ---
 
     private void SetupPauseMenuSliders()
     {
@@ -222,8 +224,6 @@ public class GameManager : MonoBehaviour
         mainAudioMixer.SetFloat("SFXVolume", Mathf.Log10(value) * 20);
         PlayerPrefs.SetFloat("MasterSFXVolume", value);
     }
-
-    // --- MÉTODOS DE NAVEGACIÓN (sin cambios) ---
 
     public void SaveAndQuit()
     {
