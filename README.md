@@ -151,7 +151,7 @@ El combate se centra en el uso de un arma de proyectiles y un sistema de salud c
 ### 4.2.5 Tipos de Zombies
 En este juego, encontraremos 3 tipos de zombies principales y luego un mini-boss que aparecerá cada 5 rondas. Como se ha mencionado anteriormente, la vida de los zombies que se detalla a continuación es cambiante, ya que por cada ronda que el jugador sobreviva, la vida de los zombies aumentará un 10%.
 
-El modelo de zombi se compone de tres colliders principales: cabeza, cuerpo y piernas. Esta segmentación es fundamental para el sistema de daño: los disparos a la cabeza reciben una bonificación de daño, mientras que impactar en las piernas penaliza la movilidad del zombi, haciéndole ir más lento.
+El modelo de zombie se compone de tres colliders principales: cabeza, cuerpo y piernas. Esta segmentación es fundamental para el sistema de daño: los disparos a la cabeza reciben una bonificación de daño, mientras que impactar en las piernas penaliza la movilidad del zombi, haciéndole ir más lento.
 
 * **Zombie Normal:** Es el tipo de zombi más común y equilibrado. Posee 100 puntos de salud y es capaz de infligir 20 puntos de daño al jugador cada vez que logra golpearlo. Su velocidad de movimiento es estándar, lo que lo convierte en una amenaza constante, aunque predecible. Es el enemigo ideal para que los jugadores principiantes se familiaricen con las mecánicas básicas del combate.
 
