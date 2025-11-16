@@ -248,8 +248,11 @@ public class PlayerShooting : MonoBehaviour
             {
                 yield return new WaitForSeconds(timePerBullet);
                 
+                // Aplicamos la bala
                 currentAmmoInMag++;
                 totalAmmo--;
+                
+                // Actualizamos la UI inmediatamente después de cargar la bala
                 UpdateAmmoUI(); 
             }
         }
