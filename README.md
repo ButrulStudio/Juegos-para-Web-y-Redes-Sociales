@@ -354,3 +354,46 @@ En esta primera entrega me he encargado de programar los power ups, así como de
 Durante el desarrollo de esta primera versión del juego, tres integrantes del grupo se centraron principalmente en el funcionamiento del juego, encargándose de la programación, las mecánicas y el montaje de las escenas. Los otros dos miembros se enfocaron en la redacción y estructuración del GDD, asegurándose de que toda la información estuviera bien documentada y sirviera como guía para el desarrollo.
 
 La mayoría del trabajo se realizaba en llamadas por Microsoft Teams, lo que facilitaba la comunicación y permitía que todos los avances del juego quedaran correctamente reflejados en el GDD. Este método resultó muy útil para coordinar las tareas y mantener la coherencia entre las partes técnicas y de diseño del proyecto.
+
+# 10. Post Mortem - Beta
+## 10.1 Lecciones aprendidas
+El desarrollo de esta etapa centrada en el look and feel del juego nos ha brindado valiosos conocimientos, enseñándonos varios aspectos fundamentales que guiarán la siguiente fase del proyecto:
+*La Importancia del "Feedback" 
+
+** **Lección Principal: ** Hemos comprobado que el éxito de una nueva mecánica depende directamente de la calidad del feedback que recibe el jugador. 
+** **Conclusión: ** Más allá de la belleza visual, elementos como los efectos de partículas y el impacto sonoro no son adornos, sino componentes funcionales cruciales que comunican la potencia y el éxito de la acción. Priorizaremos la respuesta háptica y auditiva en todas las interacciones futuras.
+  
+*La Interfaz como Extensión del Jugador
+** **Lección Principal: ** Descubrimos que la optimización de la interfaz de usuario (UI) y la experiencia de usuario (UX) es un factor determinante para la comodidad del jugador. 
+
+**  **Conclusión: ** Un gameplay pulido puede verse arruinado por menús complejos o información mal presentada. La lección aprendida es que la interfaz debe ser invisible en el juego y clara fuera de él, actuando como una extensión natural de la voluntad del jugador, no como un obstáculo.
+
+
+## 10.2 Trabajo individual
+**Adrian**
+
+Para esta segunda entrega, me he encargado del desarrollo integral del escenario de Callao, incluyendo su modelado completo y la iluminación (luces de farola, incendios, niebla, etc.), y también he creado los modelos de las armas. En el apartado de programación, he programado las interfaces de usuario y su navegación, el guardado, menú de opciones y carga de datos, he creado animaciones como las transiciones entre pantallas y el menú de pausa, y he integrado las animaciones de los zombis junto a su sistema de daño (3 colliders para distintos efectos), además de corregir diversos bugs. Finalmente, también he añadido los sonidos en los menús y me he encargado del equilibrio del juego.
+
+
+**David**
+
+Para esta entrega me he encargado principalmente de la programación de los aspectos que terminaban por pulir del juego así como la corrección de múltiples bugs existentes, también he implementado algunos sonidos dentro del juego, algunas interfaces y los modelos de las armas.
+
+**Hugo**
+
+Para esta segunda entrega de la versión Beta del juego, me he encargado de  actualizar la documentación del juego (GDD).  Además, he trabajado en el diseño de los Power-Ups, diseño de interfaces, elementos visuales 2D y texturizado de mapa y objetos.
+
+
+**Guillermo**
+
+En esta segunda entrega del juego, me he centrado en el diseño de las distintas pantallas del proyecto y en varios elementos de la interfaz de usuario. Además, he avanzado en la búsqueda y selección de los sonidos y la música que se utilizarán en el juego.
+
+
+**Diego**
+
+En esta segunda entrega del juego, he hecho la animación de recarga de las armas, he implementado la luz ambiental nocturna y he hecho que los iconos de los power ups se muestren en la interfaz tras comprarlos, así como un mejor sistema de navegación y detección de colisiones de los zombis. También he implementado la funcionalidad de que la música se mantenga de una escena a otra y he modificado el texto de recarga de las armas.
+
+## 10.3 Trabajo colectivo
+Para esta entrega el grupo se ha dividido en dos sectores principales, Hugo, y Guillermo cubrieron todo el apartado estético y auditivo, mientras que David, Adrian y Diego se han centrado en la programación y la implementación de dicho arte.
+
+La mayor parte del trabajo se llevó a cabo mediante llamadas en Microsoft Teams. Este canal de comunicación facilitó la interacción fluida entre los miembros del equipo y aseguró que todos los avances del juego quedaran registrados de manera precisa en el Documento de Diseño del Juego (GDD). Este método demostró ser altamente eficaz para la coordinación de tareas y para mantener la coherencia entre los aspectos técnicos y de diseño del proyecto.
