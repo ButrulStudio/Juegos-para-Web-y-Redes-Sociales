@@ -294,15 +294,12 @@ Por otro lado, al presionar el botón de Pausa durante una partida, el jugador s
 
 Entre las configuraciones disponibles se incluyen:
 
-Música: Permite controlar el volumen de la música del juego.
+**Música:** Permite controlar el volumen de la música del juego.
 
-Efectos de sonido: Permite controlar el volumen de los efectos.
+**Efectos de sonido:** Permite controlar el volumen de los efectos.
 
+**Sensibilidad:** Ajusta la velocidad con la que la cámara responde al movimiento del ratón, un elemento fundamental en juegos en primera persona para garantizar una experiencia cómoda y precisa.
 
-Sensibilidad: Ajusta la velocidad con la que la cámara responde al movimiento del ratón, un elemento fundamental en juegos en primera persona para garantizar una experiencia cómoda y precisa.
-
-* **Volumen:** Permitirá controlar el volumen del juego.
-* **Sensibilidad:** Velocidad a la que la cámara responderá al movimiento del ratón, cuya personalización es clave en los videojuegos en primera persona.
 ### 7.1.3 Menú Créditos
 Un pequeño menú en el que se muestran los nombres de los principales implicados en el desarrollo del videojuego
 ### 7.1.4 Menú In-Game
