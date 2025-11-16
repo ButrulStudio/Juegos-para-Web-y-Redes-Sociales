@@ -149,7 +149,9 @@ El combate se centra en el uso de un arma de proyectiles y un sistema de salud c
 
 * Cada vez que el jugador impacta a un zombie, se genera un agujero de bala (decal) que se adhiere al cuerpo del enemigo, proporcionando una respuesta visual clara del acierto.
 ### 4.2.5 Tipos de Zombies
-En este juego, encontraremos 3 tipos de zombies principales y luego un mini-boss que aparecerá cada 5 rondas. Como se ha mencionado anteriormente, la vida de los zombies que se detalla a continuación es cambiante, ya que por cada ronda que el jugador sobreviva, la vida de los zombies aumentará un 10%:
+En este juego, encontraremos 3 tipos de zombies principales y luego un mini-boss que aparecerá cada 5 rondas. Como se ha mencionado anteriormente, la vida de los zombies que se detalla a continuación es cambiante, ya que por cada ronda que el jugador sobreviva, la vida de los zombies aumentará un 10%.
+
+El modelo de zombi se compone de tres colliders principales: cabeza, cuerpo y piernas. Esta segmentación es fundamental para el sistema de daño: los disparos a la cabeza reciben una bonificación de daño, mientras que impactar en las piernas penaliza la movilidad del zombi, haciéndole ir más lento.
 
 * **Zombie Normal:** Es el tipo de zombi más común y equilibrado. Posee 100 puntos de salud y es capaz de infligir 20 puntos de daño al jugador cada vez que logra golpearlo. Su velocidad de movimiento es estándar, lo que lo convierte en una amenaza constante, aunque predecible. Es el enemigo ideal para que los jugadores principiantes se familiaricen con las mecánicas básicas del combate.
 
@@ -157,7 +159,7 @@ En este juego, encontraremos 3 tipos de zombies principales y luego un mini-boss
 
 * **Zombie Tanque:** El zombi Tanque representa la fuerza bruta y la resistencia. Es un enemigo enorme y extremadamente lento, pero su capacidad de aguante es impresionante, con 150 puntos de salud. Además, sus ataques son devastadores, infligiendo 35 puntos de daño por golpe. Aunque su lentitud puede parecer una desventaja, su resistencia y poder destructivo lo convierten en un oponente temible, especialmente en combates prolongados o cuando aparece junto a otros tipos de zombis.
 
-* **Zombie Mini-Boss:** El mini-jefe es una versión mucho más poderosa y amenazante de los zombis comunes. Posee un tamaño considerablemente mayor, una velocidad de desplazamiento alta para su tamaño y una salud de 200 puntos, lo que lo convierte en uno de los enemigos más difíciles de derrotar. Sus ataques son tremendamente peligrosos, causando 50 puntos de daño cada vez que alcanza al jugador. Este tipo de zombi está diseñado para poner a prueba la habilidad, la estrategia y la capacidad de reacción del jugador, siendo un desafío digno de las etapas más avanzadas del juego.
+
 ### 4.2.6 Mecánicas de Enemigos e IA Básica
 Los enemigos tienen un comportamiento simple de rastreo y ataque.
 
