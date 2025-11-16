@@ -18,6 +18,7 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private Image crosshairImage;         // Imagen de la mira (crosshair)
 
     private RectTransform crosshairRectTransform;
+    private Color defaultAmmoColor;
 
     [Header("Arma actual")]
     public WeaponData currentWeapon;
@@ -66,6 +67,11 @@ public class PlayerShooting : MonoBehaviour
     void Start()
     {
         if (crosshairImage != null) crosshairRectTransform = crosshairImage.GetComponent<RectTransform>();
+
+        if (ammoText != null)
+        {
+            defaultAmmoColor = ammoText.color;
+        }
 
         if (weaponHolder != null) weaponInitialLocalPos = weaponHolder.localPosition;
         if (weaponHolder != null) weaponInitialLocalRot = weaponHolder.localEulerAngles;
@@ -204,13 +210,11 @@ public class PlayerShooting : MonoBehaviour
     {
         isReloading = true;
         PlaySound(currentWeapon.reloadSound);
-
-        if (ammoText != null) ammoText.text = "Recargando...";
-
+        
         float reloadTime = currentWeapon.reloadTime * reloadTimeMultiplier;
         float animTime = 1f / reloadAnimSpeed;
 
-        // 🔽 1. Animación: inclinar arma hacia abajo
+        // Animación: inclinar arma hacia abajo
         float t = 0;
         while (t < 1f)
         {
@@ -223,9 +227,42 @@ public class PlayerShooting : MonoBehaviour
             yield return null;
         }
 
-        // 2. Esperar la recarga (menos lo ya usado por la animación)
-        float waitTime = Mathf.Max(0, reloadTime - animTime * 2f);
-        yield return new WaitForSeconds(waitTime);
+        // Lógica de espera y llenado incremental (Solo Escopeta)
+        int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
+        int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
+        
+        // --- ELIMINADA LA DECLARACIÓN DUPLICADA DE waitTime ---
+        // float waitTime = Mathf.Max(0, reloadTime - animTime * 2f); // ESTA LÍNEA ES EL PROBLEMA
+        
+        // La declararemos y asignaremos SÓLO una vez aquí:
+        float waitTime = Mathf.Max(0, reloadTime - animTime * 2f); 
+        // --------------------------------------------------------
+
+        // --- LÓGICA DE CARGA ESPECÍFICA ---
+        if (currentWeapon.weaponType == WeaponType.Shotgun && ammoToLoad > 0)
+        {
+            // --- Carga Incremental (Solo Escopeta) ---
+            float timePerBullet = waitTime / ammoToLoad;
+
+            for (int i = 0; i < ammoToLoad; i++)
+            {
+                yield return new WaitForSeconds(timePerBullet);
+                
+                currentAmmoInMag++;
+                totalAmmo--;
+                UpdateAmmoUI(); 
+            }
+        }
+        else
+        {
+            // --- Carga Instantánea (Pistola, Rifle, Sniper) ---
+            
+            yield return new WaitForSeconds(waitTime);
+
+            currentAmmoInMag += ammoToLoad;
+            totalAmmo -= ammoToLoad;
+        }
+        // --- FIN LÓGICA DE CARGA ESPECÍFICA ---
 
         // 3. Volver a rotación original
         t = 0;
@@ -239,16 +276,14 @@ public class PlayerShooting : MonoBehaviour
             );
             yield return null;
         }
-
-        // --- Lógica original de recarga ---
-        int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
-        int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
-
-        currentAmmoInMag += ammoToLoad;
-        totalAmmo -= ammoToLoad;
-
+        
         isReloading = false;
-        UpdateAmmoUI();
+        
+        // Solo las armas sin recarga incremental necesitan la actualización final.
+        if (currentWeapon.weaponType != WeaponType.Shotgun)
+        {
+             UpdateAmmoUI();
+        }
     }
     
     // === DISPARO PRINCIPAL ===
@@ -304,7 +339,15 @@ public class PlayerShooting : MonoBehaviour
         if (currentAmmoInMag <= 0)
         {
             PlaySound(currentWeapon.emptyClipSound);
-            if (ammoText != null) ammoText.text = "R para recargar";
+            if (totalAmmo > 0)
+            {
+                if (ammoText != null)
+                {
+                    ammoText.text = "R para recargar";
+                    ammoText.color = defaultAmmoColor;
+                }
+            }
+            
             return;
         }
 
@@ -333,6 +376,16 @@ public class PlayerShooting : MonoBehaviour
             if (currentAmmoInMag <= 0)
             {
                 PlaySound(currentWeapon.emptyClipSound);
+
+                if (totalAmmo > 0)
+                {
+                    if (ammoText != null)
+                    {
+                        ammoText.text = "R para recargar";
+                        ammoText.color = defaultAmmoColor;
+                    }
+                }
+
                 break;
             }
 
@@ -360,8 +413,16 @@ public class PlayerShooting : MonoBehaviour
         if (currentAmmoInMag <= 0)
         {
             PlaySound(currentWeapon.emptyClipSound);
-            if (ammoText != null) ammoText.text = "R para recargar";
-            return;
+            if (totalAmmo > 0)
+            {
+                if (ammoText != null)
+                {
+                    ammoText.text = "R para recargar";
+                    ammoText.color = defaultAmmoColor;
+                }
+            }
+            
+            return;    
         }
 
         PlaySound(currentWeapon.shootSound);
@@ -382,12 +443,18 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentAmmoInMag <= 0)
         {
-            if (ammoText != null)
+            PlaySound(currentWeapon.emptyClipSound);
+
+            if (totalAmmo > 0)
             {
-                PlaySound(currentWeapon.emptyClipSound);
-                ammoText.text = "R para recargar";
-                yield break;
+                if (ammoText != null)
+                {
+                    ammoText.text = "R para recargar";
+                    ammoText.color = defaultAmmoColor;
+                }
             }
+            
+            yield break;
         }
 
         PlaySound(currentWeapon.shootSound);
@@ -423,12 +490,20 @@ public class PlayerShooting : MonoBehaviour
     // === DISPARO SNIPER ===
     IEnumerator ShootSniperCoroutine()
     {
-        // 1. Comprobar munición
         if (currentAmmoInMag <= 0)
         {
             PlaySound(currentWeapon.emptyClipSound); // <-- SONIDO SIN BALAS
-            if (ammoText != null) ammoText.text = "R para recargar";
-            yield break; // Termina la corrutina
+            
+            if (totalAmmo > 0)
+            {
+                if (ammoText != null)
+                {
+                    ammoText.text = "R para recargar";
+                    ammoText.color = defaultAmmoColor;
+                }
+            }
+            
+            yield break;
         }
 
         PlaySound(currentWeapon.shootSound); // <-- SONIDO DE DISPARO
@@ -604,7 +679,18 @@ public class PlayerShooting : MonoBehaviour
     private void UpdateAmmoUI()
     {
         if (ammoText != null && currentWeapon != null)
+        {
             ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
+            
+            if (currentAmmoInMag == 0 && totalAmmo == 0)
+            {
+                ammoText.color = Color.red;
+            }
+            else
+            {
+                ammoText.color = defaultAmmoColor;
+            }
+        }
     }
 
     private void UpdateCrosshair()
