@@ -10,7 +10,8 @@ public class ZombieSpawner : MonoBehaviour
 
     private int zombiesRemainingInWave;
     private float currentSpawnInterval;
-    private float zombieHpMultiplier;
+    // private float zombieHpMultiplier; // <-- CAMBIADO
+    private float zombieHpExtra;     // <-- CAMBIADO
     private float nextSpawnTime;
     private bool isSpawning = false;
 
@@ -38,15 +39,18 @@ public class ZombieSpawner : MonoBehaviour
         }
     }
 
-    public void StartWaveSpawn(int count, float interval, float hpMultiplier)
+    // --- ¡FUNCIÓN MODIFICADA! ---
+    public void StartWaveSpawn(int count, float interval, float extraHealth)
     {
         zombiesRemainingInWave = count;
         currentSpawnInterval = interval;
-        zombieHpMultiplier = hpMultiplier;
+        // zombieHpMultiplier = hpMultiplier; // <-- CAMBIADO
+        zombieHpExtra = extraHealth;     // <-- CAMBIADO
         isSpawning = true;
         nextSpawnTime = Time.time;
     }
 
+    // --- ¡FUNCIÓN MODIFICADA! ---
     private bool TrySpawnZombie()
     {
         if (spawnPoints.Length == 0 || zombieTypes.Length == 0) return false;
@@ -65,7 +69,8 @@ public class ZombieSpawner : MonoBehaviour
         if (zc != null)
         {
             zc.ApplyZombieData(chosenData);
-            zc.ApplyHealthMultiplier(zombieHpMultiplier);
+            // zc.ApplyHealthMultiplier(zombieHpMultiplier); // <-- CAMBIADO
+            zc.ApplyExtraHealth(zombieHpExtra);         // <-- CAMBIADO
         }
 
         if (waveManager != null)

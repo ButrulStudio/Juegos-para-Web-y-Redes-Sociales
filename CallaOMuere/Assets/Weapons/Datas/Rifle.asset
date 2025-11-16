@@ -16,16 +16,16 @@ MonoBehaviour:
   crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 130, y: 130}
   weaponName: Rifle
-  damage: 20
+  damage: 60
   range: 100
   fireRate: 0.2
-  price: 0
-  ammoPrice: 50
+  price: 1500
+  ammoPrice: 750
   magCapacity: 30
-  maxAmmo: 150
-  reloadTime: 2
+  maxAmmo: 180
+  reloadTime: 2.5
   isUpgraded: 0
-  upgradeCost: 0
+  upgradeCost: 4000
   weaponModelPrefab: {fileID: 8773701669380745142, guid: 34f0217aa88a1ea40a8310915be3fa20, type: 3}
   bulletHolePrefab: {fileID: 2212925028312433708, guid: edc92b779abc45d478d8dfeda3fc979a, type: 3}
   crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}
@@ -35,7 +35,7 @@ MonoBehaviour:
   pelletCount: 5
   spreadAngle: 10
   penetrationCount: 1
-  recoilVerticalMin: 0.04
+  recoilVerticalMin: 0.08
   recoilVerticalMax: 0.08
   recoilHorizontalMin: -0.04
   recoilHorizontalMax: 0.08

@@ -15,7 +15,7 @@ MonoBehaviour:
   powerUpType: 0
   powerUpName: Bocata de calamares
   description: Rellena el escudo
-  cost: 0
+  cost: 1200
   icon: {fileID: 21300000, guid: 4924c965a43b9f34bbe8082ef1465209, type: 3}
   applySound: {fileID: 8300000, guid: 7d7a1546c8527984689a32d5053ac7af, type: 3}
   armorRestore: 100

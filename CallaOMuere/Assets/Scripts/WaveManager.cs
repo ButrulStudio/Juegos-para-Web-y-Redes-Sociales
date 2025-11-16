@@ -16,8 +16,8 @@ public class WaveManager : MonoBehaviour
 
     [Header("Configuración de Zombies")]
     [SerializeField] private int initialZombieCount = 5;
-    [SerializeField][Range(1.0f, 2.0f)] private float zombieCountMultiplier = 1.05f; 
-    [SerializeField] private float baseZombieHealth = 60f; // La vida de la ronda 1
+    [SerializeField][Range(1.0f, 2.0f)] private float zombieCountMultiplier = 1.05f;
+    // [SerializeField] private float baseZombieHealth = 60f; // <-- Esta variable ya no se usa
     [SerializeField] private float healthIncreasePerWave = 30f; // Puntos de vida a añadir por ronda
 
     [Header("Referencias")]
@@ -71,6 +71,7 @@ public class WaveManager : MonoBehaviour
         }
     }
 
+    // --- ¡FUNCIÓN MODIFICADA! ---
     void StartNextWave()
     {
         // Al empezar la oleada, guarda el progreso.
@@ -90,19 +91,22 @@ public class WaveManager : MonoBehaviour
         }
         zombiesRemainingInWave = currentZombieCount; // Este es el total a spawnear
 
-        //  Calcular la vida
-        float currentHealth = baseZombieHealth + (healthIncreasePerWave * currentWaveIndex);
-        float healthMultiplier = currentHealth / baseZombieHealth;
+        // --- ¡LÓGICA DE VIDA MODIFICADA! ---
+        // Ya no calculamos un multiplicador.
+        // Calculamos cuánta vida EXTRA se debe AÑADIR.
+        // (currentWaveIndex es 0 en la Ronda 1, 1 en la Ronda 2, etc.)
+        float extraHealthToAdd = healthIncreasePerWave * currentWaveIndex;
 
         // Intervalo
         float spawnInterval = 1f;
 
-        Debug.Log($"Iniciando Oleada {currentWave}: Spawneando {zombiesRemainingInWave} zombies");
+        Debug.Log($"Iniciando Oleada {currentWave}: Spawneando {zombiesRemainingInWave} zombies con +{extraHealthToAdd} HP extra.");
 
-        zombieSpawner.StartWaveSpawn(zombiesRemainingInWave, spawnInterval, healthMultiplier);
+        // Pasamos la vida extra (extraHealthToAdd) en lugar del multiplicador
+        zombieSpawner.StartWaveSpawn(zombiesRemainingInWave, spawnInterval, extraHealthToAdd);
     }
 
- 
+
     // Llamado por ZombieController al morir.
 
     public void ZombieDied()

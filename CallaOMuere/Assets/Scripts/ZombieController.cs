@@ -39,7 +39,7 @@ public class ZombieController : MonoBehaviour
         waveManager = FindAnyObjectByType<WaveManager>();
         scoreManager = FindAnyObjectByType<ScoreManager>();
 
-        ApplyZombieData(zombieData);
+        // ApplyZombieData(zombieData); // <-- ¡LÍNEA ELIMINADA!
 
         if (zombieData != null)
         {
@@ -53,10 +53,22 @@ public class ZombieController : MonoBehaviour
         currentHp = data.maxHp;
     }
 
+    // --- ¡FUNCIÓN ELIMINADA! ---
+    /*
     public void ApplyHealthMultiplier(float multiplier)
     {
         currentHp *= multiplier;
     }
+    */
+
+    // --- ¡NUEVA FUNCIÓN AÑADIDA! ---
+    public void ApplyExtraHealth(float extraHealth)
+    {
+        // currentHp ya fue establecido por ApplyZombieData() con la vida base.
+        // Simplemente le sumamos la vida extra de la ronda.
+        currentHp += extraHealth;
+    }
+
 
     void Update()
     {

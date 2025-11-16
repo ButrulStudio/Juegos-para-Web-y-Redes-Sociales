@@ -1334,13 +1334,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76fb8beb1130dfa4895c7f22971c7951, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  timeBetweenWaves: 3
+  timeBetweenWaves: 4
   waveText: {fileID: 1108431921}
-  maxActiveZombies: 6
-  initialZombieCount: 10
-  zombieCountMultiplier: 1.05
-  baseZombieHealth: 60
-  healthIncreasePerWave: 10
+  maxActiveZombies: 60
+  initialZombieCount: 5
+  zombieCountMultiplier: 1.25
+  healthIncreasePerWave: 30
   zombieSpawner: {fileID: 864696409}
   audioSource: {fileID: 1338426845}
   waveEndSound: {fileID: 8300000, guid: 20ede244166c9a84f9ff40faa30e93b0, type: 3}
@@ -35107,7 +35106,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scoreText: {fileID: 545905240}
-  pointsPerKill: 1000
+  pointsPerKill: 150
 --- !u!4 &1725038673
 Transform:
   m_ObjectHideFlags: 0
@@ -37847,7 +37846,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3827252631700383044, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.19
+      value: 0.499
       objectReference: {fileID: 0}
     - target: {fileID: 6020118131600127513, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: recoilMultiplier
@@ -37894,7 +37893,8 @@ PrefabInstance:
       value: 0.018
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 8363207407416843288, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 2789888946692566376, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       insertIndex: -1

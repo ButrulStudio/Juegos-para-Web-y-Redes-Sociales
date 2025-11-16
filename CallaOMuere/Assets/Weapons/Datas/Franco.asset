@@ -16,16 +16,16 @@ MonoBehaviour:
   crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 15, y: 12}
   weaponName: Francotirador
-  damage: 100
+  damage: 150
   range: 100
   fireRate: 1.6
-  price: 0
-  ammoPrice: 50
+  price: 2500
+  ammoPrice: 2000
   magCapacity: 6
-  maxAmmo: 18
-  reloadTime: 3
+  maxAmmo: 24
+  reloadTime: 2.5
   isUpgraded: 0
-  upgradeCost: 0
+  upgradeCost: 4000
   weaponModelPrefab: {fileID: 8773701669380745142, guid: 307c61fc9e9b8a24fbf32d7a50cf3cbb, type: 3}
   bulletHolePrefab: {fileID: 2212925028312433708, guid: edc92b779abc45d478d8dfeda3fc979a, type: 3}
   crosshairIcon: {fileID: 21300000, guid: c1503a56258b70947befccadad6322a2, type: 3}

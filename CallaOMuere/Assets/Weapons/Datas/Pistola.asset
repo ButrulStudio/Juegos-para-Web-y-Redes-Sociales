@@ -16,16 +16,16 @@ MonoBehaviour:
   crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: Pistola
-  damage: 20
+  damage: 30
   range: 80
   fireRate: 0.1
   price: 0
-  ammoPrice: 50
+  ammoPrice: 100
   magCapacity: 15
   maxAmmo: 60
-  reloadTime: 2
+  reloadTime: 1.5
   isUpgraded: 0
-  upgradeCost: 500
+  upgradeCost: 4000
   weaponModelPrefab: {fileID: 8887860802637153673, guid: 5fd46fcbca24273418c0dc1fd87f9504, type: 3}
   bulletHolePrefab: {fileID: 2212925028312433708, guid: edc92b779abc45d478d8dfeda3fc979a, type: 3}
   crosshairIcon: {fileID: 21300000, guid: 2a8383cfd7bf6b448aecea15d112b419, type: 3}
