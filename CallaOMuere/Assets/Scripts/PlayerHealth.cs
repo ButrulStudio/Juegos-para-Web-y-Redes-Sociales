@@ -20,6 +20,12 @@ public class PlayerHealth : MonoBehaviour
 
     private float lastDamageTime;
 
+    [Header("Sonido de Daño")]
+    [Tooltip("El AudioSource para los sonidos de dolor/daño del jugador.")]
+    [SerializeField] private AudioSource audioSource;
+    [Tooltip("Sonidos que suenan aleatoriamente cuando el jugador recibe daño.")]
+    [SerializeField] private AudioClip[] damageSounds;
+
     void Start()
     {
         currentHealth = maxHealth;
@@ -64,6 +70,8 @@ public class PlayerHealth : MonoBehaviour
     {
         // El jugador no puede recibir dao si el juego est pausado (Time.timeScale = 0)
         if (Time.timeScale == 0) return;
+
+        PlayRandomDamageSound();
 
         float damageRemaining = amount;
 
@@ -138,5 +146,21 @@ public class PlayerHealth : MonoBehaviour
         // Actualiza los sliders inmediatamente
         if (healthSlider != null) healthSlider.value = currentHealth;
         if (armorSlider != null) armorSlider.value = currentArmor;
+    }
+
+    private void PlayRandomDamageSound()
+    {
+        if (audioSource != null && damageSounds != null && damageSounds.Length > 0)
+        {
+            // Elige un clip aleatorio del array
+            int index = Random.Range(0, damageSounds.Length);
+            AudioClip clip = damageSounds[index];
+
+            // Reproduce ese clip
+            if (clip != null)
+            {
+                audioSource.PlayOneShot(clip);
+            }
+        }
     }
 }

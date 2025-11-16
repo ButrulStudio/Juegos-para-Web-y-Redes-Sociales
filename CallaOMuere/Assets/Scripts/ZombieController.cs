@@ -3,13 +3,26 @@ using System.Collections;
 
 public class ZombieController : MonoBehaviour
 {
+    [Header("Sonidos de Ambiente")]
+    [Tooltip("El AudioSource para los gruñidos del zombi.")]
+    [SerializeField] private AudioSource audioSource;
+    [Tooltip("Gruñidos aleatorios que el zombi emite.")]
+    [SerializeField] private AudioClip[] ambientSounds;
+    [Tooltip("Tiempo mínimo (en segundos) entre gruñidos.")]
+    [SerializeField] private float minTimeBetweenSounds = 4.0f;
+    [Tooltip("Tiempo máximo (en segundos) entre gruñidos.")]
+    [SerializeField] private float maxTimeBetweenSounds = 8.0f;
+
+    [Tooltip("Gruñidos aleatorios que el zombi emite al atacar.")]
+    [SerializeField] private AudioClip[] attackSounds;
+
     [Header("Datos del zombi")]
     [SerializeField] private ZombieData zombieData;
 
-    // ¡NUEVA VARIABLE!
+    
     [Header("Ajustes de Combate")]
     [Tooltip("La velocidad a la que se moverá el zombi si le disparan en la pierna.")]
-    [SerializeField] private float crippledSpeed = 1.5f; // Puedes cambiar este valor en el Inspector
+    [SerializeField] private float crippledSpeed = 1.5f; 
 
     private CharacterController zombie;
     private Transform player;
@@ -39,12 +52,14 @@ public class ZombieController : MonoBehaviour
         waveManager = FindAnyObjectByType<WaveManager>();
         scoreManager = FindAnyObjectByType<ScoreManager>();
 
-        // ApplyZombieData(zombieData); // <-- ¡LÍNEA ELIMINADA!
+        
 
         if (zombieData != null)
         {
             currentSpeed = zombieData.speed;
         }
+
+        StartCoroutine(AmbientSoundRoutine());
     }
 
     public void ApplyZombieData(ZombieData data)
@@ -53,19 +68,8 @@ public class ZombieController : MonoBehaviour
         currentHp = data.maxHp;
     }
 
-    // --- ¡FUNCIÓN ELIMINADA! ---
-    /*
-    public void ApplyHealthMultiplier(float multiplier)
-    {
-        currentHp *= multiplier;
-    }
-    */
-
-    // --- ¡NUEVA FUNCIÓN AÑADIDA! ---
     public void ApplyExtraHealth(float extraHealth)
     {
-        // currentHp ya fue establecido por ApplyZombieData() con la vida base.
-        // Simplemente le sumamos la vida extra de la ronda.
         currentHp += extraHealth;
     }
 
@@ -189,6 +193,19 @@ public class ZombieController : MonoBehaviour
 
         animator.SetTrigger("Attack");
 
+        if (audioSource != null && attackSounds != null && attackSounds.Length > 0)
+        {
+            
+            int index = Random.Range(0, attackSounds.Length);
+            AudioClip clip = attackSounds[index];
+
+            
+            if (clip != null)
+            {
+                audioSource.PlayOneShot(clip);
+            }
+        }
+
         yield return new WaitForSeconds(0.9f);
 
         if (Vector3.Distance(transform.position, player.position) <= zombieData.attackRange)
@@ -216,30 +233,30 @@ public class ZombieController : MonoBehaviour
         TakeDamage(amount, EHitboxType.Body);
     }
 
-    // --- ¡FUNCIÓN DE DAÑO MODIFICADA! ---
+    
     public void TakeDamage(float amount, EHitboxType partHit)
     {
         if (isDead) return;
 
-        // 'amount' ya es el daño del arma (con multiplicadores de power-up si los hay)
+        
         float finalDamage = amount;
 
         switch (partHit)
         {
-            // ¡LÓGICA DE DAÑO X2!
+            
             case EHitboxType.Head:
-                finalDamage *= 2.0f; // Duplica el daño recibido
+                finalDamage *= 2.0f; 
                 Debug.Log($"¡Disparo a la cabeza! Daño total: {finalDamage}");
                 break;
 
-            // ¡LÓGICA DE RALENTIZACIÓN!
+            
             case EHitboxType.Legs:
-                finalDamage = amount; // Daño normal
+                finalDamage = amount; 
 
                 if (!isCrippled)
                 {
                     isCrippled = true;
-                    // Asigna la velocidad pública que definiste en el Inspector
+                    
                     currentSpeed = crippledSpeed;
                     Debug.Log($"¡Pierna herida! Zombie ralentizado a {crippledSpeed}");
                 }
@@ -247,7 +264,7 @@ public class ZombieController : MonoBehaviour
 
             case EHitboxType.Body:
             default:
-                finalDamage = amount; // Daño normal
+                finalDamage = amount; 
                 break;
         }
 
@@ -263,6 +280,8 @@ public class ZombieController : MonoBehaviour
     {
         isDead = true;
         animator.SetTrigger("Die");
+
+        StopAllCoroutines();
 
         CapsuleCollider capsule = GetComponent<CapsuleCollider>();
         if (capsule != null)
@@ -281,5 +300,30 @@ public class ZombieController : MonoBehaviour
     public float GetHP()
     {
         return currentHp;
+    }
+
+    private IEnumerator AmbientSoundRoutine()
+    {
+        
+        while (!isDead)
+        {
+            
+            float waitTime = Random.Range(minTimeBetweenSounds, maxTimeBetweenSounds);
+            yield return new WaitForSeconds(waitTime);
+
+            
+            if (audioSource != null && ambientSounds != null && ambientSounds.Length > 0)
+            {
+                
+                int index = Random.Range(0, ambientSounds.Length);
+                AudioClip clip = ambientSounds[index];
+
+                // 4. Lo reproduce
+                if (clip != null)
+                {
+                    audioSource.PlayOneShot(clip);
+                }
+            }
+        }
     }
 }
