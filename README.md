@@ -266,14 +266,11 @@ El diseño sonoro actúa como una herramienta fundamental para darle vida al vid
 # 7. Interfaces
 ## 7.1 Diseños básicos
 ### 7.1.1 Menú Principal
-Logo del Juego: Ubicado en la esquina superior izquierda, es un logo robusto , con el detalle de arañazos de zombie en el fondo.
-Botones de Navegación: Los elementos interactivos ("JUGAR", "CRÉDITOS", "OPCIONES") están presentados como tablones de madera desgastada, rotos y atravesados por lo que parecen ser balas o grapas.
+Logo del Juego: Ubicado en la esquina inferior izquierda, es un logo robusto , con el detalle de arañazos de zombie en el fondo.
+Botones de Navegación: Los elementos interactivos ("JUGAR", "CRÉDITOS", "OPCIONES" y “TIENDA”) están presentados como señales de tráfico de direcciones típicos de la Comunidad de Madrid.
+La tipografía de los botones es en mayúsculas, clara y con un color que contrasta bien (Blanca) con el verde de la señal y las marcas de suciedad y desgaste.
+El diseño de los botones está ligeramente inclinado, dándole un toque más dinámico que una UI tradicional.
 
-* La tipografía de los botones es en mayúsculas, clara y con un color que contrasta bien (un rojo-marrón) con el color de la madera y el fondo oscuro.
-  
-* El diseño de los botones está ligeramente inclinado, dándole un toque más dinámico que una UI tradicional.
-  
-Créditos de "BUTRUL STUDIO" que se ubica en la esquina inferior derecha.
 ### 7.1.2 Menú Pausa/Opciones
 Al personal el boton de opciones, o el botón de pausa desde dentro del juego se  redirigirá al jugador a el menú de pausa, en el cual se mostrarán diversas opciones y configuraciones que se podrán modificar para adaptar la experiencia de juego a las comodidades de cada jugador
 
@@ -286,11 +283,25 @@ Dentro del juego se apreciará una interfaz sencilla, sin demasiados elementos i
 
 * **Arma/Mirilla:** El arma se situará en la esquina inferior derecha de la pantalla y contará con una mirilla propia de cada arma en el centro de la pantalla.
 * **Munición:** El indicador de munición estará en la esquina inferior derecha de la pantalla.
-* **Vida/Escudo:** Indicador de la salud del jugador y de su escudo actual, situados en la esquina superior izquierda.
-* **Ronda:** las rondas, indicadas en rojo, mostraran cuantas oleadas de zombies ha eliminado el jugador.
-* **Puntuación:** Los zombies otorgarán puntos al ser eliminados, mostrados en la parte media del lado izquierdo de la pantalla.
+* **Vida/Escudo:** Indicador de la salud del jugador y de su escudo actual, situados en la esquina inferior izquierda, con una foto de este.
+* **Ronda:** las rondas, indicadas en en color blanco sobre una mancha roja, mostraran cuantas oleadas de zombies ha eliminado el jugador.
+* **Puntuación:** Los zombies otorgarán puntos al ser eliminados, mostrados en la parte media del lado izquierdo de la pantalla junto a la información del personaje.
+### 7.1.5 Pantalla de Tienda
+La tienda está representada por un kiosko, la cual se divide en 3 zonas:
+
+* Zona de comprar skins del personaje, en la parte izquierda.
+* Zona de comprar nuevos mapas, en la parte central.
+* Zona de comprar skins de armas, en la parte derecha.
+
+### 7.1.6 Pantalla de elección de mapas
+Se nos presentan los 3 mapas a elegir en forma de parodia de portadas de revistas madrileñas, al seleccionar alguno de ellos aparecerá una versión más grande y detallada, dejando ver el mapa.
+
 ## 7.2 Diagrama de flujo
-Este diagrama de flujo muestra cómo se organiza la navegación de ZPain. El jugador empieza en el Menú de Inicio, donde puede elegir entre comenzar una partida (IN GAME), entrar en Opciones para ajustar la configuración del juego, o visitar los Créditos para ver quiénes participaron en su desarrollo. Durante la partida, el jugador también puede volver al menú o acceder a las opciones si necesita modificar algo sin salir del juego. De esta forma, el flujo refleja una estructura sencilla y cómoda que facilita moverse entre las diferentes partes del juego sin romper la experiencia del jugador.
+Este diagrama de flujo muestra cómo se organiza la navegación de ZPain. El jugador comienza en el Menú Principal (o Menú de Inicio), desde donde puede elegir entre comenzar una partida ($IN\ GAME$), acceder a Opciones para ajustar la configuración del juego, consultar los Créditos para ver a los participantes en su desarrollo y visitar la Tienda para comprar aspectos, armas y nuevos mapas.
+Previo al inicio de la partida, el jugador puede elegir el mapa que desea jugar; al seleccionar alguno de ellos, se mostrará una versión más grande y detallada que permite su visualización completa.
+Durante la partida, el jugador puede pausar el juego y acceder al Menú de Pausa, donde se incluyen las Opciones si necesita modificar la configuración sin salir del juego. Desde este menú pausa, también puede volver al Menú Principal.
+De esta forma, el flujo refleja una estructura sencilla y cómoda que facilita la navegación entre las diferentes partes del juego sin interrumpir la experiencia del jugador.
+
 # 8. Hoja de ruta del desarrollo
 ## 8.1 Hito 1- Diseño conceptual y prototipo básico
 Este hito inicial marca las bases del desarrollo del juego, centrándose en la definición del concepto del juego. El equipo se encargará de completar la documentación, es decir, redactarán el GDD con todas las especificaciones de arte y de gameplay. Además, la actividad principal es crear un prototipo que muestre las mecánicas fundamentales. El objetivo es definir las necesidades del proyecto para así poder planificar y crear un prototipo que muestre la idea inicial del juego.
