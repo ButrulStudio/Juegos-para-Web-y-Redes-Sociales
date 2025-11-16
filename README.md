@@ -256,15 +256,29 @@ Todos los archivos visuales se mantendrán dentro del marco Low Poly para asegur
 
 **Diseño de personajes:** los modelos de los infectados tendrán un diseño sencillo con siluetas exageradas y expresivas. Esto no solo facilita la rápida identificación de las diferentes clases de Zombies especiales durante el combate, sino que también refuerza el tono cartoon, contrastando con la seriedad de la situación.
 ## 6.3 Música
-La banda sonora refuerza la atmósfera de terror, tensión y acción frenética mediante una mezcla musical de Horror Industrial y elementos melódicos españoles. Esta combinación le otorga al juego una identidad sonora diferencial. 
+En cuanto al apartado musical, hemos seleccionado temas que refuercen la ambientación de cada sección del juego. 
 
-La música del juego está compuesta por instrumentos típicos de España, como la guitarra flamenca, castañuelas y percusión tradicional. 
+Para los menús, hemos implementado una canción de estilo heavy metal que transmite energía y dinamismo desde el primer momento. 
 
-* **Música de Menú y Fondo:** El juego utiliza composiciones tranquilas y melancólicas cuando el jugador está en los menús. Esta música es más lenta y crea una sensación de miedo e incertidumbre general.
+En la tienda, la música adopta un tono jazz más relajado, simulando que es el propio vendedor del kiosco quien la está escuchando, lo que aporta personalidad y coherencia al entorno. 
 
-* **Música de Partida:** Los ritmos se disparan con percusión industrial y ritmos rápidos de guitarra flamenca cuando comienza una partida. Esta música es rápida y tiene la función de aumentar la adrenalina y la acción frenética durante el combate.
+Por último, la música de partida presenta un estilo menos movido que el de los menús, pero funciona a la perfección para crear una atmósfera de tensión y un tono apocalíptico acorde con la experiencia de juego.
+
 ## 6.4 Ambiente sonoro
-El diseño sonoro actúa como una herramienta fundamental para darle vida al videojuego. Los sonidos de los infectados, como sus gruñidos y pasos. Gracias a esto el jugador puede localizar la ubicación de los enemigos. Además, cada arma cuenta con un sonido característico que permite diferenciar su tipo y calibre, ayudando al jugador a identificar rápidamente qué arma está utilizando. Finalmente, cada vez que el jugador logra puntos o realiza una compra en la tienda,  el juego recompensa de forma audible con sonidos distintivos, reforzando el progreso y la acción de forma inmersiva. 
+En el apartado de ambiente sonoro, se ha realizado una búsqueda exhaustiva de efectos que permitan reforzar la atmósfera del juego y acompañar correctamente cada una de las acciones del jugador. Dado que se trata de un título ambientado en un mundo infestado de zombis, el sonido cumple un papel fundamental en la construcción de la tensión y del tono general de la experiencia.
+
+En primer lugar, se han recopilado sonidos asociados al personaje principal, especialmente aquellos relacionados con el daño que recibe. Estos efectos ayudan a transmitir al jugador la gravedad de cada impacto y aportan claridad en situaciones de combate, donde la retroalimentación auditiva es esencial para reaccionar con rapidez.
+
+También se ha trabajado en los sonidos de los zombis, buscando diferentes tipos de gruñidos, chillidos y movimientos que refuercen su presencia y generen un ambiente inquietante. Estos efectos permiten que el jugador pueda identificar amenazas cercanas incluso sin verlas, añadiendo tensión y profundidad al escenario.
+
+Por otro lado, se han añadido efectos para los power ups. A esto se suman los sonidos de todas las armas del juego, desde disparos hasta recargas, lo que contribuye a que cada arma tenga su propia identidad sonora y se sienta más consistente durante el juego.
+
+Además, se han incorporado sonidos adicionales para botones e interfaces, con el objetivo de mejorar la interacción del usuario y hacer que los menús resulten más intuitivos y agradables de utilizar. Este tipo de efectos, aunque más sutiles, son clave para ofrecer una experiencia más pulida y profesional.
+
+Finalmente, todos los efectos utilizados han sido obtenidos de un banco gratuito de sonidos.
+
+https://pixabay.com/es/
+
 # 7. Interfaces
 ## 7.1 Diseños básicos
 ### 7.1.1 Menú Principal
