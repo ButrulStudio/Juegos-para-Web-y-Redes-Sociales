@@ -61,6 +61,12 @@ public class PlayerShooting : MonoBehaviour
 
     private Vector3 weaponInitialLocalRot;
 
+    // --- NUEVO PARA UI DE RECARGA RÁPIDA DE ESCOPETA ---
+    [Header("Ajuste de UI")]
+    [Tooltip("Factor para acelerar el llenado de munición en la UI de la escopeta. 1.0 = igual que el tiempo real. 1.25 = 25% más rápido.")]
+    [SerializeField] private float shotgunUIReloadSpeedFactor = 1.25f;
+    // ----------------------------------------------------
+
     //======AUDIO=======
     [SerializeField] private AudioSource audioSource;
 
@@ -104,6 +110,12 @@ public class PlayerShooting : MonoBehaviour
 
     void Update()
     {
+        // --- ¡FUSIÓN! Verificación de pausa ---
+        // Asumiendo que tienes un script GameManager con estas banderas.
+        if (GameManager.IsPaused || GameManager.GameIsOver)
+            return;
+        // -----------------
+
         if (isReloading) return;
 
         HandleShooting();
@@ -112,7 +124,7 @@ public class PlayerShooting : MonoBehaviour
         HandleAiming();
 
         // Movimiento de retorno del arma
-        if (weaponHolder != null && currentWeapon != null) // Añadida comprobación de currentWeapon
+        if (weaponHolder != null && currentWeapon != null) 
         {
             weaponCurrentOffset = Vector3.Lerp(
                 weaponCurrentOffset,
@@ -151,7 +163,7 @@ public class PlayerShooting : MonoBehaviour
         {
             if (crosshairRectTransform != null)
             {
-                
+
                 crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
                 crosshairRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
                 crosshairRectTransform.pivot = new Vector2(0.5f, 0.5f);
@@ -206,15 +218,16 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
+    // --- CORRUTINA DE RECARGA CON AJUSTE DE UI RÁPIDA ---
     IEnumerator ReloadCoroutine()
     {
         isReloading = true;
         PlaySound(currentWeapon.reloadSound);
-        
+
         float reloadTime = currentWeapon.reloadTime * reloadTimeMultiplier;
         float animTime = 1f / reloadAnimSpeed;
 
-        // Animación: inclinar arma hacia abajo
+        // 1. Animación: inclinar arma hacia abajo
         float t = 0;
         while (t < 1f)
         {
@@ -230,37 +243,49 @@ public class PlayerShooting : MonoBehaviour
         // Lógica de espera y llenado incremental (Solo Escopeta)
         int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
         int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
-        
-        // --- ELIMINADA LA DECLARACIÓN DUPLICADA DE waitTime ---
-        // float waitTime = Mathf.Max(0, reloadTime - animTime * 2f); // ESTA LÍNEA ES EL PROBLEMA
-        
-        // La declararemos y asignaremos SÓLO una vez aquí:
-        float waitTime = Mathf.Max(0, reloadTime - animTime * 2f); 
-        // --------------------------------------------------------
+
+        // Tiempo total que el arma debe esperar físicamente entre animaciones
+        float actualWeaponWaitTime = Mathf.Max(0, reloadTime - animTime * 2f);
 
         // --- LÓGICA DE CARGA ESPECÍFICA ---
         if (currentWeapon.weaponType == WeaponType.Shotgun && ammoToLoad > 0)
         {
             // --- Carga Incremental (Solo Escopeta) ---
-            float timePerBullet = waitTime / ammoToLoad;
 
+            // 1. Calcular la duración que la UI tardará en llenarse (aplicando el factor de velocidad)
+            float uiFillDuration = actualWeaponWaitTime / shotgunUIReloadSpeedFactor;
+            
+            // Aseguramos que la duración sea mínima 0 y que no dividamos por cero
+            if (uiFillDuration < 0) uiFillDuration = 0;
+
+            // 2. Calcular el tiempo por bala usando la duración de la UI
+            float timePerBullet = (uiFillDuration > 0 && ammoToLoad > 0) ? uiFillDuration / ammoToLoad : 0;
+
+            // 3. Ejecutar el bucle de llenado de la UI (empieza y acaba antes)
             for (int i = 0; i < ammoToLoad; i++)
             {
-                yield return new WaitForSeconds(timePerBullet);
-                
-                // Aplicamos la bala
+                // Solo espera si el tiempo por bala es mayor que 0
+                if (timePerBullet > 0)
+                    yield return new WaitForSeconds(timePerBullet);
+
                 currentAmmoInMag++;
                 totalAmmo--;
-                
-                // Actualizamos la UI inmediatamente después de cargar la bala
-                UpdateAmmoUI(); 
+                UpdateAmmoUI();
+            }
+
+            // 4. Esperar el tiempo restante para que la animación del arma sea coherente con reloadTime
+            float timeRemaining = actualWeaponWaitTime - uiFillDuration;
+
+            if (timeRemaining > 0)
+            {
+                 yield return new WaitForSeconds(timeRemaining); // Espera el resto del tiempo de recarga
             }
         }
         else
         {
             // --- Carga Instantánea (Pistola, Rifle, Sniper) ---
-            
-            yield return new WaitForSeconds(waitTime);
+            if (actualWeaponWaitTime > 0)
+                yield return new WaitForSeconds(actualWeaponWaitTime);
 
             currentAmmoInMag += ammoToLoad;
             totalAmmo -= ammoToLoad;
@@ -279,16 +304,16 @@ public class PlayerShooting : MonoBehaviour
             );
             yield return null;
         }
-        
+
         isReloading = false;
-        
+
         // Solo las armas sin recarga incremental necesitan la actualización final.
         if (currentWeapon.weaponType != WeaponType.Shotgun)
         {
-             UpdateAmmoUI();
+            UpdateAmmoUI();
         }
     }
-    
+
     // === DISPARO PRINCIPAL ===
     void HandleShooting()
     {
@@ -320,7 +345,7 @@ public class PlayerShooting : MonoBehaviour
                 if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    
+
                     StartCoroutine(ShootShotgunCoroutine());
                 }
                 break;
@@ -328,13 +353,13 @@ public class PlayerShooting : MonoBehaviour
                 if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime && !isBursting)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    
+
                     StartCoroutine(ShootSniperCoroutine());
                 }
                 break;
         }
     }
-    
+
 
     // === DISPARO PISTOLA ===
     void Shoot()
@@ -350,7 +375,7 @@ public class PlayerShooting : MonoBehaviour
                     ammoText.color = defaultAmmoColor;
                 }
             }
-            
+
             return;
         }
 
@@ -424,8 +449,8 @@ public class PlayerShooting : MonoBehaviour
                     ammoText.color = defaultAmmoColor;
                 }
             }
-            
-            return;    
+
+            return;
         }
 
         PlaySound(currentWeapon.shootSound);
@@ -456,7 +481,7 @@ public class PlayerShooting : MonoBehaviour
                     ammoText.color = defaultAmmoColor;
                 }
             }
-            
+
             yield break;
         }
 
@@ -496,7 +521,7 @@ public class PlayerShooting : MonoBehaviour
         if (currentAmmoInMag <= 0)
         {
             PlaySound(currentWeapon.emptyClipSound); // <-- SONIDO SIN BALAS
-            
+
             if (totalAmmo > 0)
             {
                 if (ammoText != null)
@@ -505,7 +530,7 @@ public class PlayerShooting : MonoBehaviour
                     ammoText.color = defaultAmmoColor;
                 }
             }
-            
+
             yield break;
         }
 
@@ -532,7 +557,19 @@ public class PlayerShooting : MonoBehaviour
             foreach (var hit in sortedHits)
             {
                 // Obtenemos el componente de salud ANTES de llamar a HandleHit
-                ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
+                // ¡FUSIÓN! Buscamos la Hitbox primero
+                ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
+                ZombieController zombieHealth = null;
+
+                // Intentamos obtener el ZombieController (ya sea por la hitbox o directo)
+                if (hitbox != null)
+                {
+                    zombieHealth = hitbox.zombieController;
+                }
+                else
+                {
+                    zombieHealth = hit.collider.GetComponent<ZombieController>();
+                }
 
                 // ¿Es un zombie?
                 if (zombieHealth != null)
@@ -542,7 +579,7 @@ public class PlayerShooting : MonoBehaviour
                     {
                         // ¡Es un objetivo nuevo!
                         // 1. Llama a HandleHit para aplicar daño y efectos de agujero
-                        HandleHit(hit, currentWeapon.damage * damageMultiplier);
+                        HandleHit(hit, currentWeapon.damage * damageMultiplier); 
 
                         // 2. Añádelo al Set para no volver a golpearlo
                         alreadyDamaged.Add(zombieHealth);
@@ -560,17 +597,17 @@ public class PlayerShooting : MonoBehaviour
                 }
                 else
                 {
-                    // No es un zombie 
+                    // No es un zombie (es pared o entorno)
                     // Llama a HandleHit para poner el agujero de bala
-                    HandleHit(hit, currentWeapon.damage * damageMultiplier);
+                    HandleHit(hit, currentWeapon.damage * damageMultiplier); 
 
+                    // Si quieres que las balas no atraviesen paredes, descomenta esto:
                     // break; 
                 }
             }
         }
 
         // --- NUEVA LÓGICA DE SONIDO DE ACCIÓN ---
-        // Esto se ejecutará siempre después del disparo (haya acertado o no)
         if (currentWeapon.boltActionSound != null)
         {
             // Espera el delay definido en el WeaponData
@@ -579,19 +616,48 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // === GESTIÓN DE IMPACTOS ===
+    // === GESTIÓN DE IMPACTOS (¡MODIFICADO!) ===
     void HandleHit(RaycastHit hit, float damage)
     {
-        ZombieController zombieHealth = hit.collider.GetComponent<ZombieController>();
+        // 1. Intentamos encontrar el nuevo script ZombieHitbox
+        ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
+        ZombieController zombieHealth = null;
+
+        if (hitbox != null)
+        {
+            // 2. ¡Éxito! El golpe fue en una hitbox.
+            // Obtenemos el controlador principal desde la hitbox
+            zombieHealth = hitbox.zombieController;
+
+            if (zombieHealth != null)
+            {
+                // 3. Llamamos a la NUEVA función TakeDamage, pasando el tipo de hitbox
+                zombieHealth.TakeDamage(damage, hitbox.hitboxType);
+            }
+        }
+        else
+        {
+            // 4. FALLBACK: Si no golpeamos una hitbox (o es un colisionador directo)
+            // Intentamos el método antiguo
+            zombieHealth = hit.collider.GetComponent<ZombieController>();
+            if (zombieHealth != null)
+            {
+                // 5. Llamamos a la función de daño antigua (que ahora asume daño al "Body" si no hay Hitbox)
+                // Nota: Asume que TakeDamage(float damage) en ZombieController aplica daño estándar (Cuerpo).
+                zombieHealth.TakeDamage(damage);
+            }
+        }
+
+        // --- El resto de tu lógica (logs, agujeros de bala) ---
 
         if (zombieHealth != null)
         {
-            zombieHealth.TakeDamage(damage);
             float remainingHealth = zombieHealth.GetHP();
             Debug.Log($"El Zombie {hit.collider.name} ha recibido {damage} de daño y le quedan {remainingHealth:F1} de vida.");
         }
 
-        if (hit.collider.CompareTag("Zombie") && currentWeapon.bulletHolePrefab != null)
+        // Lógica de agujeros de bala (sin cambios)
+        if (currentWeapon.bulletHolePrefab != null)
         {
             Quaternion hitRotation = Quaternion.FromToRotation(Vector3.forward, hit.normal) * Quaternion.Euler(0, 180f, 0);
             GameObject hole = Instantiate(currentWeapon.bulletHolePrefab,
@@ -607,6 +673,7 @@ public class PlayerShooting : MonoBehaviour
             Destroy(hole, 5f);
         }
     }
+
 
     // === CAMBIO DE ARMA ===
     public void EquipWeapon(WeaponData weaponData)
@@ -684,7 +751,7 @@ public class PlayerShooting : MonoBehaviour
         if (ammoText != null && currentWeapon != null)
         {
             ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
-            
+
             if (currentAmmoInMag == 0 && totalAmmo == 0)
             {
                 ammoText.color = Color.red;
@@ -739,6 +806,7 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentWeapon != null)
         {
+            // Asegúrate de que las claves existen antes de asignar
             ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
             totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
         }
