@@ -360,13 +360,13 @@ La mayoría del trabajo se realizaba en llamadas por Microsoft Teams, lo que fac
 El desarrollo de esta etapa centrada en el look and feel del juego nos ha brindado valiosos conocimientos, enseñándonos varios aspectos fundamentales que guiarán la siguiente fase del proyecto:
 *La Importancia del "Feedback" 
 
-** **Lección Principal: ** Hemos comprobado que el éxito de una nueva mecánica depende directamente de la calidad del feedback que recibe el jugador. 
-** **Conclusión: ** Más allá de la belleza visual, elementos como los efectos de partículas y el impacto sonoro no son adornos, sino componentes funcionales cruciales que comunican la potencia y el éxito de la acción. Priorizaremos la respuesta háptica y auditiva en todas las interacciones futuras.
+ **Lección Principal:** Hemos comprobado que el éxito de una nueva mecánica depende directamente de la calidad del feedback que recibe el jugador. 
+ **Conclusión:** Más allá de la belleza visual, elementos como los efectos de partículas y el impacto sonoro no son adornos, sino componentes funcionales cruciales que comunican la potencia y el éxito de la acción. Priorizaremos la respuesta háptica y auditiva en todas las interacciones futuras.
   
 *La Interfaz como Extensión del Jugador
-** **Lección Principal: ** Descubrimos que la optimización de la interfaz de usuario (UI) y la experiencia de usuario (UX) es un factor determinante para la comodidad del jugador. 
+ **Lección Principal:** Descubrimos que la optimización de la interfaz de usuario (UI) y la experiencia de usuario (UX) es un factor determinante para la comodidad del jugador. 
 
-**  **Conclusión: ** Un gameplay pulido puede verse arruinado por menús complejos o información mal presentada. La lección aprendida es que la interfaz debe ser invisible en el juego y clara fuera de él, actuando como una extensión natural de la voluntad del jugador, no como un obstáculo.
+ **Conclusión:** Un gameplay pulido puede verse arruinado por menús complejos o información mal presentada. La lección aprendida es que la interfaz debe ser invisible en el juego y clara fuera de él, actuando como una extensión natural de la voluntad del jugador, no como un obstáculo.
 
 
 ## 10.2 Trabajo individual
