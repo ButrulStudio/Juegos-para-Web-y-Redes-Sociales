@@ -189,7 +189,7 @@ public class ZombieController : MonoBehaviour
             if (ph != null) ph.TakeDamage(zombieData.damage);
         }
         
-        float animationTime = 1.2f; // <-- REEMPLAZA ESTE VALOR con la duración real de tu animación.
+        float animationTime = 2.3f; // <-- REEMPLAZA ESTE VALOR con la duración real de tu animación.
         float waitAfterHitPoint = animationTime - 0.9f; // Tiempo restante de la animación
 
         // Esperar el resto de la animación
