@@ -378,7 +378,7 @@ La Interfaz como Extensión del Jugador
 ## 10.2 Trabajo individual
 **Adrian**
 
-Para esta segunda entrega, me he encargado del desarrollo integral del escenario de Callao, incluyendo su modelado completo y la iluminación (luces de farola, incendios, niebla, etc.), y también he creado los modelos de las armas. En el apartado de programación, he programado las interfaces de usuario y su navegación, el guardado, menú de opciones y carga de datos, he creado animaciones como las transiciones entre pantallas y el menú de pausa, y he integrado las animaciones de los zombis junto a su sistema de daño (3 colliders para distintos efectos), además de corregir diversos bugs. Finalmente, también he añadido los sonidos en los menús y me he encargado del equilibrio del juego.
+Para esta segunda entrega, me he encargado del desarrollo integral del escenario de Callao, incluyendo su modelado completo y la iluminación (luces de farola, incendios, niebla, etc.), y también he creado los modelos de las armas. En el apartado de programación, he programado las interfaces de usuario y su navegación, el guardado, menú de opciones y carga de datos, he creado animaciones como las transiciones entre pantallas y el menú de pausa, y he integrado las animaciones de los zombies junto a su sistema de daño (3 colliders para distintos efectos), además de corregir diversos bugs. Finalmente, también he añadido los sonidos en los menús y me he encargado del equilibrio del juego.
 
 
 **David**
@@ -397,7 +397,7 @@ En esta segunda entrega del juego, me he centrado en el diseño de las distintas
 
 **Diego**
 
-En esta segunda entrega del juego, he hecho la animación de recarga de las armas, he implementado la luz ambiental nocturna y he hecho que los iconos de los power ups se muestren en la interfaz tras comprarlos, así como un mejor sistema de navegación y detección de colisiones de los zombis. También he implementado la funcionalidad de que la música se mantenga de una escena a otra y he modificado el texto de recarga de las armas.
+En esta segunda entrega del juego, he hecho la animación de recarga de las armas, he implementado la luz ambiental nocturna y he hecho que los iconos de los power ups se muestren en la interfaz tras comprarlos, así como un mejor sistema de navegación y detección de colisiones de los zombies. También he implementado la funcionalidad de que la música se mantenga de una escena a otra y he modificado el texto de recarga de las armas.
 
 ## 10.3 Trabajo colectivo
 Para esta entrega el grupo se ha dividido en dos sectores principales, Hugo, y Guillermo cubrieron todo el apartado estético y auditivo, mientras que David, Adrian y Diego se han centrado en la programación y la implementación de dicho arte.
