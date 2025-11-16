@@ -288,7 +288,18 @@ La tipografía de los botones es en mayúsculas, clara y con un color que contra
 El diseño de los botones está ligeramente inclinado, dándole un toque más dinámico que una UI tradicional.
 
 ### 7.1.2 Menú Pausa/Opciones
-Al personal el boton de opciones, o el botón de pausa desde dentro del juego se  redirigirá al jugador a el menú de pausa, en el cual se mostrarán diversas opciones y configuraciones que se podrán modificar para adaptar la experiencia de juego a las comodidades de cada jugador
+Al pulsar el botón de Opciones desde el menú principal, el jugador podrá acceder directamente al menú de configuración general del juego. Desde allí se pueden ajustar distintos parámetros para adaptar la experiencia a las preferencias de cada usuario.
+
+Por otro lado, al presionar el botón de Pausa durante una partida, el jugador será redirigido a un menú específico dentro del propio juego, con una apariencia similar a la de un menú de dispositivo móvil. Este menú permite realizar ajustes rápidos sin abandonar la sesión activa.
+
+Entre las configuraciones disponibles se incluyen:
+
+Música: Permite controlar el volumen de la música del juego.
+
+Efectos de sonido: Permite controlar el volumen de los efectos.
+
+
+Sensibilidad: Ajusta la velocidad con la que la cámara responde al movimiento del ratón, un elemento fundamental en juegos en primera persona para garantizar una experiencia cómoda y precisa.
 
 * **Volumen:** Permitirá controlar el volumen del juego.
 * **Sensibilidad:** Velocidad a la que la cámara responderá al movimiento del ratón, cuya personalización es clave en los videojuegos en primera persona.
