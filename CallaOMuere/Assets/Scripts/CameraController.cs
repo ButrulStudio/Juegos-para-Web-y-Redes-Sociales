@@ -6,57 +6,64 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float sensibility = 100f;
 
     [Header("Referencias")]
+    // Referencia al transform del 'jugador' (cuerpo) para la rotación horizontal.
     public Transform jugador;
 
     [Header("Recoil")]
     [SerializeField] private float recoilRecoverySpeed = 5f;
+
+    // Almacena el offset de retroceso aditivo (X=Vertical, Y=Horizontal).
     private Vector2 recoilOffset;
+
     [SerializeField, Range(0f, 1f)] private float recoilMultiplier = 0.01f;
 
+    // Acumulador para la rotación vertical. Debe ser un campo de clase para persistir.
     private float verticalRotation = 0f;
 
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
 
-        // Carga la sensibilidad guardada al iniciar la partida
+        // Cargar la sensibilidad del usuario o usar el valor 'sensibility' como fallback.
         sensibility = PlayerPrefs.GetFloat("MasterSensitivity", this.sensibility);
     }
 
     void Update()
     {
-        // --- ¡AÑADIDO! ---
-        // Si el juego está pausado o terminado, no mover la cámara.
         if (GameManager.IsPaused || GameManager.GameIsOver)
             return;
-        // -----------------
 
-        // --- Entrada del ratón ---
         float mouseX = Input.GetAxis("Mouse X") * sensibility * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * sensibility * Time.deltaTime;
 
-        // --- Rotación vertical (mirar arriba/abajo) ---
-        verticalRotation -= mouseY;
-        verticalRotation -= recoilOffset.x; // recoil empuja la cámara hacia arriba
-        verticalRotation = Mathf.Clamp(verticalRotation, -90f, 90f);
+        // --- Rotación Vertical ---
 
-        // --- Rotación horizontal ---
+        verticalRotation -= mouseY;
+        verticalRotation -= recoilOffset.x;
+        verticalRotation = Mathf.Clamp(verticalRotation, -90f, 90f); // Asi no se parte el cuello
+
+        // --- Rotación Horizontal ---
         jugador.Rotate(Vector3.up * (mouseX + recoilOffset.y));
 
-        // --- Aplicar rotación a la cámara ---
+        // --- Aplicación Final ---
         transform.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
 
-        // --- Recuperación suave del recoil ---
+        // Interpolar suavemente el offset de retroceso de vuelta a cero.
         recoilOffset = Vector2.Lerp(recoilOffset, Vector2.zero, Time.deltaTime * recoilRecoverySpeed);
     }
 
+    /// <summary>
+    /// Funcion publica para que otros scripts (ej. PlayerShooting)
+    /// </summary>
     public void AddRecoil(float vertical, float horizontal)
     {
         recoilOffset += new Vector2(vertical, horizontal) * recoilMultiplier;
     }
 
-    // --- Setter para modificar la sensibilidad dentro del juego ---
-
+    /// <summary>
+    /// Funcion pública para que los menús de opciones
+    /// actualicen la sensibilidad en tiempo real.
+    /// </summary>
     public void SetSensibility(float newSensibility)
     {
         sensibility = newSensibility;

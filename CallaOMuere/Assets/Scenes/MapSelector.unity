@@ -2313,10 +2313,10 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   speed: 10
-  hoverSound: {fileID: 0}
-  clickSound: {fileID: 0}
+  hoverSound: {fileID: 8300000, guid: f6da06ccab2749143837fa1b274b9ab7, type: 3}
+  clickSound: {fileID: 8300000, guid: ec85cd5db926d7946b4bc5e4116b2322, type: 3}
   hoverVolume: 1
-  clickVolume: 1
+  clickVolume: 0.4
 --- !u!82 &1861477249
 AudioSource:
   m_ObjectHideFlags: 0

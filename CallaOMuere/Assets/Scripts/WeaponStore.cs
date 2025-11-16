@@ -89,7 +89,7 @@ public class WeaponStore : MonoBehaviour
     }
 
 
-    // --- ¡MÉTODO MODIFICADO CON LÓGICA DE 4 PASOS! ---
+
     void TryPurchaseOrEquip()
     {
         if (playerShooting == null) return;
@@ -98,7 +98,6 @@ public class WeaponStore : MonoBehaviour
         bool isAmmoFull = playerShooting.IsAmmoFull(weaponData);
         bool isEquipped = playerShooting.GetEquippedWeaponType() == weaponData.weaponType;
 
-        // --- Escenario 2: Compra por primera vez ---
         if (!alreadyOwned)
         {
             WeaponData newWeaponInstance = Instantiate(weaponData);
@@ -119,9 +118,6 @@ public class WeaponStore : MonoBehaviour
             return;
         }
 
-        // --- Lógica si YA la tienes ---
-
-        // --- Escenario 4: La tienes equipada Y la munición está llena ---
         if (isEquipped && isAmmoFull)
         {
             Debug.Log("Munición ya al máximo. No se puede comprar.");
@@ -142,11 +138,9 @@ public class WeaponStore : MonoBehaviour
         playerShooting.ForceCurrentWeaponAmmoToFull();
 
         Debug.Log("Has pagado la munición y equipado " + instanceToEquip.weaponName + ".");
-        ShowInteractionMessage(); // Actualizar el mensaje de nuevo (ahora dirá "LLENA")
+        ShowInteractionMessage(); // Actualizar el mensaje de nuevo
     }
 
-
-    // --- El resto de funciones (Reset, Get, Load, Register) NO cambian ---
 
     public static void ResetOwnedWeapons()
     {

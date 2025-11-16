@@ -68,7 +68,7 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
-        // El jugador no puede recibir dao si el juego est pausado (Time.timeScale = 0)
+        // El jugador no puede recibir daño si el juego esta pausado
         if (Time.timeScale == 0) return;
 
         PlayRandomDamageSound();
@@ -117,7 +117,7 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // MTODO DE COMPRA
+    // Compra de armadura
     public void BuyMaxArmor()
     {
         currentArmor = maxArmor;

@@ -50,7 +50,6 @@ public class WeaponData : ScriptableObject
     public GameObject bulletHolePrefab;
     public Sprite crosshairIcon;
 
-    // --- NUEVAS VARIABLES PARA APUNTADO ---
     [Header("Apuntado (ADS - Aim Down Sights)")]
     [Tooltip("¿Puede esta arma apuntar con el clic derecho?")]
     public bool canAim = false;

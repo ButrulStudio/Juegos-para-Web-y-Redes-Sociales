@@ -81,7 +81,7 @@ public class GameManager : MonoBehaviour
             musicAudioSource.Play();
         }
 
-        // --- ¡LÓGICA DE CARGA MODIFICADA! ---
+        // --- Lógica de Carga ---
         if (SaveLoadManager.ShouldLoadGame)
         {
             // Si hay que cargar, llama al SaveLoadManager
@@ -95,12 +95,12 @@ public class GameManager : MonoBehaviour
 
             PlayerShooting playerShooting = FindObjectOfType<PlayerShooting>();
 
-            // ¡NUEVO! Pide el arma inicial al SaveLoadManager
+            // Pide el arma inicial al SaveLoadManager
             WeaponData startingWeapon = SaveLoadManager.Instance.GetStartingWeapon();
 
             if (playerShooting != null && startingWeapon != null)
             {
-                // ¡MODIFICADO! Le pasamos el arma al jugador
+                // Le pasamos el arma al jugador
                 playerShooting.InitializeNewGame(startingWeapon);
             }
             else

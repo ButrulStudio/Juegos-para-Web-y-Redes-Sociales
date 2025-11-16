@@ -71,11 +71,10 @@ public class WaveManager : MonoBehaviour
         }
     }
 
-    // --- ¡FUNCIÓN MODIFICADA! ---
+
     void StartNextWave()
     {
         // Al empezar la oleada, guarda el progreso.
-        // Ignora la oleada 1 (index 0) para no guardar al inicio de la partida.
         if (currentWaveIndex > 0 && SaveLoadManager.Instance != null)
         {
             Debug.Log($"--- AUTOSAVE: Iniciando Oleada {currentWave} ---");
@@ -91,10 +90,6 @@ public class WaveManager : MonoBehaviour
         }
         zombiesRemainingInWave = currentZombieCount; // Este es el total a spawnear
 
-        // --- ¡LÓGICA DE VIDA MODIFICADA! ---
-        // Ya no calculamos un multiplicador.
-        // Calculamos cuánta vida EXTRA se debe AÑADIR.
-        // (currentWaveIndex es 0 en la Ronda 1, 1 en la Ronda 2, etc.)
         float extraHealthToAdd = healthIncreasePerWave * currentWaveIndex;
 
         // Intervalo
@@ -102,7 +97,6 @@ public class WaveManager : MonoBehaviour
 
         Debug.Log($"Iniciando Oleada {currentWave}: Spawneando {zombiesRemainingInWave} zombies con +{extraHealthToAdd} HP extra.");
 
-        // Pasamos la vida extra (extraHealthToAdd) en lugar del multiplicador
         zombieSpawner.StartWaveSpawn(zombiesRemainingInWave, spawnInterval, extraHealthToAdd);
     }
 
@@ -114,7 +108,6 @@ public class WaveManager : MonoBehaviour
         currentActiveZombies--;
         zombiesRemainingInWave--;
 
-        // 2. CONDICIÓN DE FIN DE OLEADA: 
         if (hasFinishedSpawning && currentActiveZombies <= 0)
         {
             EndWave();
@@ -156,7 +149,7 @@ public class WaveManager : MonoBehaviour
         return currentWave;
     }
 
-    // --- MÉTODOS PARA GESTIÓN DE POBLACIÓN (Usado por ZombieSpawner) ---
+    // --- MÉTODOS PARA GESTIÓN DE POBLACIÓN ---
     public void ZombieSpawned()
     {
         currentActiveZombies++;

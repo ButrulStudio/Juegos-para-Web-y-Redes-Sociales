@@ -2,10 +2,10 @@ using UnityEngine;
 
 public enum PowerUpType
 {
-    Armadura,   // Restaura armadura (INSTANTÁNEO)
-    Velocidad,  // Aumenta velocidad (TEMPORAL/PERMANENTE)
-    Recarga,    // Aumenta velocidad de recarga (TEMPORAL/PERMANENTE)
-    Daño        // Aumenta daño (TEMPORAL/PERMANENTE)
+    Armadura,
+    Velocidad,  
+    Recarga,    
+    Daño        
 }
 
 [CreateAssetMenu(fileName = "NewPowerUp", menuName = "PowerUps/PowerUp Data")]

@@ -11,7 +11,6 @@ public class SaveLoadManager : MonoBehaviour
     [SerializeField] private List<PowerUpData> allGamePowerUps;
     [SerializeField] private List<WeaponData> allGameWeapons;
 
-    // --- ¡AÑADIDO! ---
     [Tooltip("El ScriptableObject del arma con la que empezará el jugador en una partida nueva.")]
     [SerializeField] private WeaponData startingWeaponAsset;
 
@@ -50,7 +49,6 @@ public class SaveLoadManager : MonoBehaviour
         ShouldLoadGame = shouldLoad;
     }
 
-    // --- ¡NUEVA FUNCIÓN AÑADIDA! ---
     // Esta función le permite al GameManager pedir el arma inicial
     public WeaponData GetStartingWeapon()
     {
