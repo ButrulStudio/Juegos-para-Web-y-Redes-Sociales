@@ -25,6 +25,12 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
+        // --- ¡AÑADIDO! ---
+        // Si el juego está pausado o terminado, no mover la cámara.
+        if (GameManager.IsPaused || GameManager.GameIsOver)
+            return;
+        // -----------------
+
         // --- Entrada del ratón ---
         float mouseX = Input.GetAxis("Mouse X") * sensibility * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * sensibility * Time.deltaTime;
