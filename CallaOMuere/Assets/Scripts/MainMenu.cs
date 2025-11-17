@@ -144,6 +144,18 @@ public class MainMenu : MonoBehaviour
         StartCoroutine(LoadShop());
     }
 
+    public IEnumerator QuitGame()
+    {
+        transitionAnimator.SetTrigger("StartTransition");
+        yield return new WaitForSeconds(0.3f);
+        Application.Quit();
+    }
+
+    public void StartQuit()
+    {
+        StartCoroutine(QuitGame());
+    }
+
 
     // --- Control de Paneles UI ---
 
