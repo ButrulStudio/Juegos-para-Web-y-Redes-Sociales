@@ -1,392 +1,266 @@
 ﻿using UnityEngine;
+using UnityEngine.AI; // IMPORTANTE: Necesario para usar NavMeshAgent
 using System.Collections;
 
+// Esto asegura que si pones el script, Unity te añade el NavMeshAgent automáticamente
+[RequireComponent(typeof(NavMeshAgent))]
 public class ZombieController : MonoBehaviour
 {
     [Header("Sonidos de Ambiente")]
-    [Tooltip("El AudioSource para los gruñidos del zombi.")]
     [SerializeField] private AudioSource audioSource;
-    [Tooltip("Gruñidos aleatorios que el zombi emite.")]
     [SerializeField] private AudioClip[] ambientSounds;
-    [Tooltip("Tiempo mínimo (en segundos) entre gruñidos.")]
     [SerializeField] private float minTimeBetweenSounds = 4.0f;
-    [Tooltip("Tiempo máximo (en segundos) entre gruñidos.")]
     [SerializeField] private float maxTimeBetweenSounds = 8.0f;
 
-    [Tooltip("Gruñidos aleatorios que el zombi emite al atacar.")]
+    [Header("Sonidos de Ataque")]
     [SerializeField] private AudioClip[] attackSounds;
 
     [Header("Datos del zombi")]
     [SerializeField] private ZombieData zombieData;
 
-
     [Header("Ajustes de Combate")]
     [Tooltip("La velocidad a la que se moverá el zombi si le disparan en la pierna.")]
     [SerializeField] private float crippledSpeed = 1.5f;
 
-    private CharacterController zombie;
+    // --- COMPONENTES ---
+    private NavMeshAgent agent; // Sustituye al CharacterController
     private Transform player;
     private Animator animator;
+    private CapsuleCollider physicalCollider; // Para recibir balas
+
+    // --- ESTADO ---
     private float currentHp;
     private float lastAttackTime = 0f;
     private bool isDead = false;
     private bool isAttacking = false;
-    private Vector3 verticalVelocity; // Para manejar la gravedad
+    private bool isCrippled = false;
 
+    // --- MANAGERS ---
     private WaveManager waveManager;
     private ScoreManager scoreManager;
 
-    [Header("Configuración de Evasión")]
-    [Tooltip("Máscara de la capa que bloquea la entrada al metro.")]
-    public LayerMask metroEntranceMask;
-
-    private float currentSpeed; // Velocidad actual (puede ser 'crippledSpeed')
-    private bool isCrippled = false; // Flag para saber si le han disparado en la pierna
-
     void Start()
     {
-        // --- Inicialización de componentes ---
-        zombie = GetComponent<CharacterController>();
+        // 1. Inicializar Componentes
+        agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
-        player = GameObject.FindGameObjectWithTag("Player").transform;
+        physicalCollider = GetComponent<CapsuleCollider>();
 
-        // --- Búsqueda de Managers (Singletons) ---
+        // 2. Buscar al Jugador
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            player = playerObj.transform;
+        }
+        else
+        {
+            Debug.LogError("¡No se encuentra al Player! Asegúrate de que tiene el Tag 'Player'.");
+        }
+
+        // 3. Buscar Managers
         waveManager = FindAnyObjectByType<WaveManager>();
         scoreManager = FindAnyObjectByType<ScoreManager>();
 
-
-        // Establece la velocidad inicial basada en el ScriptableObject
+        // 4. Configurar el Agente con los datos del ScriptableObject
         if (zombieData != null)
         {
-            currentSpeed = zombieData.speed;
+            agent.speed = zombieData.speed;
+            currentHp = zombieData.maxHp;
+
+            // Configuración clave para que pare justo delante del jugador
+            agent.stoppingDistance = zombieData.attackRange - 0.2f;
         }
 
-        // Inicia la corrutina para los gruñidos aleatorios
         StartCoroutine(AmbientSoundRoutine());
     }
 
-    /// <summary>
-    /// Aplica los datos base (vida, daño, etc.) del ScriptableObject.
-    /// </summary>
+    // Método llamado por el Spawner para configurar stats
     public void ApplyZombieData(ZombieData data)
     {
         zombieData = data;
         currentHp = data.maxHp;
+        if (agent != null)
+        {
+            agent.speed = data.speed;
+            agent.stoppingDistance = data.attackRange - 0.2f;
+        }
     }
 
-    /// <summary>
-    /// Añade la vida extra calculada por el WaveManager.
-    /// Es llamado por el ZombieSpawner justo después de ApplyZombieData.
-    /// </summary>
     public void ApplyExtraHealth(float extraHealth)
     {
         currentHp += extraHealth;
     }
 
-
     void Update()
     {
-        // Cláusula de guarda: si está muerto, atacando, o no hay jugador, no hace nada.
-        if (isDead || player == null || isAttacking) return;
+        // Si está muerto, atacando o no hay jugador, no calculamos movimiento
+        if (isDead || player == null) return;
 
-        // Comprueba la distancia al jugador para decidir si atacar o perseguir.
-        float distance = Vector3.Distance(transform.position, player.position);
-
-        if (distance <= zombieData.attackRange)
+        // Si está atacando, aseguramos que el agente esté quieto y salimos
+        if (isAttacking)
         {
-            StopAndAttack(); // Si está cerca, ataca
+            if (!agent.isStopped) agent.isStopped = true;
+            return;
+        }
+
+        // Calculamos distancia real física
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+
+        if (distanceToPlayer <= zombieData.attackRange)
+        {
+            StopAndAttack();
         }
         else
         {
-            FollowPlayer(); // Si está lejos, persigue
+            ChasePlayer();
         }
     }
 
-    /// <summary>
-    /// Lógica de movimiento (pathfinding) del zombi.
-    /// </summary>
-    private void FollowPlayer()
+    private void ChasePlayer()
     {
-        // Activa la animación de andar
-        animator.SetBool("isWalking", true);
+        // Reactivamos el agente si estaba parado
+        if (agent.isStopped) agent.isStopped = false;
 
-        // --- Manejo de Gravedad ---
-        if (zombie.isGrounded)
-            verticalVelocity.y = -2f; // Fuerza un poco hacia abajo si está en el suelo
-        else
-            verticalVelocity.y += Physics.gravity.y * Time.deltaTime; // Aplica gravedad
+        // --- LA LÍNEA MÁGICA: El NavMesh calcula todo ---
+        agent.SetDestination(player.position);
 
-        // --- Cálculo de Dirección ---
-        // Dirección ideal: directo hacia el jugador (ignorando eje Y)
-        Vector3 targetDir = (player.position - transform.position);
-        targetDir.y = 0;
-        targetDir.Normalize();
-
-        // Lógica de evasión de obstáculos (Raycast avoidance)
-        float rayDistance = 2.0f;
-        int rayCount = 15; // Nº de rayos en un arco
-        float maxAngle = 90f; // Amplitud del arco
-
-        Vector3 bestDirection = Vector3.zero; // La dirección "segura" que elegirá
-        float bestScore = float.MinValue;
-        Vector3 origin = transform.position + Vector3.up * 0.5f; // Origen de los rayos
-
-        // Lanza múltiples rayos en un arco frontal
-        for (int i = 0; i < rayCount; i++)
-        {
-            float t = (float)i / (rayCount - 1);
-            float angle = Mathf.Lerp(-maxAngle, maxAngle, t);
-            Vector3 dir = Quaternion.Euler(0, angle, 0) * transform.forward;
-
-            RaycastHit hit;
-
-            // Comprueba si el rayo choca con algo
-            bool blocked = Physics.Raycast(origin, dir, rayDistance, ~0, QueryTriggerInteraction.Ignore);
-
-            // Puntuación: qué tan alineada está esta dirección con el jugador
-            float alignmentScore = Vector3.Dot(dir, targetDir);
-            // Penalización si la dirección está bloqueada
-            float avoidanceScore = blocked ? -8.0f : 1.0f;
-
-            // Penalización extra si choca con la capa "metroEntranceMask"
-            float metroPenalty = 0f;
-            if (Physics.Raycast(origin, dir, out hit, rayDistance, metroEntranceMask))
-            {
-                metroPenalty = -15.0f;
-            }
-
-            // Puntuación total de esta dirección
-            float score = (alignmentScore * 1.0f) + (avoidanceScore * 3.0f) + metroPenalty;
-
-            // Si esta dirección es mejor que la anterior, la guardamos
-            if (score > bestScore)
-            {
-                bestScore = score;
-                bestDirection = dir;
-            }
-        }
-
-        // Si no se encontró una buena dirección, va directo al jugador
-        if (bestDirection == Vector3.zero || bestScore < -5.0f)
-            bestDirection = targetDir;
-
-        // Lógica de evasión de otros zombis
-        Collider[] nearby = Physics.OverlapSphere(transform.position, 1.0f);
-        foreach (var col in nearby)
-        {
-            if (col.CompareTag("Zombie") && col.gameObject != this.gameObject)
-            {
-                Vector3 away = transform.position - col.transform.position;
-                away.y = 0;
-                bestDirection += away.normalized * 1.0f; // Añade una fuerza de repulsión
-            }
-        }
-        bestDirection.Normalize(); // Normaliza la dirección final
-
-        // --- Aplicación del Movimiento ---
-        Vector3 horizontalMovement = bestDirection * currentSpeed;
-        Vector3 finalMovement = horizontalMovement + verticalVelocity; // Combina movimiento y gravedad
-        zombie.Move(finalMovement * Time.deltaTime);
-
-        // Rotación suave hacia la dirección de movimiento
-        if (horizontalMovement.magnitude > 0.1f)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(horizontalMovement);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
-        }
+        // Sincronizar animación con la velocidad real del agente
+        // velocity.magnitude nos dice si realmente se está moviendo (por si se atasca)
+        bool isMoving = agent.velocity.magnitude > 0.1f;
+        animator.SetBool("isWalking", isMoving);
     }
 
-    /// <summary>
-    /// Detiene el movimiento y gestiona la lógica de ataque.
-    /// </summary>
     private void StopAndAttack()
     {
-        animator.SetBool("isWalking", false); // Detiene animación de andar
+        // 1. Frenar en seco
+        agent.isStopped = true;
+        agent.velocity = Vector3.zero;
+        animator.SetBool("isWalking", false);
 
-        // Sigue aplicando gravedad aunque esté quieto
-        if (!zombie.isGrounded)
+        // 2. Rotación Manual: 
+        // El NavMesh no rota bien cuando está parado (isStopped), así que lo rotamos nosotros
+        // para que mire al jugador mientras le pega.
+        Vector3 directionToPlayer = (player.position - transform.position).normalized;
+        directionToPlayer.y = 0; // Ignorar altura para no inclinar al zombie
+        if (directionToPlayer != Vector3.zero)
         {
-            verticalVelocity.y += Physics.gravity.y * Time.deltaTime;
-            zombie.Move(verticalVelocity * Time.deltaTime);
+            Quaternion lookRotation = Quaternion.LookRotation(directionToPlayer);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 5f);
         }
 
-        // Mira al jugador (solo en eje Y)
-        transform.LookAt(new Vector3(player.position.x, transform.position.y, player.position.z));
-
-        // Comprueba si ha pasado el cooldown de ataque
+        // 3. Comprobar Cooldown y Atacar
         if (Time.time - lastAttackTime >= zombieData.attackCooldown)
         {
-            StartCoroutine(AttackRoutine()); // Inicia la corrutina de ataque
+            StartCoroutine(AttackRoutine());
         }
     }
 
-    /// <summary>
-    /// Corrutina que maneja la animación de ataque, el sonido y la aplicación del daño.
-    /// </summary>
     private IEnumerator AttackRoutine()
     {
-        isAttacking = true; // Bloquea el Update()
-        lastAttackTime = Time.time; // Resetea el cooldown
+        isAttacking = true; // Bloquea el movimiento en Update
+        lastAttackTime = Time.time;
 
-        animator.SetTrigger("Attack"); // Dispara la animación de ataque
+        animator.SetTrigger("Attack");
 
-        // --- Reproducir sonido de ataque aleatorio ---
+        // Sonido de ataque
         if (audioSource != null && attackSounds != null && attackSounds.Length > 0)
         {
+            audioSource.PlayOneShot(attackSounds[Random.Range(0, attackSounds.Length)]);
+        }
 
-            int index = Random.Range(0, attackSounds.Length);
-            AudioClip clip = attackSounds[index];
+        // Esperar al momento del impacto (ajusta este 0.9f a tu animación exacta)
+        yield return new WaitForSeconds(0.9f);
 
-
-            if (clip != null)
+        // Verificar si el jugador sigue cerca y vivo
+        if (player != null)
+        {
+            float distance = Vector3.Distance(transform.position, player.position);
+            // Damos un pequeño margen extra (0.5f) por si el jugador se movió un poco hacia atrás
+            if (distance <= zombieData.attackRange + 0.5f)
             {
-                audioSource.PlayOneShot(clip);
+                PlayerHealth ph = player.GetComponent<PlayerHealth>();
+                if (ph != null) ph.TakeDamage(zombieData.damage);
             }
         }
 
-        // Espera 0.9 segundos (punto de la animación donde impacta)
-        yield return new WaitForSeconds(0.9f);
+        // Esperar a que termine la animación
+        // Asumiendo que la animación dura unos 2.3 segundos en total
+        float animationDuration = 2.3f;
+        yield return new WaitForSeconds(animationDuration - 0.9f);
 
-        // --- Aplicar Daño ---
-        // Comprueba si el jugador sigue en rango después de 0.9s
-        if (Vector3.Distance(transform.position, player.position) <= zombieData.attackRange)
-        {
-            PlayerHealth ph = player.GetComponent<PlayerHealth>();
-            if (ph != null) ph.TakeDamage(zombieData.damage);
-        }
-
-        // Espera el resto de la animación
-        float animationTime = 2.3f;
-        float waitAfterHitPoint = animationTime - 0.9f;
-        yield return new WaitForSeconds(waitAfterHitPoint);
-
-        // Espera el tiempo de cooldown restante (si lo hay)
-        float remainingCooldown = zombieData.attackCooldown - animationTime;
-        if (remainingCooldown > 0)
-        {
-            yield return new WaitForSeconds(remainingCooldown);
-        }
-
-        isAttacking = false; // Desbloquea el Update()
+        isAttacking = false; // Desbloquea el Update para que vuelva a perseguir
     }
 
-    /// <summary>
-    /// Función pública para recibir daño (sobrecarga para daño genérico al cuerpo).
-    /// </summary>
+    public void TakeDamage(float amount, EHitboxType partHit)
+    {
+        if (isDead) return;
+
+        float finalDamage = amount;
+
+        switch (partHit)
+        {
+            case EHitboxType.Head:
+                finalDamage *= 2.0f; // Doble daño
+                break;
+
+            case EHitboxType.Legs:
+                // Lógica de lisiado usando NavMeshAgent
+                if (!isCrippled)
+                {
+                    isCrippled = true;
+                    agent.speed = crippledSpeed; // <-- Modificamos la velocidad del NavMesh
+                }
+                break;
+        }
+
+        currentHp -= finalDamage;
+
+        if (currentHp <= 0)
+        {
+            Die();
+        }
+    }
+
+    // Sobrecarga por si se llama sin hitbox específica
     public void TakeDamage(float amount)
     {
         TakeDamage(amount, EHitboxType.Body);
     }
 
-
-    /// <summary>
-    /// Función principal de recibir daño, llamada por los ZombieHitbox.
-    /// </summary>
-    public void TakeDamage(float amount, EHitboxType partHit)
-    {
-        if (isDead) return; // No puede recibir daño si ya está muerto
-
-
-        float finalDamage = amount;
-
-        // Switch para aplicar multiplicadores o efectos según la parte golpeada
-        switch (partHit)
-        {
-
-            case EHitboxType.Head: // Doble daño en la cabeza
-                finalDamage *= 2.0f;
-                Debug.Log($"¡Disparo a la cabeza! Daño total: {finalDamage}");
-                break;
-
-
-            case EHitboxType.Legs: // Ralentización en las piernas
-                finalDamage = amount; // Daño normal
-
-                if (!isCrippled) // Aplica la ralentización solo una vez
-                {
-                    isCrippled = true;
-
-                    currentSpeed = crippledSpeed; // Reduce la velocidad
-                    Debug.Log($"¡Pierna herida! Zombie ralentizado a {crippledSpeed}");
-                }
-                break;
-
-            case EHitboxType.Body:
-            default: // Daño normal
-                finalDamage = amount;
-                break;
-        }
-
-        currentHp -= finalDamage; // Aplica el daño
-
-        if (currentHp <= 0)
-        {
-            Die(); // Muere si la vida es 0 o menos
-        }
-    }
-
-    /// <summary>
-    /// Gestiona la muerte del zombi.
-    /// </summary>
     private void Die()
     {
         isDead = true;
-        animator.SetTrigger("Die"); // Dispara la animación de muerte
+        animator.SetTrigger("Die");
+        StopAllCoroutines();
 
-        StopAllCoroutines(); // Detiene la corrutina de sonidos ambientales
+        // 1. Desactivar Colliders físicos (para que las balas no le den)
+        if (physicalCollider != null) physicalCollider.enabled = false;
 
-        // Desactiva los colliders y el CharacterController para que no bloquee
-        CapsuleCollider capsule = GetComponent<CapsuleCollider>();
-        if (capsule != null)
-        {
-            capsule.enabled = false;
-        }
-        zombie.enabled = false;
+        // 2. DESACTIVAR NAVMESH AGENT (Muy importante)
+        // Si no lo apagas, el zombie muerto será un obstáculo invisible y los otros zombies no podrán pasar.
+        if (agent != null) agent.enabled = false;
 
-        // Notifica a los managers que el zombi ha muerto (para puntuación y conteo de oleada)
         if (scoreManager != null) scoreManager.ZombieKilled();
         if (waveManager != null) waveManager.ZombieDied();
 
-        // Destruye el GameObject después de 2 segundos (para que termine la animación)
-        Destroy(gameObject, 2f);
+        Destroy(gameObject, 2.8f); // Dar tiempo a que termine la animación antes de borrar
     }
 
-    /// <summary>
-    /// Getter público para la vida actual (usado por otros scripts si es necesario).
-    /// </summary>
+    private IEnumerator AmbientSoundRoutine()
+    {
+        while (!isDead)
+        {
+            yield return new WaitForSeconds(Random.Range(minTimeBetweenSounds, maxTimeBetweenSounds));
+
+            if (audioSource != null && ambientSounds != null && ambientSounds.Length > 0)
+            {
+                audioSource.PlayOneShot(ambientSounds[Random.Range(0, ambientSounds.Length)]);
+            }
+        }
+    }
+
     public float GetHP()
     {
         return currentHp;
-    }
-
-    /// <summary>
-    /// Corrutina que reproduce gruñidos aleatorios en intervalos aleatorios.
-    /// </summary>
-    private IEnumerator AmbientSoundRoutine()
-    {
-
-        while (!isDead) // Bucle infinito mientras el zombi esté vivo
-        {
-
-            // 1. Espera un tiempo aleatorio
-            float waitTime = Random.Range(minTimeBetweenSounds, maxTimeBetweenSounds);
-            yield return new WaitForSeconds(waitTime);
-
-
-            // 2. Comprueba si tiene los componentes necesarios
-            if (audioSource != null && ambientSounds != null && ambientSounds.Length > 0)
-            {
-
-                // 3. Elige un clip aleatorio
-                int index = Random.Range(0, ambientSounds.Length);
-                AudioClip clip = ambientSounds[index];
-
-                // 4. Lo reproduce
-                if (clip != null)
-                {
-                    audioSource.PlayOneShot(clip);
-                }
-            }
-        }
     }
 }

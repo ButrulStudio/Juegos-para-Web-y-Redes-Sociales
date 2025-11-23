@@ -21,7 +21,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Animator transitionAnimator;
 
     [Header("UI (Componentes)")]
-    [SerializeField] private TMPro.TextMeshProUGUI gameOverText;
     [SerializeField] private TextMeshProUGUI pauseText;
 
     // --- Variables para los Ajustes de Pausa ---

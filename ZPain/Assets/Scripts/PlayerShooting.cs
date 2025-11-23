@@ -4,11 +4,10 @@ using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting; // Nota: Esta directiva 'using' parece no utilizarse.
 
 public class PlayerShooting : MonoBehaviour
 {
-    [Header("Referencias")]
+    [Header("Referencias Generales")]
     [SerializeField] private Camera playerCamera;
     [SerializeField] private Transform weaponHolder;
     [SerializeField] private CameraController cameraController;
@@ -17,120 +16,112 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private TextMeshProUGUI ammoText;
     [SerializeField] private Image crosshairImage;
 
-    private RectTransform crosshairRectTransform; 
+    private RectTransform crosshairRectTransform;
     private Color defaultAmmoColor;
 
-    [Header("Arma actual")]
+    [Header("Estado del Arma")]
     public WeaponData currentWeapon;
     private GameObject currentWeaponModel;
     private float nextFireTime = 0f;
+    private bool isBursting = false;
 
-    private bool isBursting = false; // Flag para evitar disparar ráfagas múltiples.
-
-    private Vector3 weaponInitialLocalPos; // Posición original del weaponHolder.
-    private Vector3 weaponCurrentOffset; // Desplazamiento actual por el kickback.
+    // Variables para el retroceso visual (Kickback)
+    private Vector3 weaponInitialLocalPos;
+    private Vector3 weaponCurrentOffset;
 
     // === MUNICIÓN ===
-    private int currentAmmoInMag; // Balas en el cargador actual.
-    private int totalAmmo; // Balas en la reserva.
-    private bool isReloading = false; // Flag para bloquear acciones mientras se recarga.
+    private int currentAmmoInMag;
+    private int totalAmmo;
+    private bool isReloading = false;
 
-    // Caché para guardar la munición de las armas que no están equipadas.
+    // Caché de munición para armas no equipadas
     private Dictionary<WeaponType, int> ammoInMagCache = new Dictionary<WeaponType, int>();
     private Dictionary<WeaponType, int> totalAmmoCache = new Dictionary<WeaponType, int>();
 
     // === MULTIPLICADORES DE POWER-UP ===
-    [HideInInspector] public float reloadTimeMultiplier = 1f; // Modifica la velocidad de recarga.
-    [HideInInspector] public float damageMultiplier = 1f; // Modifica el daño.
+    [HideInInspector] public float reloadTimeMultiplier = 1f;
+    [HideInInspector] public float damageMultiplier = 1f;
 
-    [Header("Muzzle Flash")]
-    [Tooltip("Arrastra aquí el componente Light (Point Light) del cañón del arma equipada.")]
-    private Light muzzleLight; // Luz del fogonazo (se obtiene del prefab).
-
-    [Tooltip("Duración en segundos del fogonazo. 0.05 es un buen valor para empezar.")]
+    [Header("Efectos Visuales (Muzzle Flash)")]
+    private Light muzzleLight;
     [SerializeField] private float flashDuration = 0.05f;
+
+    [Header("Efectos de Impacto (Partículas)")]
+    [Tooltip("Sistema de partículas para sangre (Tag Zombie).")]
+    [SerializeField] private GameObject bloodParticlePrefab;
+
+    [Tooltip("Sistema de partículas para polvo/tierra (Tag Mapa).")]
+    [SerializeField] private GameObject dustParticlePrefab;
+
+    [Header("Decals (Agujeros de Bala PNG)")]
+    [Tooltip("Prefab BASE que debe tener un componente SpriteRenderer (sin sprite asignado).")]
+    [SerializeField] private GameObject bulletHoleBasePrefab;
+
+    [Tooltip("Sprite único para impactos en el escenario (Tag: Mapa).")]
+    [SerializeField] private Sprite mapBulletHoleSprite;
+
+    [Tooltip("Colección de Sprites para impactos en enemigos (Tag: Zombie).")]
+    [SerializeField] private Sprite[] zombieBulletHoleSprites;
 
     // --- APUNTADO ---
     [Header("Apuntado (ADS)")]
-    [SerializeField] private float adsSpeed = 10f; // Velocidad de transición al apuntar.
-    [SerializeField] private float defaultFOV = 60f; // FOV normal de la cámara.
-    private bool isAiming = false; // Flag de estado de apuntado.
-    private bool weaponHiddenForScope = false; // Flag para ocultar el arma al usar miras de sniper.
+    [SerializeField] private float adsSpeed = 10f;
+    [SerializeField] private float defaultFOV = 60f;
+    private bool isAiming = false;
+    private bool weaponHiddenForScope = false;
 
     [Header("Animación de Recarga")]
-    [SerializeField] private Vector3 reloadRotation = new Vector3(35f, 0f, 0f); // Rotación para la animación falsa.
-    [SerializeField] private float reloadAnimSpeed = 8f; // Velocidad de la animación falsa.
+    [SerializeField] private Vector3 reloadRotation = new Vector3(35f, 0f, 0f);
+    [SerializeField] private float reloadAnimSpeed = 8f;
+    private Vector3 weaponInitialLocalRot;
 
-    private Vector3 weaponInitialLocalRot; // Rotación original del weaponHolder.
+    //====== AUDIO =======
+    [SerializeField] private AudioSource audioSource;
 
-    //======AUDIO=======
-    [SerializeField] private AudioSource audioSource; // AudioSource para sonidos de disparo/recarga.
-
-    // Awake() se ejecuta ANTES que cualquier Start().
-    // Ideal para inicializar referencias.
     void Awake()
     {
         if (crosshairImage != null)
             crosshairRectTransform = crosshairImage.GetComponent<RectTransform>();
 
-        if (ammoText != null)
-        {
-            // Guardamos el color por defecto antes de que se modifique.
-            defaultAmmoColor = ammoText.color;
-        }
+        if (ammoText != null) defaultAmmoColor = ammoText.color;
 
         if (weaponHolder != null)
         {
-            // Guardamos las posiciones/rotaciones iniciales para el recoil y la recarga.
             weaponInitialLocalPos = weaponHolder.localPosition;
             weaponInitialLocalRot = weaponHolder.localEulerAngles;
         }
     }
 
-    // Start() ahora solo pone la UI en su estado inicial.
     void Start()
     {
         UpdateAmmoUI();
         UpdateCrosshair();
-        playerCamera.fieldOfView = defaultFOV;
+        if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
     }
 
-    /// <summary>
-    /// Llamado por GameManager al iniciar una partida nueva.
-    /// Establece el arma inicial.
-    /// </summary>
+    // Llamado por GameManager al iniciar
     public void InitializeNewGame(WeaponData weaponToEquip)
     {
         if (weaponToEquip != null)
         {
-            // Instanciamos el ScriptableObject para evitar modificar el asset original.
             currentWeapon = Instantiate(weaponToEquip);
-            EquipWeapon(currentWeapon); // Equipa el arma.
-            WeaponStore.RegisterStartingWeapon(currentWeapon); // Informa a la tienda que ya la tenemos.
-        }
-        else
-        {
-            Debug.LogError("InitializeNewGame fue llamado pero el weaponToEquip era nulo.");
+            EquipWeapon(currentWeapon);
+            WeaponStore.RegisterStartingWeapon(currentWeapon);
         }
     }
 
     void Update()
     {
-        // Guard clauses: No hacer nada si el juego está pausado o si estamos recargando.
-        if (GameManager.IsPaused || GameManager.GameIsOver)
-            return;
-
+        if (GameManager.IsPaused || GameManager.GameIsOver) return;
         if (isReloading) return;
 
-        // Manejadores de Input.
         HandleShooting();
         HandleReloadInput();
         HandleAiming();
 
-        // Lógica de recuperación del kickback (visual).
+        // Recuperación del retroceso visual del arma
         if (weaponHolder != null && currentWeapon != null)
         {
-            // Interpola suavemente el offset del arma de vuelta a cero.
             weaponCurrentOffset = Vector3.Lerp(
                 weaponCurrentOffset,
                 Vector3.zero,
@@ -140,38 +131,27 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // === APUNTADO ===
+    // =================================================================================
+    //                                  APUNTADO (ADS)
+    // =================================================================================
 
-    /// <summary>
-    /// Maneja el input y la lógica de apuntar (ADS).
-    /// </summary>
     void HandleAiming()
     {
-        // Si el arma no puede apuntar, fuerza a dejar de apuntar.
         if (currentWeapon == null || !currentWeapon.canAim)
         {
             if (isAiming) StopAiming();
             return;
         }
 
-        // Detecta el input de apuntado (Clic derecho).
-        if (Input.GetButtonDown("Fire2"))
-        {
-            isAiming = true;
-        }
-        if (Input.GetButtonUp("Fire2"))
-        {
-            isAiming = false;
-        }
+        if (Input.GetButtonDown("Fire2")) isAiming = true;
+        if (Input.GetButtonUp("Fire2")) isAiming = false;
 
-        // Interpola suavemente el FOV de la cámara.
         float targetFOV = isAiming ? currentWeapon.aimedFOV : defaultFOV;
         playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * adsSpeed);
 
-        // Lógica específica para miras de francotirador.
+        // Lógica especial para Sniper (Overlay 2D)
         if (isAiming && currentWeapon.sniperScopeSprite != null)
         {
-            // Configura la imagen de la mira para que ocupe toda la pantalla.
             if (crosshairRectTransform != null)
             {
                 crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
@@ -184,7 +164,6 @@ public class PlayerShooting : MonoBehaviour
             crosshairImage.sprite = currentWeapon.sniperScopeSprite;
             crosshairImage.enabled = true;
 
-            // Oculta el modelo del arma para que no tape la mira.
             if (!weaponHiddenForScope)
             {
                 if (currentWeaponModel != null) currentWeaponModel.SetActive(false);
@@ -193,23 +172,19 @@ public class PlayerShooting : MonoBehaviour
         }
         else
         {
-            // Si no está apuntando con mira, restaura el arma y la mira normal.
             if (weaponHiddenForScope)
             {
                 if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
                 weaponHiddenForScope = false;
             }
-            UpdateCrosshair(); // Restaura la mira normal.
+            UpdateCrosshair();
         }
     }
 
-    /// <summary>
-    /// Forza a salir del modo ADS y restaura el FOV y la mira.
-    /// </summary>
     public void StopAiming()
     {
         isAiming = false;
-        playerCamera.fieldOfView = defaultFOV;
+        if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
         if (weaponHiddenForScope)
         {
             if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
@@ -218,133 +193,98 @@ public class PlayerShooting : MonoBehaviour
         UpdateCrosshair();
     }
 
-    // === RECARGA ===
+    // =================================================================================
+    //                                  RECARGA
+    // =================================================================================
 
-    /// <summary>
-    /// Detecta el input para iniciar la recarga.
-    /// </summary>
     void HandleReloadInput()
     {
         if (currentWeapon == null) return;
-        // Comprueba si se pulsa 'R', si no está ya recargando,
-        // si el cargador no está lleno y si tiene munición en la reserva.
         if (Input.GetKeyDown(KeyCode.R) && !isReloading && currentAmmoInMag < currentWeapon.magCapacity && totalAmmo > 0)
         {
             StartCoroutine(ReloadCoroutine());
         }
     }
 
-    /// <summary>
-    /// Corrutina que maneja la lógica de recarga (animación, tiempos y munición).
-    /// </summary>
     IEnumerator ReloadCoroutine()
     {
         isReloading = true;
         PlaySound(currentWeapon.reloadSound);
 
-        // Aplica el multiplicador de PowerUp al tiempo de recarga.
         float reloadTime = currentWeapon.reloadTime * reloadTimeMultiplier;
-        float animTime = 1f / reloadAnimSpeed; // Tiempo de la animación de rotación.
+        float animTime = 1f / reloadAnimSpeed;
 
-        // Animación de "bajada" del arma.
+        // Animación de bajada
         float t = 0;
         while (t < 1f)
         {
             t += Time.deltaTime * reloadAnimSpeed;
-            weaponHolder.localRotation = Quaternion.Lerp(
-                Quaternion.Euler(weaponInitialLocalRot),
-                Quaternion.Euler(reloadRotation),
-                t
-            );
+            weaponHolder.localRotation = Quaternion.Lerp(Quaternion.Euler(weaponInitialLocalRot), Quaternion.Euler(reloadRotation), t);
             yield return null;
         }
 
-        // Calcula cuánta munición se necesita y cuánta se puede cargar.
         int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
         int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
-
-        // Tiempo de espera (el tiempo real de recarga menos las animaciones).
         float waitTime = Mathf.Max(0, reloadTime - animTime * 2f);
 
-        // Lógica especial para escopetas (recarga bala por bala).
+        // Lógica Escopeta (bala a bala) vs Normal
         if (currentWeapon.weaponType == WeaponType.Shotgun && ammoToLoad > 0)
         {
             float timePerBullet = (waitTime > 0 && ammoToLoad > 0) ? waitTime / ammoToLoad : 0;
-
             for (int i = 0; i < ammoToLoad; i++)
             {
-                if (timePerBullet > 0)
-                    yield return new WaitForSeconds(timePerBullet);
-
+                if (timePerBullet > 0) yield return new WaitForSeconds(timePerBullet);
                 currentAmmoInMag++;
                 totalAmmo--;
-                UpdateAmmoUI(); // Actualiza la UI por cada bala.
+                UpdateAmmoUI();
             }
         }
-        else // Lógica de recarga normal (todas las balas a la vez).
+        else
         {
-            if (waitTime > 0)
-                yield return new WaitForSeconds(waitTime);
-
+            if (waitTime > 0) yield return new WaitForSeconds(waitTime);
             currentAmmoInMag += ammoToLoad;
             totalAmmo -= ammoToLoad;
         }
 
-        // Animación de "subida" del arma.
+        // Animación de subida
         t = 0;
         while (t < 1f)
         {
             t += Time.deltaTime * reloadAnimSpeed;
-            weaponHolder.localRotation = Quaternion.Lerp(
-                Quaternion.Euler(reloadRotation),
-                Quaternion.Euler(weaponInitialLocalRot),
-                t
-            );
+            weaponHolder.localRotation = Quaternion.Lerp(Quaternion.Euler(reloadRotation), Quaternion.Euler(weaponInitialLocalRot), t);
             yield return null;
         }
 
         isReloading = false;
-
-        // Actualiza la UI al final (si no es escopeta).
-        if (currentWeapon.weaponType != WeaponType.Shotgun)
-        {
-            UpdateAmmoUI();
-        }
+        if (currentWeapon.weaponType != WeaponType.Shotgun) UpdateAmmoUI();
     }
 
-    // === DISPARO ===
+    // =================================================================================
+    //                                  DISPARO
+    // =================================================================================
 
-    /// <summary>
-    /// Maneja el input de disparo y lo dirige al método de disparo correcto.
-    /// </summary>
     void HandleShooting()
     {
         if (currentWeapon == null) return;
 
-        // Switch para diferentes lógicas de disparo
         switch (currentWeapon.weaponType)
         {
             case WeaponType.Pistol:
                 if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime && !isBursting)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    if (currentWeapon.isUpgraded)
-                        StartCoroutine(BurstFire()); // Dispara ráfaga si está mejorada.
-                    else
-                        Shoot(); // Disparo simple.
+                    if (currentWeapon.isUpgraded) StartCoroutine(BurstFire()); else Shoot();
                 }
                 break;
-
             case WeaponType.Rifle:
-                if (Input.GetButton("Fire1") && Time.time >= nextFireTime) // Automático (GetButton)
+                if (Input.GetButton("Fire1") && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
                     ShootRifle();
                 }
                 break;
-
             case WeaponType.Shotgun:
-                if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime) // Semiautomático (GetButtonDown)
+                if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
                     StartCoroutine(ShootShotgunCoroutine());
@@ -360,133 +300,61 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Lógica de disparo base (usada por la pistola).
-    /// </summary>
     void Shoot()
     {
-        // Comprueba si hay munición.
-        if (currentAmmoInMag <= 0)
-        {
-            PlaySound(currentWeapon.emptyClipSound);
-            if (totalAmmo > 0 && ammoText != null)
-            {
-                ammoText.text = "R para recargar";
-                ammoText.color = defaultAmmoColor;
-            }
-            return;
-        }
-
-        // Gasta munición, reproduce efectos y lanza el rayo.
-        PlaySound(currentWeapon.shootSound);
-        currentAmmoInMag--;
-        UpdateAmmoUI();
-        StartCoroutine(MuzzleFlashRoutine());
+        if (currentAmmoInMag <= 0) { HandleEmptyClip(); return; }
+        FireBaseLogic();
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
             HandleHit(hit, currentWeapon.damage * damageMultiplier);
 
         ApplyRecoil();
     }
 
-    /// <summary>
-    /// Lógica de disparo en ráfaga (Pistola mejorada).
-    /// </summary>
     private IEnumerator BurstFire()
     {
         if (isBursting) yield break;
         isBursting = true;
-
         int burstCount = 3;
+
         for (int i = 0; i < burstCount; i++)
         {
-            if (currentAmmoInMag <= 0)
-            {
-                PlaySound(currentWeapon.emptyClipSound);
-                if (totalAmmo > 0 && ammoText != null)
-                {
-                    ammoText.text = "R para recargar";
-                    ammoText.color = defaultAmmoColor;
-                }
-                break; // Sale del bucle si se queda sin balas a mitad de ráfaga.
-            }
-
-            // Lógica de disparo (copiada de Shoot()).
-            PlaySound(currentWeapon.shootSound);
-            currentAmmoInMag--;
-            UpdateAmmoUI();
-            StartCoroutine(MuzzleFlashRoutine());
+            if (currentAmmoInMag <= 0) { HandleEmptyClip(); break; }
+            FireBaseLogic();
 
             Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
                 HandleHit(hit, currentWeapon.damage * damageMultiplier);
 
             ApplyRecoil();
-            yield return new WaitForSeconds(currentWeapon.fireRate); // Espera entre disparos de ráfaga.
+            yield return new WaitForSeconds(currentWeapon.fireRate);
         }
-
-        yield return new WaitForSeconds(0.1f); // Pequeño cooldown después de la ráfaga.
+        yield return new WaitForSeconds(0.1f);
         isBursting = false;
     }
 
-    /// <summary>
-    /// Lógica de disparo del Rifle (idéntica a Shoot, pero separada por si acaso).
-    /// </summary>
     void ShootRifle()
     {
-        if (currentAmmoInMag <= 0)
-        {
-            PlaySound(currentWeapon.emptyClipSound);
-            if (totalAmmo > 0 && ammoText != null)
-            {
-                ammoText.text = "R para recargar";
-                ammoText.color = defaultAmmoColor;
-            }
-            return;
-        }
-
-        PlaySound(currentWeapon.shootSound);
-        currentAmmoInMag--;
-        UpdateAmmoUI();
-        StartCoroutine(MuzzleFlashRoutine());
+        if (currentAmmoInMag <= 0) { HandleEmptyClip(); return; }
+        FireBaseLogic();
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
             HandleHit(hit, currentWeapon.damage * damageMultiplier);
 
         ApplyRecoil();
     }
 
-    /// <summary>
-    /// Lógica de disparo de la Escopeta (múltiples rayos).
-    /// </summary>
     IEnumerator ShootShotgunCoroutine()
     {
-        if (currentAmmoInMag <= 0)
-        {
-            PlaySound(currentWeapon.emptyClipSound);
-            if (totalAmmo > 0 && ammoText != null)
-            {
-                ammoText.text = "R para recargar";
-                ammoText.color = defaultAmmoColor;
-            }
-            yield break;
-        }
+        if (currentAmmoInMag <= 0) { HandleEmptyClip(); yield break; }
+        FireBaseLogic();
 
-        PlaySound(currentWeapon.shootSound);
-        currentAmmoInMag--;
-        UpdateAmmoUI();
-        StartCoroutine(MuzzleFlashRoutine());
-
-        // Lanza múltiples rayos (perdigones).
         for (int i = 0; i < currentWeapon.pelletCount; i++)
         {
-            // Calcula una dirección aleatoria dentro del ángulo de dispersión (spread).
             Vector3 direction = playerCamera.transform.forward;
+            // Dispersión aleatoria
             direction = Quaternion.Euler(
                 Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle),
                 Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle),
@@ -494,14 +362,11 @@ public class PlayerShooting : MonoBehaviour
             ) * direction;
 
             Ray ray = new Ray(playerCamera.transform.position, direction);
-
             if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-                HandleHit(hit, currentWeapon.damage * damageMultiplier); // Cada perdigón hace daño completo.
+                HandleHit(hit, currentWeapon.damage * damageMultiplier);
         }
 
         ApplyRecoil();
-
-        // Reproduce el sonido de "pump action" después de un delay.
         if (currentWeapon.pumpActionSound != null)
         {
             yield return new WaitForSeconds(currentWeapon.actionSoundDelay);
@@ -509,37 +374,19 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Lógica de disparo del Sniper (penetración).
-    /// </summary>
     IEnumerator ShootSniperCoroutine()
     {
-        if (currentAmmoInMag <= 0)
-        {
-            PlaySound(currentWeapon.emptyClipSound);
-            if (totalAmmo > 0 && ammoText != null)
-            {
-                ammoText.text = "R para recargar";
-                ammoText.color = defaultAmmoColor;
-            }
-            yield break;
-        }
-
-        PlaySound(currentWeapon.shootSound);
-        currentAmmoInMag--;
-        UpdateAmmoUI();
-        StartCoroutine(MuzzleFlashRoutine());
+        if (currentAmmoInMag <= 0) { HandleEmptyClip(); yield break; }
+        FireBaseLogic();
         ApplyRecoil();
 
-        // Usa RaycastAll para obtener todos los impactos.
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        // Penetración: RaycastAll
         RaycastHit[] hits = Physics.RaycastAll(ray, currentWeapon.range);
 
         if (hits.Length > 0)
         {
-            // Ordena los impactos por distancia (cercano a lejano).
             var sortedHits = hits.OrderBy(h => h.distance);
-            // HashSet para evitar dañar al mismo zombi múltiples veces con un disparo.
             HashSet<ZombieController> alreadyDamaged = new HashSet<ZombieController>();
             int targetsHit = 0;
 
@@ -548,36 +395,26 @@ public class PlayerShooting : MonoBehaviour
                 ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
                 ZombieController zombieHealth = null;
 
-                if (hitbox != null)
-                    zombieHealth = hitbox.zombieController;
-                else
-                    zombieHealth = hit.collider.GetComponent<ZombieController>();
+                if (hitbox != null) zombieHealth = hitbox.zombieController;
+                else zombieHealth = hit.collider.GetComponent<ZombieController>();
 
                 if (zombieHealth != null)
                 {
-                    // Si es un zombi y no ha sido dañado por este disparo...
                     if (!alreadyDamaged.Contains(zombieHealth))
                     {
                         HandleHit(hit, currentWeapon.damage * damageMultiplier);
                         alreadyDamaged.Add(zombieHealth);
                         targetsHit++;
-
-                        // Si alcanzamos el límite de penetración, paramos.
-                        if (targetsHit >= currentWeapon.penetrationCount)
-                        {
-                            break;
-                        }
+                        if (targetsHit >= currentWeapon.penetrationCount) break;
                     }
                 }
                 else
                 {
-                    // Si no es un zombi (ej. una pared), aplica el impacto (agujero de bala).
                     HandleHit(hit, currentWeapon.damage * damageMultiplier);
                 }
             }
         }
 
-        // Reproduce el sonido del cerrojo (bolt action) después de un delay.
         if (currentWeapon.boltActionSound != null)
         {
             yield return new WaitForSeconds(currentWeapon.actionSoundDelay);
@@ -585,89 +422,153 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // === GESTIÓN DE IMPACTOS ===
-
-    /// <summary>
-    /// Maneja lo que sucede cuando un Raycast impacta algo.
-    /// Aplica daño y crea agujeros de bala.
-    /// </summary>
-    void HandleHit(RaycastHit hit, float damage)
+    void FireBaseLogic()
     {
-        // Lógica para encontrar el script de salud del zombi,
-        // ya sea en el hitbox o en el collider principal.
-        ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
-        ZombieController zombieHealth = null;
+        PlaySound(currentWeapon.shootSound);
+        currentAmmoInMag--;
+        UpdateAmmoUI();
+        StartCoroutine(MuzzleFlashRoutine());
+    }
 
-        if (hitbox != null) // Si golpea un hitbox...
+    void HandleEmptyClip()
+    {
+        PlaySound(currentWeapon.emptyClipSound);
+
+        if (totalAmmo > 0)
         {
-            zombieHealth = hitbox.zombieController;
-            if (zombieHealth != null)
+
+            if (!isReloading)
             {
-                // Pasa el daño y el tipo de hitbox (para multiplicadores).
-                zombieHealth.TakeDamage(damage, hitbox.hitboxType);
+                StartCoroutine(ReloadCoroutine());
             }
         }
-        else // Si golpea el collider principal...
+        else
         {
-            zombieHealth = hit.collider.GetComponent<ZombieController>();
-            if (zombieHealth != null)
+            if (ammoText != null)
             {
-                zombieHealth.TakeDamage(damage); // Daño normal (al cuerpo).
+                ammoText.text = "SIN MUNICIÓN";
+                ammoText.color = Color.red;
             }
-        }
-
-        if (zombieHealth != null)
-        {
-            // Log de depuración.
-            float remainingHealth = zombieHealth.GetHP();
-            Debug.Log($"El Zombie {hit.collider.name} ha recibido {damage} de daño y le quedan {remainingHealth:F1} de vida.");
-        }
-
-        // Lógica para crear agujeros de bala.
-        if (hit.collider.CompareTag("Zombie") && currentWeapon.bulletHolePrefab != null)
-        {
-            // Calcula la rotación del agujero para que quede plano sobre la superficie golpeada.
-            Quaternion hitRotation = Quaternion.FromToRotation(Vector3.forward, hit.normal) * Quaternion.Euler(0, 180f, 0);
-            GameObject hole = Instantiate(currentWeapon.bulletHolePrefab,
-                                        hit.point + hit.normal * 0.001f, // Un pequeño offset para evitar z-fighting.
-                                        hitRotation);
-
-            hole.transform.SetParent(hit.transform); // Emparenta el agujero al zombi (para que se mueva con él).
-            hole.transform.Rotate(0, 0, Random.Range(0, 360)); // Rota aleatoriamente.
-
-            Collider holeCollider = hole.GetComponent<Collider>();
-            if (holeCollider != null) holeCollider.enabled = false; // Desactiva el collider del agujero.
-
-            Destroy(hole, 5f); // Destruye el agujero después de 5 segundos.
         }
     }
 
+    // =================================================================================
+    //                GESTIÓN DE IMPACTOS, DECALS Y PARTÍCULAS
+    // =================================================================================
 
-    // === CAMBIO DE ARMA ===
+    void HandleHit(RaycastHit hit, float damage)
+    {
+        // 1. APLICAR DAÑO
+        ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
+        ZombieController zombieHealth = null;
 
-    /// <summary>
-    /// Equipar una nueva arma. Maneja el guardado de munición y la instanciación del modelo.
-    /// </summary>
+        if (hitbox != null)
+        {
+            zombieHealth = hitbox.zombieController;
+            if (zombieHealth != null) zombieHealth.TakeDamage(damage, hitbox.hitboxType);
+        }
+        else
+        {
+            zombieHealth = hit.collider.GetComponent<ZombieController>();
+            if (zombieHealth != null) zombieHealth.TakeDamage(damage);
+        }
+
+        // SELECCIONAR EFECTOS VISUALES SEGÚN TAG
+        Sprite decalSprite = null;
+        GameObject particlePrefab = null;
+
+        if (hit.collider.CompareTag("Zombie"))
+        {
+            // Partículas de Sangre
+            particlePrefab = bloodParticlePrefab;
+
+            // Sprite de Sangre/Herida aleatorio. Esto en teoria se deberia de poder quitar porque se ha puesto un sistema de particulas
+            if (zombieBulletHoleSprites != null && zombieBulletHoleSprites.Length > 0)
+            {
+                int rnd = Random.Range(0, zombieBulletHoleSprites.Length);
+                decalSprite = zombieBulletHoleSprites[rnd];
+            }
+        }
+        else if (hit.collider.CompareTag("Mapa"))
+        {
+            // Partículas de Polvo/Tierra
+            particlePrefab = dustParticlePrefab;
+
+            // Sprite de Agujero en pared
+            decalSprite = mapBulletHoleSprite;
+        }
+
+        // INSTANCIAR EFECTOS
+
+        // Partículas (Splash)
+        if (particlePrefab != null)
+        {
+            SpawnParticleEffect(hit, particlePrefab);
+        }
+
+        // Decal (Sprite pegado)
+        if (decalSprite != null && bulletHoleBasePrefab != null)
+        {
+            SpawnDecal(hit, decalSprite);
+        }
+        // Fallback (Sistema antiguo de WeaponData si no se configuró el nuevo)
+        else if (hit.collider.CompareTag("Zombie") && currentWeapon.bulletHolePrefab != null && bulletHoleBasePrefab == null)
+        {
+            SpawnLegacyDecal(hit);
+        }
+    }
+
+    private void SpawnParticleEffect(RaycastHit hit, GameObject prefab)
+    {
+        // LookRotation(hit.normal) orienta las partículas hacia afuera de la superficie
+        GameObject effect = Instantiate(prefab, hit.point + (hit.normal * 0.02f), Quaternion.LookRotation(hit.normal));
+        Destroy(effect, 2f);
+    }
+
+    private void SpawnDecal(RaycastHit hit, Sprite sprite)
+    {
+        Quaternion hitRotation = Quaternion.LookRotation(hit.normal);
+        // Offset de 0.01f para evitar z-fighting
+        GameObject hole = Instantiate(bulletHoleBasePrefab, hit.point + (hit.normal * 0.01f), hitRotation);
+
+        SpriteRenderer sr = hole.GetComponent<SpriteRenderer>();
+        if (sr != null) sr.sprite = sprite;
+        else Debug.LogWarning("El 'bulletHoleBasePrefab' no tiene SpriteRenderer.");
+
+        hole.transform.SetParent(hit.collider.transform);
+        Destroy(hole, 5f);
+    }
+
+    private void SpawnLegacyDecal(RaycastHit hit)
+    {
+        Quaternion hitRotation = Quaternion.FromToRotation(Vector3.forward, hit.normal) * Quaternion.Euler(0, 180f, 0);
+        GameObject hole = Instantiate(currentWeapon.bulletHolePrefab, hit.point + hit.normal * 0.001f, hitRotation);
+        hole.transform.SetParent(hit.collider.transform);
+        hole.transform.Rotate(0, 0, Random.Range(0, 360));
+        Collider holeCollider = hole.GetComponent<Collider>();
+        if (holeCollider != null) holeCollider.enabled = false;
+        Destroy(hole, 5f);
+    }
+
+    // =================================================================================
+    //                          INVENTARIO Y UTILIDADES
+    // =================================================================================
+
     public void EquipWeapon(WeaponData weaponData)
     {
-        // 1. Guarda la munición del arma actual (si hay una) en el caché.
-        if (currentWeapon != null && currentWeaponModel != null)
+        // Guardar estado del arma anterior
+        if (currentWeapon != null)
         {
             ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
             totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
         }
 
-        // 2. Destruye el modelo 3D del arma antigua.
-        if (currentWeaponModel != null)
-            Destroy(currentWeaponModel);
+        // Destruir modelo anterior
+        if (currentWeaponModel != null) Destroy(currentWeaponModel);
 
-        // 3. Asigna la nueva arma.
         currentWeapon = weaponData;
-
-        // 4. Resetea el estado de apuntado.
         StopAiming();
 
-        // 5. Si el arma nueva es nula (ej. sin arma), limpia la UI y sale.
         if (currentWeapon == null)
         {
             if (crosshairImage != null) crosshairImage.enabled = false;
@@ -675,86 +576,58 @@ public class PlayerShooting : MonoBehaviour
             return;
         }
 
-        // 6. Instancia el nuevo modelo 3D y lo emparenta al weaponHolder.
+        // Instanciar nuevo modelo
         if (currentWeapon.weaponModelPrefab != null && weaponHolder != null)
         {
             currentWeaponModel = Instantiate(currentWeapon.weaponModelPrefab, weaponHolder);
             currentWeaponModel.transform.localPosition = Vector3.zero;
             currentWeaponModel.transform.localRotation = Quaternion.identity;
 
-            // Busca la luz del MuzzleFlash en los hijos del modelo nuevo.
+            // Buscar la luz del fogonazo
             Light newMuzzleLight = currentWeaponModel.GetComponentInChildren<Light>();
             muzzleLight = newMuzzleLight;
-            if (muzzleLight == null) Debug.LogWarning($"El arma {weaponData.weaponName} no tiene un componente Light.");
         }
 
-        // 7. Carga la munición del caché para la nueva arma.
+        // Recuperar o inicializar munición
         if (ammoInMagCache.ContainsKey(currentWeapon.weaponType))
         {
             currentAmmoInMag = ammoInMagCache[currentWeapon.weaponType];
             totalAmmo = totalAmmoCache[currentWeapon.weaponType];
         }
-        else // Si es la primera vez que se equipa esta arma...
+        else
         {
-            // ...dale la munición por defecto y guárdala en el caché.
             currentAmmoInMag = currentWeapon.magCapacity;
             totalAmmo = currentWeapon.maxAmmo - currentAmmoInMag;
             ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
             totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
         }
 
-        // 8. Resetea el estado y actualiza la UI.
         isReloading = false;
         UpdateAmmoUI();
         UpdateCrosshair();
     }
 
-    // === RECOIL ===
-
-    /// <summary>
-    /// Aplica el retroceso (kick) a la cámara y al modelo del arma.
-    /// </summary>
     private void ApplyRecoil()
     {
-        // 1. Recoil de Cámara (Rotación):
         if (cameraController != null)
         {
-            // Pide al CameraController que aplique un offset de rotación.
             float vertical = Random.Range(currentWeapon.recoilVerticalMin, currentWeapon.recoilVerticalMax);
             float horizontal = Random.Range(currentWeapon.recoilHorizontalMin, currentWeapon.recoilHorizontalMax);
             cameraController.AddRecoil(vertical, horizontal);
         }
-
-        // 2. Kickback del Arma (Posición):
         if (weaponHolder != null)
         {
-            // Aplica un offset hacia atrás al modelo del arma.
             weaponCurrentOffset = new Vector3(0, 0, -currentWeapon.weaponKickbackDistance);
         }
     }
 
-    // === ACTUALIZACIÓN DE HUD ===
-
-    /// <summary>
-    /// Actualiza el texto de munición en el HUD.
-    /// </summary>
     private void UpdateAmmoUI()
     {
         if (ammoText == null) return;
-
         if (currentWeapon != null)
         {
             ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
-
-            // Cambia a color rojo si no queda munición.
-            if (currentAmmoInMag == 0 && totalAmmo == 0)
-            {
-                ammoText.color = Color.red;
-            }
-            else
-            {
-                ammoText.color = defaultAmmoColor;
-            }
+            ammoText.color = (currentAmmoInMag == 0 && totalAmmo == 0) ? Color.red : defaultAmmoColor;
         }
         else
         {
@@ -763,16 +636,11 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Actualiza el sprite y tamaño de la mira (crosshair).
-    /// </summary>
     private void UpdateCrosshair()
     {
         if (crosshairRectTransform == null) return;
-
         if (currentWeapon != null && currentWeapon.crosshairIcon != null)
         {
-            // Asigna el sprite y el tamaño definidos en el WeaponData.
             crosshairImage.sprite = currentWeapon.crosshairIcon;
             crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
             crosshairRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
@@ -781,17 +649,9 @@ public class PlayerShooting : MonoBehaviour
             crosshairRectTransform.sizeDelta = currentWeapon.crosshairSize;
             crosshairImage.enabled = true;
         }
-        else
-        {
-            crosshairImage.enabled = false; // Oculta la mira si no hay arma.
-        }
+        else crosshairImage.enabled = false;
     }
 
-    // === OTROS MÉTODOS ===
-
-    /// <summary>
-    /// Corrutina para el efecto de luz del fogonazo.
-    /// </summary>
     private IEnumerator MuzzleFlashRoutine()
     {
         if (muzzleLight == null) yield break;
@@ -800,128 +660,75 @@ public class PlayerShooting : MonoBehaviour
         muzzleLight.enabled = false;
     }
 
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+    }
+
     // --- Métodos de Guardado/Carga ---
 
-    /// <summary>
-    /// Llamado por SaveLoadManager. Guarda la munición actual en el caché
-    /// y devuelve una lista de todos los datos de munición.
-    /// </summary>
     public List<WeaponAmmoData> GetAmmoData()
     {
-        // Asegura que la munición del arma equipada esté actualizada en el caché.
         if (currentWeapon != null)
         {
             ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
             totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
         }
-
-        // Convierte los diccionarios de caché en una lista para serializar.
         List<WeaponAmmoData> dataList = new List<WeaponAmmoData>();
         foreach (var key in ammoInMagCache.Keys)
         {
-            dataList.Add(new WeaponAmmoData
-            {
-                weaponType = key,
-                currentMagAmmo = ammoInMagCache[key],
-                currentTotalAmmo = totalAmmoCache[key]
-            });
+            dataList.Add(new WeaponAmmoData { weaponType = key, currentMagAmmo = ammoInMagCache[key], currentTotalAmmo = totalAmmoCache[key] });
         }
         return dataList;
     }
 
-    /// <summary>
-    /// Llamado por SaveLoadManager. Recibe los datos de munición guardados
-    /// y los carga en el caché.
-    /// </summary>
     public void LoadAmmoData(List<WeaponAmmoData> dataList)
     {
         ammoInMagCache.Clear();
         totalAmmoCache.Clear();
-
         if (dataList == null) return;
-
-        // Rellena los diccionarios de caché con los datos guardados.
         foreach (var data in dataList)
         {
             ammoInMagCache[data.weaponType] = data.currentMagAmmo;
             totalAmmoCache[data.weaponType] = data.currentTotalAmmo;
         }
-        Debug.Log("Datos de munición cargados en el caché de PlayerShooting.");
     }
 
-    /// <summary>
-    /// Llamado por la Tienda de Armas. Rellena la munición del arma actual al máximo.
-    /// </summary>
     public void ForceCurrentWeaponAmmoToFull()
     {
         if (currentWeapon == null) return;
-
         currentAmmoInMag = currentWeapon.magCapacity;
         totalAmmo = currentWeapon.maxAmmo - currentWeapon.magCapacity;
-
-        // Actualiza el caché también.
         ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
         totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
-
         UpdateAmmoUI();
     }
 
-    /// <summary>
-    /// Llamado por la Tienda de Armas. Comprueba si un arma (esté equipada o no)
-    /// ya tiene la munición al máximo.
-    /// </summary>
     public bool IsAmmoFull(WeaponData weaponData)
     {
         if (weaponData == null) return true;
-
         int currentMag = 0;
         int currentTotal = 0;
-
-        // Comprueba la munición del arma equipada.
         if (currentWeapon != null && weaponData.weaponType == currentWeapon.weaponType)
         {
             currentMag = currentAmmoInMag;
             currentTotal = totalAmmo;
         }
-        // O comprueba la munición del caché si el arma no está equipada.
         else if (ammoInMagCache.ContainsKey(weaponData.weaponType))
         {
             currentMag = ammoInMagCache[weaponData.weaponType];
             currentTotal = totalAmmoCache[weaponData.weaponType];
         }
-        else
-        {
-            return false; // Si no está en el caché, no la tenemos, ergo no está llena.
-        }
+        else return false;
 
-        // Compara la munición actual con la máxima capacidad del arma.
         int maxMag = weaponData.magCapacity;
         int maxTotal = weaponData.maxAmmo - weaponData.magCapacity;
-
-        bool isFull = currentMag >= maxMag && currentTotal >= maxTotal;
-        return isFull;
+        return currentMag >= maxMag && currentTotal >= maxTotal;
     }
 
-    /// <summary>
-    /// Getter para saber qué tipo de arma está equipada.
-    /// </summary>
     public WeaponType GetEquippedWeaponType()
     {
-        if (currentWeapon != null)
-        {
-            return currentWeapon.weaponType;
-        }
-        return (WeaponType)(-1); // Devuelve un valor inválido si no hay arma.
-    }
-
-    /// <summary>
-    /// Helper para reproducir sonidos one-shot.
-    /// </summary>
-    private void PlaySound(AudioClip clip)
-    {
-        if (audioSource != null && clip != null)
-        {
-            audioSource.PlayOneShot(clip);
-        }
+        if (currentWeapon != null) return currentWeapon.weaponType;
+        return (WeaponType)(-1);
     }
 }
