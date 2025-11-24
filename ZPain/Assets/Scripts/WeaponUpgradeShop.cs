@@ -10,11 +10,33 @@ public class WeaponUpgradeShop : MonoBehaviour
     [Header("UI del mensaje")]
     public TextMeshProUGUI interactionText;
 
-    [Header("Valores de mejora")]
+    [Header("Valores de mejora (Mecánicas)")]
     [SerializeField] private int shotgunUpgradePellets = 8;
-    [SerializeField] private float rifleUpgradeFireRate = 1f;
+    [SerializeField] private float rifleUpgradeFireRate = 0.08f; // Cuidado con poner 1f aqui, seria muy lento. Menor es mas rapido.
     [SerializeField] private float pistolBurstFireRate = 0.1f;
     [SerializeField] private int sniperUpgradePenetration = 3;
+
+    [Header("Valores de mejora (Munición: Cargador / Total)")]
+    [Tooltip("Nuevo tamaño del cargador para la Pistola mejorada")]
+    [SerializeField] private int pistolUpgradedMag = 20;
+    [Tooltip("Nueva munición total para la Pistola mejorada")]
+    [SerializeField] private int pistolUpgradedMaxAmmo = 120;
+
+    [Tooltip("Nuevo tamaño del cargador para el Rifle mejorado")]
+    [SerializeField] private int rifleUpgradedMag = 45;
+    [Tooltip("Nueva munición total para el Rifle mejorado")]
+    [SerializeField] private int rifleUpgradedMaxAmmo = 270;
+
+    [Tooltip("Nuevo tamaño del cargador para la Escopeta mejorada")]
+    [SerializeField] private int shotgunUpgradedMag = 12;
+    [Tooltip("Nueva munición total para la Escopeta mejorada")]
+    [SerializeField] private int shotgunUpgradedMaxAmmo = 64;
+
+    [Tooltip("Nuevo tamaño del cargador para el Sniper mejorado")]
+    [SerializeField] private int sniperUpgradedMag = 10;
+    [Tooltip("Nueva munición total para el Sniper mejorado")]
+    [SerializeField] private int sniperUpgradedMaxAmmo = 50;
+
 
     private Camera playerCamera;
     private PlayerShooting playerShooting;
@@ -96,32 +118,56 @@ public class WeaponUpgradeShop : MonoBehaviour
             return;
         }
 
+        // Aplicar lógica según el tipo de arma
         switch (weapon.weaponType)
         {
             case WeaponType.Pistol:
                 weapon.isUpgraded = true;
                 weapon.fireRate = pistolBurstFireRate;
-                Debug.Log("Pistola mejorada: ahora dispara ráfagas de 3 balas.");
+
+                // Nuevas capacidades
+                weapon.magCapacity = pistolUpgradedMag;
+                weapon.maxAmmo = pistolUpgradedMaxAmmo;
+
+                Debug.Log("Pistola mejorada: ráfagas y más munición.");
                 break;
 
             case WeaponType.Rifle:
                 weapon.isUpgraded = true;
                 weapon.fireRate = rifleUpgradeFireRate;
-                Debug.Log($"Rifle mejorado. Valor asignado a fireRate: {weapon.fireRate}.");
-                Debug.Log("Rifle mejorado: ahora dispara más rápido.");
+
+                // Nuevas capacidades
+                weapon.magCapacity = rifleUpgradedMag;
+                weapon.maxAmmo = rifleUpgradedMaxAmmo;
+
+                Debug.Log($"Rifle mejorado: disparo rápido y más munición.");
                 break;
 
             case WeaponType.Shotgun:
                 weapon.isUpgraded = true;
                 weapon.pelletCount = shotgunUpgradePellets;
-                Debug.Log("Escopeta mejorada: ahora dispara más perdigones.");
+
+                // Nuevas capacidades
+                weapon.magCapacity = shotgunUpgradedMag;
+                weapon.maxAmmo = shotgunUpgradedMaxAmmo;
+
+                Debug.Log("Escopeta mejorada: más perdigones y más munición.");
                 break;
+
             case WeaponType.Sniper:
                 weapon.isUpgraded = true;
                 weapon.penetrationCount = sniperUpgradePenetration;
-                Debug.Log("Sniper mejorado: ahora atraviesa enemigos.");    
+
+                // Nuevas capacidades
+                weapon.magCapacity = sniperUpgradedMag;
+                weapon.maxAmmo = sniperUpgradedMaxAmmo;
+
+                Debug.Log("Sniper mejorado: perforación y más munición.");
                 break;
         }
+
+        // Rellenar la munición cuando se mejoran las armas
+        playerShooting.ForceCurrentWeaponAmmoToFull();
 
         interactionText.text = $"{weapon.weaponName} mejorada correctamente!";
     }

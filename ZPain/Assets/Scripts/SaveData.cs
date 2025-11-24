@@ -9,7 +9,6 @@ public class WeaponAmmoData
     public int currentTotalAmmo;
 }
 
-
 [System.Serializable]
 public class SaveData
 {
@@ -26,7 +25,13 @@ public class SaveData
     public List<PowerUpType> ownedPowerUps;
     public List<WeaponType> ownedWeapons;
     public List<WeaponType> upgradedWeapons;
-    public WeaponType equippedWeaponType; 
+
+    // Datos de los slots del inventario 
+    public int weaponTypeInSlot0 = -1;
+    public int weaponTypeInSlot1 = -1;
+    public int activeSlotIndex = 0;
+
+    public WeaponType equippedWeaponType;
 
     public List<WeaponAmmoData> ammoData;
 }
