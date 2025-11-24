@@ -20,6 +20,8 @@ public class CameraController : MonoBehaviour
     // Acumulador para la rotación vertical. Debe ser un campo de clase para persistir.
     private float verticalRotation = 0f;
 
+    private float sensitivityMultiplier = 1f;
+
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
@@ -33,8 +35,8 @@ public class CameraController : MonoBehaviour
         if (GameManager.IsPaused || GameManager.GameIsOver)
             return;
 
-        float mouseX = Input.GetAxis("Mouse X") * sensibility * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * sensibility * Time.deltaTime;
+        float mouseX = Input.GetAxis("Mouse X") * sensibility * sensitivityMultiplier * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * sensibility * sensitivityMultiplier * Time.deltaTime;
 
         // --- Rotación Vertical ---
 
@@ -67,5 +69,10 @@ public class CameraController : MonoBehaviour
     public void SetSensibility(float newSensibility)
     {
         sensibility = newSensibility;
+    }
+
+    public void SetSensitivityMultiplier(float multiplier) 
+    {
+        sensitivityMultiplier = multiplier;
     }
 }

@@ -75,6 +75,9 @@ public class PlayerShooting : MonoBehaviour
     private bool isAiming = false;
     private bool weaponHiddenForScope = false;
 
+    [SerializeField][Range(0.1f, 1f)] private float aimSensitivityMultiplier = 0.7f;
+    private Vector3 currentWeaponPositionVelocity;
+
     [Header("Animación de Recarga")]
     [SerializeField] private Vector3 reloadRotation = new Vector3(35f, 0f, 0f);
     [SerializeField] private float reloadAnimSpeed = 8f;
@@ -125,20 +128,59 @@ public class PlayerShooting : MonoBehaviour
 
         HandleWeaponSwitching();
 
+        // Si recargamos, no calculamos posición/rotación aquí (lo hace la corrutina)
         if (isReloading) return;
 
         HandleShooting();
         HandleReloadInput();
         HandleAiming();
 
+        // =================================================================
+        // LÓGICA DE MOVIMIENTO Y ROTACIÓN DEL ARMA (Iron Sights)
+        // =================================================================
         if (weaponHolder != null && currentWeapon != null)
         {
+            // --- 1. POSICIÓN ---
+            Vector3 targetPosition = weaponInitialLocalPos; // Base: Cadera
+
+            // Si apuntamos y NO es modo sniper
+            if (isAiming && currentWeapon.sniperScopeSprite == null)
+            {
+                targetPosition = currentWeapon.aimPosition;
+            }
+
+            // Interpolación suave de la posición
+            Vector3 smoothPosition = Vector3.Lerp(
+                weaponHolder.localPosition - weaponCurrentOffset,
+                targetPosition,
+                Time.deltaTime * adsSpeed
+            );
+
+            // --- 2. ROTACIÓN (Aquí estaba el problema) ---
+            Quaternion targetRotation = Quaternion.Euler(weaponInitialLocalRot); // Base: Cadera
+
+            // Si apuntamos y NO es modo sniper, usamos la rotación de apuntado SIEMPRE
+            if (isAiming && currentWeapon.sniperScopeSprite == null)
+            {
+                targetRotation = Quaternion.Euler(currentWeapon.aimRotation);
+            }
+
+            // Interpolación suave de la rotación
+            weaponHolder.localRotation = Quaternion.Slerp(
+                weaponHolder.localRotation,
+                targetRotation,
+                Time.deltaTime * adsSpeed
+            );
+
+            // --- 3. RETROCESO (KICKBACK) ---
             weaponCurrentOffset = Vector3.Lerp(
                 weaponCurrentOffset,
                 Vector3.zero,
                 Time.deltaTime * currentWeapon.weaponKickbackReturnSpeed
             );
-            weaponHolder.localPosition = weaponInitialLocalPos + weaponCurrentOffset;
+
+            // Aplicar posición final (Base suavizada + Retroceso)
+            weaponHolder.localPosition = smoothPosition + weaponCurrentOffset;
         }
     }
 
@@ -620,24 +662,38 @@ public class PlayerShooting : MonoBehaviour
         if (currentWeapon.weaponType != WeaponType.Shotgun) UpdateAmmoUI();
     }
 
-    // === MÉTODOS DE APUNTADO (FIX: Clic Derecho) ===
+
     void HandleAiming()
     {
+        // 1. Verificaciones de seguridad
         if (currentWeapon == null || !currentWeapon.canAim)
         {
+            // Si dejamos de poder apuntar, aseguramos restaurar la sensibilidad
             if (isAiming) StopAiming();
             return;
         }
 
-        // GetMouseButton(1) = Clic Derecho
+        // 2. Input (Clic Derecho)
         if (Input.GetMouseButtonDown(1)) isAiming = true;
         if (Input.GetMouseButtonUp(1)) isAiming = false;
 
+        // 3. Zoom de Cámara (FOV)
         float targetFOV = isAiming ? currentWeapon.aimedFOV : defaultFOV;
         playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * adsSpeed);
 
+        // 4. GESTIÓN DE SENSIBILIDAD (¡NUEVO!)
+        if (cameraController != null)
+        {
+            if (isAiming)
+                cameraController.SetSensitivityMultiplier(aimSensitivityMultiplier); // Baja sensibilidad
+            else
+                cameraController.SetSensitivityMultiplier(1f); // Restaura sensibilidad
+        }
+
+        // 5. Lógica Visual (Sniper vs Iron Sights)
         if (isAiming && currentWeapon.sniperScopeSprite != null)
         {
+            // === MODO SNIPER ===
             if (crosshairRectTransform != null)
             {
                 crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
@@ -657,18 +713,24 @@ public class PlayerShooting : MonoBehaviour
         }
         else
         {
+            // === MODO NORMAL (Iron Sights) ===
             if (weaponHiddenForScope)
             {
                 if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
                 weaponHiddenForScope = false;
             }
-            UpdateCrosshair();
+
+            // Ocultar cruz UI al apuntar con mira de hierro
+            if (isAiming) crosshairImage.enabled = false;
+            else UpdateCrosshair();
         }
     }
 
     public void StopAiming()
     {
         isAiming = false;
+        if (cameraController != null) cameraController.SetSensitivityMultiplier(1f);
+        
         if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
         if (weaponHiddenForScope)
         {

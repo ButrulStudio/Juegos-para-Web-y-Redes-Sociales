@@ -53,10 +53,15 @@ public class WeaponData : ScriptableObject
     [Header("Apuntado (ADS - Aim Down Sights)")]
     [Tooltip("¿Puede esta arma apuntar con el clic derecho?")]
     public bool canAim = false;
-    [Tooltip("FOV de la cámara al apuntar (ej. 30 para sniper, 50 para rifle)")]
+    [Tooltip("FOV de la cámara al apuntar")]
     public float aimedFOV = 60f;
-    [Tooltip("Sprite de la mirilla del francotirador (si aplica)")]
+    [Tooltip("Sprite de la mirilla del francotirador")]
     public Sprite sniperScopeSprite;
+
+    [Tooltip("Posición local del arma cuando estás apuntando (para centrarla)")]
+    public Vector3 aimPosition;
+    [Tooltip("Rotación local del arma cuando estás apuntando (si es necesaria)")]
+    public Vector3 aimRotation;
 
     [Header("Parámetros de escopeta")]
     [Tooltip("Número de perdigones que se disparan en un tiro (solo para Shotgun)")]
