@@ -233,17 +233,19 @@ public class ZombieController : MonoBehaviour
         animator.SetTrigger("Die");
         StopAllCoroutines();
 
-        // 1. Desactivar Colliders físicos (para que las balas no le den)
-        if (physicalCollider != null) physicalCollider.enabled = false;
+        Collider[] allColliders = GetComponentsInChildren<Collider>();
+        foreach (Collider col in allColliders)
+        {
+            col.enabled = false;
+        }
 
-        // 2. DESACTIVAR NAVMESH AGENT (Muy importante)
-        // Si no lo apagas, el zombie muerto será un obstáculo invisible y los otros zombies no podrán pasar.
+            if (physicalCollider != null) physicalCollider.enabled = false;
         if (agent != null) agent.enabled = false;
 
         if (scoreManager != null) scoreManager.ZombieKilled();
         if (waveManager != null) waveManager.ZombieDied();
 
-        Destroy(gameObject, 2.8f); // Dar tiempo a que termine la animación antes de borrar
+        Destroy(gameObject, 2.8f);
     }
 
     private IEnumerator AmbientSoundRoutine()

@@ -139,7 +139,7 @@ CharacterController:
   m_SlopeLimit: 45
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
-  m_MinMoveDistance: 0.001
+  m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &8705484057191545052
 MonoBehaviour:
@@ -153,10 +153,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4510c86785d9ecd49b53cd01d817043d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerCameraRoot: {fileID: 0}
   moveSpeed: 5
-  sprintMultiplier: 1.5
-  jumpHeight: 1.5
+  jumpHeight: 0.5
   gravity: -9.81
+  sprintMultiplier: 1.5
+  sprintKey: 304
+  crouchKey: 306
+  crouchHeight: 1
+  standingHeight: 2
+  crouchSpeed: 2.5
+  cameraStandY: 1.6
+  cameraCrouchY: 0.8
+  cameraSmoothTime: 10
+  audioSource: {fileID: 0}
+  walkStepInterval: 0.5
+  sprintStepInterval: 0.3
+  crouchStepInterval: 0.8
+  footstepSounds:
+  - {fileID: 8300000, guid: 979a3be3a1202424bae9cc901016b021, type: 3}
   speedMultiplier: 1
 --- !u!114 &2423239809853153516
 MonoBehaviour:
@@ -178,6 +193,8 @@ MonoBehaviour:
   currentArmor: 0
   timeUntilRegenStarts: 3
   regenRatePerSecond: 20
+  audioSource: {fileID: 0}
+  damageSounds: []
 --- !u!1 &2599392171781388409
 GameObject:
   m_ObjectHideFlags: 0

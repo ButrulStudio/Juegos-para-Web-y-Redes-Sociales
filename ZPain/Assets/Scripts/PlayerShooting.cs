@@ -16,21 +16,25 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private TextMeshProUGUI ammoText;
     [SerializeField] private Image crosshairImage;
 
-    [Header("Puntuación")]
-    [Tooltip("Puntos que gana el jugador por cada bala que acierta al zombi")]
-    public int pointsPerHit = 10;
-
     private RectTransform crosshairRectTransform;
     private Color defaultAmmoColor;
 
+    [Header("Sistema de Puntuación")]
+    [Tooltip("Puntos ganados por acertar una bala (sin matar)")]
+    public int pointsPerHit = 10;
+
+    [Tooltip("Valor visual que se mostrará al matar (Asegúrate de configurar esto mismo en ScoreManager)")]
+    public int pointsPerKillDisplay = 150;
+
+    [Tooltip("El Prefab del texto flotante 3D (FloatingScoreText)")]
+    [SerializeField] private GameObject floatingTextPrefab;
+
     [Header("Sistema de Inventario (2 Slots)")]
-    // Array para guardar las dos armas.
     private WeaponData[] weaponSlots = new WeaponData[2];
-    // Índice para saber qué arma tenemos en la mano (0 o 1).
     private int currentSlotIndex = 0;
 
     [Header("Estado del Arma Actual")]
-    public WeaponData currentWeapon; // Referencia rápida al arma activa
+    public WeaponData currentWeapon;
     private GameObject currentWeaponModel;
     private float nextFireTime = 0f;
     private bool isBursting = false;
@@ -44,7 +48,6 @@ public class PlayerShooting : MonoBehaviour
     private int totalAmmo;
     private bool isReloading = false;
 
-    // Caché de munición global
     private Dictionary<WeaponType, int> ammoInMagCache = new Dictionary<WeaponType, int>();
     private Dictionary<WeaponType, int> totalAmmoCache = new Dictionary<WeaponType, int>();
 
@@ -60,10 +63,10 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private GameObject bloodParticlePrefab;
     [SerializeField] private GameObject dustParticlePrefab;
 
-    [Header("Decals")]
+    [Header("Decals (Escenario)")]
     [SerializeField] private GameObject bulletHoleBasePrefab;
     [SerializeField] private Sprite mapBulletHoleSprite;
-    [SerializeField] private Sprite[] zombieBulletHoleSprites;
+    // Eliminado: zombieBulletHoleSprites (ya no se usa)
 
     // --- APUNTADO ---
     [Header("Apuntado (ADS)")]
@@ -101,25 +104,17 @@ public class PlayerShooting : MonoBehaviour
         if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
     }
 
-    // Inicializa la partida poniendo el arma inicial en el Slot 0
     public void InitializeNewGame(WeaponData weaponToEquip)
     {
-        // Limpiamos los slots por si acaso
         weaponSlots[0] = null;
         weaponSlots[1] = null;
         currentSlotIndex = 0;
 
         if (weaponToEquip != null)
         {
-            // Creamos una copia para no sobrescribir el Asset original
             WeaponData newInstance = Instantiate(weaponToEquip);
-
-            // Equipamos directamente
             EquipWeapon(newInstance);
-
-            // Forzamos munición llena al empezar
             ForceCurrentWeaponAmmoToFull();
-
             WeaponStore.RegisterStartingWeapon(newInstance);
         }
     }
@@ -128,7 +123,6 @@ public class PlayerShooting : MonoBehaviour
     {
         if (GameManager.IsPaused || GameManager.GameIsOver) return;
 
-        // Gestión de cambio de arma con la rueda del ratón
         HandleWeaponSwitching();
 
         if (isReloading) return;
@@ -137,7 +131,6 @@ public class PlayerShooting : MonoBehaviour
         HandleReloadInput();
         HandleAiming();
 
-        // Recuperación del retroceso visual
         if (weaponHolder != null && currentWeapon != null)
         {
             weaponCurrentOffset = Vector3.Lerp(
@@ -150,106 +143,72 @@ public class PlayerShooting : MonoBehaviour
     }
 
     // =================================================================================
-    //                        SISTEMA DE CAMBIO DE ARMA (NUEVO)
+    //                        SISTEMA DE CAMBIO DE ARMA
     // =================================================================================
 
     void HandleWeaponSwitching()
     {
-        // No cambiar de arma si estamos recargando, apuntando o disparando ráfaga
         if (isReloading || isAiming || isBursting) return;
 
         float scroll = Input.GetAxis("Mouse ScrollWheel");
 
         if (scroll > 0f)
         {
-            // Rueda arriba -> Slot 0
-            if (currentSlotIndex != 0 && weaponSlots[0] != null)
-            {
-                SwitchToSlot(0);
-            }
+            if (currentSlotIndex != 0 && weaponSlots[0] != null) SwitchToSlot(0);
         }
         else if (scroll < 0f)
         {
-            // Rueda abajo -> Slot 1
-            if (currentSlotIndex != 1 && weaponSlots[1] != null)
-            {
-                SwitchToSlot(1);
-            }
+            if (currentSlotIndex != 1 && weaponSlots[1] != null) SwitchToSlot(1);
         }
 
-        // También puedes añadir teclas numéricas si quieres
         if (Input.GetKeyDown(KeyCode.Alpha1) && currentSlotIndex != 0 && weaponSlots[0] != null) SwitchToSlot(0);
         if (Input.GetKeyDown(KeyCode.Alpha2) && currentSlotIndex != 1 && weaponSlots[1] != null) SwitchToSlot(1);
     }
 
     private void SwitchToSlot(int newIndex)
     {
-        // 1. Guardar el estado del arma actual antes de cambiar
         SaveCurrentAmmoState();
-
-        // 2. Cambiar índice
         currentSlotIndex = newIndex;
-
-        // 3. Cargar visualmente el arma del nuevo slot
         RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
     }
-
-    // =================================================================================
-    //                        SISTEMA DE EQUIPAMIENTO (MODIFICADO)
-    // =================================================================================
 
     public void EquipWeapon(WeaponData newWeapon)
     {
         if (newWeapon == null) return;
-
-        // Antes de nada, guardamos la munición del arma que tenemos en la mano ahora mismo
         SaveCurrentAmmoState();
 
-        // LÓGICA DE HUECOS:
-        // Caso A: El Slot 0 está vacío.
         if (weaponSlots[0] == null)
         {
             weaponSlots[0] = newWeapon;
             currentSlotIndex = 0;
         }
-        // Caso B: El Slot 0 tiene algo, pero el Slot 1 está vacío.
         else if (weaponSlots[1] == null)
         {
             weaponSlots[1] = newWeapon;
             currentSlotIndex = 1;
         }
-        // Caso C: Ambos llenos -> Reemplazamos la que tenemos en la mano.
         else
         {
-            // (Opcional: Aquí podrías soltar el arma antigua al suelo)
             weaponSlots[currentSlotIndex] = newWeapon;
         }
 
-        // Finalmente, actualizamos el modelo 3D y la UI
         RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
     }
 
-    /// <summary>
-    /// Se encarga de destruir el modelo viejo, instanciar el nuevo y actualizar UI.
-    /// </summary>
     private void RefreshWeaponVisuals(WeaponData weaponData)
     {
-        // 1. Limpieza del modelo anterior
         if (currentWeaponModel != null) Destroy(currentWeaponModel);
 
-        // 2. Asignar datos
         currentWeapon = weaponData;
-        StopAiming(); // Resetear zoom
+        StopAiming();
 
         if (currentWeapon == null)
         {
-            // Si no hay arma en este slot (raro, pero posible)
             if (crosshairImage != null) crosshairImage.enabled = false;
             if (ammoText != null) ammoText.text = "";
             return;
         }
 
-        // 3. Instanciar nuevo modelo
         if (currentWeapon.weaponModelPrefab != null && weaponHolder != null)
         {
             currentWeaponModel = Instantiate(currentWeapon.weaponModelPrefab, weaponHolder);
@@ -260,193 +219,49 @@ public class PlayerShooting : MonoBehaviour
             muzzleLight = newMuzzleLight;
         }
 
-        // 4. Cargar Munición del caché
         LoadAmmoStateForWeapon(currentWeapon);
-
-        // 5. Resetear estados
         isReloading = false;
         UpdateAmmoUI();
         UpdateCrosshair();
     }
 
-    // --- Helpers de Munición ---
-
-    private void SaveCurrentAmmoState()
-    {
-        if (currentWeapon != null)
-        {
-            ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
-            totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
-        }
-    }
-
-    private void LoadAmmoStateForWeapon(WeaponData weapon)
-    {
-        if (ammoInMagCache.ContainsKey(weapon.weaponType))
-        {
-            currentAmmoInMag = ammoInMagCache[weapon.weaponType];
-            totalAmmo = totalAmmoCache[weapon.weaponType];
-        }
-        else
-        {
-            // Primera vez que cogemos este tipo de arma
-            currentAmmoInMag = weapon.magCapacity;
-            totalAmmo = weapon.maxAmmo - currentAmmoInMag;
-
-            // Guardar en caché inicial
-            ammoInMagCache[weapon.weaponType] = currentAmmoInMag;
-            totalAmmoCache[weapon.weaponType] = totalAmmo;
-        }
-    }
-
     // =================================================================================
-    //               RESTO DE LÓGICA (Disparo, Recarga, Impactos...) - IGUAL
+    //                        SISTEMA DE DISPARO (SOLO CLIC IZQUIERDO)
     // =================================================================================
-
-    void HandleAiming()
-    {
-        if (currentWeapon == null || !currentWeapon.canAim)
-        {
-            if (isAiming) StopAiming();
-            return;
-        }
-
-        if (Input.GetButtonDown("Fire2")) isAiming = true;
-        if (Input.GetButtonUp("Fire2")) isAiming = false;
-
-        float targetFOV = isAiming ? currentWeapon.aimedFOV : defaultFOV;
-        playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * adsSpeed);
-
-        if (isAiming && currentWeapon.sniperScopeSprite != null)
-        {
-            if (crosshairRectTransform != null)
-            {
-                crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-                crosshairRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-                crosshairRectTransform.pivot = new Vector2(0.5f, 0.5f);
-                crosshairRectTransform.anchoredPosition = Vector2.zero;
-                crosshairRectTransform.sizeDelta = currentWeapon.aimedCrosshairSize;
-            }
-            crosshairImage.sprite = currentWeapon.sniperScopeSprite;
-            crosshairImage.enabled = true;
-
-            if (!weaponHiddenForScope)
-            {
-                if (currentWeaponModel != null) currentWeaponModel.SetActive(false);
-                weaponHiddenForScope = true;
-            }
-        }
-        else
-        {
-            if (weaponHiddenForScope)
-            {
-                if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
-                weaponHiddenForScope = false;
-            }
-            UpdateCrosshair();
-        }
-    }
-
-    public void StopAiming()
-    {
-        isAiming = false;
-        if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
-        if (weaponHiddenForScope)
-        {
-            if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
-            weaponHiddenForScope = false;
-        }
-        UpdateCrosshair();
-    }
-
-    void HandleReloadInput()
-    {
-        if (currentWeapon == null) return;
-        if (Input.GetKeyDown(KeyCode.R) && !isReloading && currentAmmoInMag < currentWeapon.magCapacity && totalAmmo > 0)
-        {
-            StartCoroutine(ReloadCoroutine());
-        }
-    }
-
-    IEnumerator ReloadCoroutine()
-    {
-        isReloading = true;
-        PlaySound(currentWeapon.reloadSound);
-
-        float reloadTime = currentWeapon.reloadTime * reloadTimeMultiplier;
-        float animTime = 1f / reloadAnimSpeed;
-
-        float t = 0;
-        while (t < 1f)
-        {
-            t += Time.deltaTime * reloadAnimSpeed;
-            weaponHolder.localRotation = Quaternion.Lerp(Quaternion.Euler(weaponInitialLocalRot), Quaternion.Euler(reloadRotation), t);
-            yield return null;
-        }
-
-        int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
-        int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
-        float waitTime = Mathf.Max(0, reloadTime - animTime * 2f);
-
-        if (currentWeapon.weaponType == WeaponType.Shotgun && ammoToLoad > 0)
-        {
-            float timePerBullet = (waitTime > 0 && ammoToLoad > 0) ? waitTime / ammoToLoad : 0;
-            for (int i = 0; i < ammoToLoad; i++)
-            {
-                if (timePerBullet > 0) yield return new WaitForSeconds(timePerBullet);
-                currentAmmoInMag++;
-                totalAmmo--;
-                UpdateAmmoUI();
-            }
-        }
-        else
-        {
-            if (waitTime > 0) yield return new WaitForSeconds(waitTime);
-            currentAmmoInMag += ammoToLoad;
-            totalAmmo -= ammoToLoad;
-        }
-
-        t = 0;
-        while (t < 1f)
-        {
-            t += Time.deltaTime * reloadAnimSpeed;
-            weaponHolder.localRotation = Quaternion.Lerp(Quaternion.Euler(reloadRotation), Quaternion.Euler(weaponInitialLocalRot), t);
-            yield return null;
-        }
-
-        isReloading = false;
-        if (currentWeapon.weaponType != WeaponType.Shotgun) UpdateAmmoUI();
-    }
 
     void HandleShooting()
     {
         if (currentWeapon == null) return;
 
+        // CAMBIO PRINCIPAL: Usamos GetMouseButton(0) en lugar de "Fire1".
+        // 0 = Clic Izquierdo del ratón.
+        // Esto evita que la tecla Ctrl (que a veces está mapeada a Fire1) dispare.
+
         switch (currentWeapon.weaponType)
         {
             case WeaponType.Pistol:
-                if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime && !isBursting)
+                if (Input.GetMouseButtonDown(0) && Time.time >= nextFireTime && !isBursting)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
                     if (currentWeapon.isUpgraded) StartCoroutine(BurstFire()); else Shoot();
                 }
                 break;
             case WeaponType.Rifle:
-                if (Input.GetButton("Fire1") && Time.time >= nextFireTime)
+                if (Input.GetMouseButton(0) && Time.time >= nextFireTime) // GetMouseButton para automático
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
                     ShootRifle();
                 }
                 break;
             case WeaponType.Shotgun:
-                if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime)
+                if (Input.GetMouseButtonDown(0) && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
                     StartCoroutine(ShootShotgunCoroutine());
                 }
                 break;
             case WeaponType.Sniper:
-                if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime && !isBursting)
+                if (Input.GetMouseButtonDown(0) && Time.time >= nextFireTime && !isBursting)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
                     StartCoroutine(ShootSniperCoroutine());
@@ -562,6 +377,78 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
+    // -----------------------------------------------------------------------------------
+    // --- LÓGICA DE IMPACTO ---
+    // -----------------------------------------------------------------------------------
+    void HandleHit(RaycastHit hit, float damage)
+    {
+        ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
+        ZombieController zombieHealth = null;
+
+        if (hitbox != null) zombieHealth = hitbox.zombieController;
+        else zombieHealth = hit.collider.GetComponent<ZombieController>();
+
+        // LÓGICA DE DAÑO Y PUNTUACIÓN
+        if (zombieHealth != null)
+        {
+            // Bloqueo: Si ya está muerto, no hacemos nada (evita farmear puntos del cadáver)
+            if (zombieHealth.GetHP() <= 0)
+            {
+                SpawnImpactEffects(hit);
+                return;
+            }
+
+            // 1. Aplicar daño
+            if (hitbox != null)
+                zombieHealth.TakeDamage(damage, hitbox.hitboxType);
+            else
+                zombieHealth.TakeDamage(damage);
+
+            // 2. Comprobar si murió con este disparo
+            if (zombieHealth.GetHP() <= 0)
+            {
+                // -- KILL --
+                // Texto visual de muerte (+150)
+                ShowFloatingScore(hit.point, pointsPerKillDisplay);
+                // Nota: Los puntos reales se suman en ZombieController.Die() -> ScoreManager
+            }
+            else
+            {
+                // -- HIT --
+                // Puntos reales (+10)
+                if (ScoreManager.Instance != null)
+                {
+                    ScoreManager.Instance.AddScore(pointsPerHit);
+                }
+                // Texto visual (+10)
+                ShowFloatingScore(hit.point, pointsPerHit);
+            }
+        }
+
+        // Efectos (Sangre / Polvo)
+        SpawnImpactEffects(hit);
+    }
+
+    private void ShowFloatingScore(Vector3 position, int points)
+    {
+        if (floatingTextPrefab != null)
+        {
+            Vector3 spawnPos = position + (Vector3.up * 0.3f);
+
+            GameObject ft = Instantiate(floatingTextPrefab, spawnPos, Quaternion.identity);
+
+            FloatingText textScript = ft.GetComponent<FloatingText>();
+            if (textScript != null)
+            {
+                textScript.Setup(points);
+            }
+        }
+    }
+
+    // =================================================================================
+    //                        UTILIDADES Y EFECTOS
+    // =================================================================================
+
     void FireBaseLogic()
     {
         PlaySound(currentWeapon.shootSound);
@@ -583,61 +470,44 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // === IMPACTOS Y EFECTOS ===
-
-    void HandleHit(RaycastHit hit, float damage)
+    // --- EFECTOS VISUALES LIMPIOS (SIN SPRITES DE ZOMBIES) ---
+    private void SpawnImpactEffects(RaycastHit hit)
     {
-        ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
-        ZombieController zombieHealth = null;
+        GameObject particlePrefab = null;
+        Sprite decalSprite = null;
 
-        if (hitbox != null)
+        if (hit.collider.CompareTag("Zombie"))
         {
-            zombieHealth = hitbox.zombieController;
-            if (zombieHealth != null) zombieHealth.TakeDamage(damage, hitbox.hitboxType);
+            // Solo partículas de sangre
+            particlePrefab = bloodParticlePrefab;
+            // decalSprite se queda nulo, así no ponemos pegatinas en los zombis
         }
-        else
+        else if (hit.collider.CompareTag("Mapa"))
         {
-            zombieHealth = hit.collider.GetComponent<ZombieController>();
-            if (zombieHealth != null) zombieHealth.TakeDamage(damage);
+            // Polvo y agujero de bala en la pared
+            particlePrefab = dustParticlePrefab;
+            decalSprite = mapBulletHoleSprite;
         }
 
-        if (zombieHealth != null)
+        // 1. Instanciar Partículas (Sangre o Polvo)
+        if (particlePrefab != null)
         {
-            if (ScoreManager.Instance != null)
-            {
-                ScoreManager.Instance.AddScore(pointsPerHit);
-            }
+            GameObject effect = Instantiate(particlePrefab, hit.point + (hit.normal * 0.02f), Quaternion.LookRotation(hit.normal));
+            Destroy(effect, 2f);
         }
-    }
 
-    private void SpawnParticleEffect(RaycastHit hit, GameObject prefab)
-    {
-        GameObject effect = Instantiate(prefab, hit.point + (hit.normal * 0.02f), Quaternion.LookRotation(hit.normal));
-        Destroy(effect, 2f);
+        // 2. Instanciar Decal (Solo si es Mapa)
+        if (decalSprite != null && bulletHoleBasePrefab != null)
+        {
+            Quaternion hitRotation = Quaternion.LookRotation(hit.normal);
+            GameObject hole = Instantiate(bulletHoleBasePrefab, hit.point + (hit.normal * 0.01f), hitRotation);
+            SpriteRenderer sr = hole.GetComponent<SpriteRenderer>();
+            if (sr != null) sr.sprite = decalSprite;
+            hole.transform.SetParent(hit.collider.transform);
+            Destroy(hole, 5f);
+        }
+        // Eliminado bloque "Legacy Decal" que intentaba poner prefabs en zombis
     }
-
-    private void SpawnDecal(RaycastHit hit, Sprite sprite)
-    {
-        Quaternion hitRotation = Quaternion.LookRotation(hit.normal);
-        GameObject hole = Instantiate(bulletHoleBasePrefab, hit.point + (hit.normal * 0.01f), hitRotation);
-        SpriteRenderer sr = hole.GetComponent<SpriteRenderer>();
-        if (sr != null) sr.sprite = sprite;
-        hole.transform.SetParent(hit.collider.transform);
-        Destroy(hole, 5f);
-    }
-
-    private void SpawnLegacyDecal(RaycastHit hit)
-    {
-        Quaternion hitRotation = Quaternion.FromToRotation(Vector3.forward, hit.normal) * Quaternion.Euler(0, 180f, 0);
-        GameObject hole = Instantiate(currentWeapon.bulletHolePrefab, hit.point + hit.normal * 0.001f, hitRotation);
-        hole.transform.SetParent(hit.collider.transform);
-        hole.transform.Rotate(0, 0, Random.Range(0, 360));
-        Collider holeCollider = hole.GetComponent<Collider>();
-        if (holeCollider != null) holeCollider.enabled = false;
-        Destroy(hole, 5f);
-    }
-
-    // === UTILIDADES ===
 
     private void ApplyRecoil()
     {
@@ -690,7 +560,186 @@ public class PlayerShooting : MonoBehaviour
         if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
     }
 
-    // --- Helpers para munición ---
+    // === MÉTODOS DE RECARGA ===
+    void HandleReloadInput()
+    {
+        if (currentWeapon == null) return;
+        if (Input.GetKeyDown(KeyCode.R) && !isReloading && currentAmmoInMag < currentWeapon.magCapacity && totalAmmo > 0)
+        {
+            StartCoroutine(ReloadCoroutine());
+        }
+    }
+
+    IEnumerator ReloadCoroutine()
+    {
+        isReloading = true;
+        PlaySound(currentWeapon.reloadSound);
+
+        float reloadTime = currentWeapon.reloadTime * reloadTimeMultiplier;
+        float animTime = 1f / reloadAnimSpeed;
+
+        float t = 0;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * reloadAnimSpeed;
+            weaponHolder.localRotation = Quaternion.Lerp(Quaternion.Euler(weaponInitialLocalRot), Quaternion.Euler(reloadRotation), t);
+            yield return null;
+        }
+
+        int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
+        int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
+        float waitTime = Mathf.Max(0, reloadTime - animTime * 2f);
+
+        if (currentWeapon.weaponType == WeaponType.Shotgun && ammoToLoad > 0)
+        {
+            float timePerBullet = (waitTime > 0 && ammoToLoad > 0) ? waitTime / ammoToLoad : 0;
+            for (int i = 0; i < ammoToLoad; i++)
+            {
+                if (timePerBullet > 0) yield return new WaitForSeconds(timePerBullet);
+                currentAmmoInMag++;
+                totalAmmo--;
+                UpdateAmmoUI();
+            }
+        }
+        else
+        {
+            if (waitTime > 0) yield return new WaitForSeconds(waitTime);
+            currentAmmoInMag += ammoToLoad;
+            totalAmmo -= ammoToLoad;
+        }
+
+        t = 0;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * reloadAnimSpeed;
+            weaponHolder.localRotation = Quaternion.Lerp(Quaternion.Euler(reloadRotation), Quaternion.Euler(weaponInitialLocalRot), t);
+            yield return null;
+        }
+
+        isReloading = false;
+        if (currentWeapon.weaponType != WeaponType.Shotgun) UpdateAmmoUI();
+    }
+
+    // === MÉTODOS DE APUNTADO (FIX: Clic Derecho) ===
+    void HandleAiming()
+    {
+        if (currentWeapon == null || !currentWeapon.canAim)
+        {
+            if (isAiming) StopAiming();
+            return;
+        }
+
+        // GetMouseButton(1) = Clic Derecho
+        if (Input.GetMouseButtonDown(1)) isAiming = true;
+        if (Input.GetMouseButtonUp(1)) isAiming = false;
+
+        float targetFOV = isAiming ? currentWeapon.aimedFOV : defaultFOV;
+        playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * adsSpeed);
+
+        if (isAiming && currentWeapon.sniperScopeSprite != null)
+        {
+            if (crosshairRectTransform != null)
+            {
+                crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+                crosshairRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                crosshairRectTransform.pivot = new Vector2(0.5f, 0.5f);
+                crosshairRectTransform.anchoredPosition = Vector2.zero;
+                crosshairRectTransform.sizeDelta = currentWeapon.aimedCrosshairSize;
+            }
+            crosshairImage.sprite = currentWeapon.sniperScopeSprite;
+            crosshairImage.enabled = true;
+
+            if (!weaponHiddenForScope)
+            {
+                if (currentWeaponModel != null) currentWeaponModel.SetActive(false);
+                weaponHiddenForScope = true;
+            }
+        }
+        else
+        {
+            if (weaponHiddenForScope)
+            {
+                if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
+                weaponHiddenForScope = false;
+            }
+            UpdateCrosshair();
+        }
+    }
+
+    public void StopAiming()
+    {
+        isAiming = false;
+        if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
+        if (weaponHiddenForScope)
+        {
+            if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
+            weaponHiddenForScope = false;
+        }
+        UpdateCrosshair();
+    }
+
+    // === MÉTODOS DE GESTIÓN DE SLOTS Y GUARDADO ===
+
+    public int GetWeaponTypeInSlot(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return -1;
+        if (weaponSlots[slotIndex] != null) return (int)weaponSlots[slotIndex].weaponType;
+        return -1;
+    }
+
+    public int GetCurrentSlotIndex()
+    {
+        return currentSlotIndex;
+    }
+
+    public void ForceWeaponToSlot(int slotIndex, WeaponData weapon)
+    {
+        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
+        weaponSlots[slotIndex] = weapon;
+        if (slotIndex == currentSlotIndex) RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
+    }
+
+    public void SelectSlot(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
+        SaveCurrentAmmoState();
+        currentSlotIndex = slotIndex;
+        RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
+    }
+
+    public void ClearInventory()
+    {
+        weaponSlots[0] = null;
+        weaponSlots[1] = null;
+        if (currentWeaponModel != null) Destroy(currentWeaponModel);
+        currentWeapon = null;
+    }
+
+    // --- Helpers de Munición ---
+    private void SaveCurrentAmmoState()
+    {
+        if (currentWeapon != null)
+        {
+            ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
+            totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
+        }
+    }
+
+    private void LoadAmmoStateForWeapon(WeaponData weapon)
+    {
+        if (ammoInMagCache.ContainsKey(weapon.weaponType))
+        {
+            currentAmmoInMag = ammoInMagCache[weapon.weaponType];
+            totalAmmo = totalAmmoCache[weapon.weaponType];
+        }
+        else
+        {
+            currentAmmoInMag = weapon.magCapacity;
+            totalAmmo = weapon.maxAmmo - currentAmmoInMag;
+            ammoInMagCache[weapon.weaponType] = currentAmmoInMag;
+            totalAmmoCache[weapon.weaponType] = totalAmmo;
+        }
+    }
 
     public List<WeaponAmmoData> GetAmmoData()
     {
@@ -751,71 +800,5 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentWeapon != null) return currentWeapon.weaponType;
         return (WeaponType)(-1);
-    }
-
-    // ... (resto del código existente)
-
-    // === MÉTODOS PARA GUARDADO Y CARGA DE SLOTS ===
-
-    /// <summary>
-    /// Devuelve el tipo de arma en el slot indicado, o -1 si está vacío.
-    /// </summary>
-    public int GetWeaponTypeInSlot(int slotIndex)
-    {
-        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return -1;
-
-        if (weaponSlots[slotIndex] != null)
-        {
-            return (int)weaponSlots[slotIndex].weaponType;
-        }
-        return -1;
-    }
-
-    /// <summary>
-    /// Devuelve el índice del slot actual (0 o 1).
-    /// </summary>
-    public int GetCurrentSlotIndex()
-    {
-        return currentSlotIndex;
-    }
-
-    /// <summary>
-    /// Fuerza la asignación de un arma a un slot específico (usado al cargar partida).
-    /// </summary>
-    public void ForceWeaponToSlot(int slotIndex, WeaponData weapon)
-    {
-        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
-
-        // Asignar al array
-        weaponSlots[slotIndex] = weapon;
-
-        // Si estamos forzando el slot actual, refrescar visuales inmediatamente
-        if (slotIndex == currentSlotIndex)
-        {
-            RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
-        }
-    }
-
-    /// <summary>
-    /// Cambia al slot indicado sin verificaciones de input (para cargar partida).
-    /// </summary>
-    public void SelectSlot(int slotIndex)
-    {
-        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
-
-        // Guardamos estado del anterior si existe
-        SaveCurrentAmmoState();
-
-        currentSlotIndex = slotIndex;
-        RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
-    }
-
-    // Método auxiliar para limpiar inventario al cargar
-    public void ClearInventory()
-    {
-        weaponSlots[0] = null;
-        weaponSlots[1] = null;
-        if (currentWeaponModel != null) Destroy(currentWeaponModel);
-        currentWeapon = null;
     }
 }

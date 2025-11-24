@@ -4,162 +4,177 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class MovementController : MonoBehaviour
 {
-    [Header("Movimiento")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float sprintMultiplier = 1.5f;
-    [SerializeField] private float jumpHeight = 1.5f;
-    [SerializeField] private float gravity = -9.81f;
+    [Header("Referencias")]
+    [Tooltip("Arrastra aquí la Main Camera (hija del jugador)")]
+    [SerializeField] private Transform playerCameraRoot;
 
-    [Header("Sonidos de Movimiento")]
+    [Header("Movimiento Base")]
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float jumpHeight = 1.5f;
+    [SerializeField] private float gravity = -15.0f;
+
+    [Header("Correr (Mantener Shift)")]
+    [SerializeField] private float sprintMultiplier = 1.5f;
+    [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
+
+    [Header("Agacharse (Mantener Control)")]
+    [SerializeField] private KeyCode crouchKey = KeyCode.LeftControl;
+
+    [Header("Configuración Física Agachado")]
+    [Tooltip("Altura total del collider de pie")]
+    [SerializeField] private float standingHeight = 2.0f;
+    [Tooltip("Centro Y del collider de pie (Tú dijiste que 0)")]
+    [SerializeField] private float standingCenterY = 0f; // <--- NUEVO: Configurable
+
+    [Space(10)]
+    [Tooltip("Altura total del collider agachado")]
+    [SerializeField] private float crouchHeight = 1.0f;
+    [Tooltip("Centro Y del collider agachado (Prueba con 0 o -0.5 según tu pivote)")]
+    [SerializeField] private float crouchCenterY = 0f;   // <--- NUEVO: Configurable
+
+    [Space(10)]
+    [SerializeField] private float crouchSpeed = 2.5f;
+    [SerializeField] private float crouchTransitionSpeed = 10f;
+
+    [Header("Configuración Cámara")]
+    [SerializeField] private float cameraStandY = 1.6f;
+    [SerializeField] private float cameraCrouchY = 0.8f;
+
+    [Header("Sonidos")]
     [SerializeField] private AudioSource audioSource;
-    [SerializeField] private float walkStepInterval = 1f;
-    [SerializeField] private float sprintStepInterval = 0.5f;
+    [SerializeField] private float walkStepInterval = 0.5f;
+    [SerializeField] private float sprintStepInterval = 0.3f;
+    [SerializeField] private float crouchStepInterval = 0.8f;
     [SerializeField] private AudioClip[] footstepSounds;
 
-    // Control de tiempo para el próximo sonido de paso.
-    private float nextStepTime = 0f;
-
     private CharacterController controller;
-
     private Vector3 velocity;
     private bool isGrounded;
+    private float nextStepTime = 0f;
 
-    // Almacena la velocidad de 'moveSpeed' al inicio.
-    private float defaultSpeed;
-    // Velocidad base actual, puede ser modificada por efectos de estado.
     private float currentSpeed;
-    // Multiplicador de PowerUp
+    private float defaultSpeed;
     public float speedMultiplier = 1f;
 
     void Start()
     {
-        if (audioSource == null)
-        {
-            Debug.LogWarning("MovementController: No se ha asignado un AudioSource para los pasos.");
-        }
-
         controller = GetComponent<CharacterController>();
-        // Cachear la velocidad inicial para poder resetearla.
         defaultSpeed = moveSpeed;
         currentSpeed = moveSpeed;
+
+        // Inicializamos con los valores de "De Pie"
+        controller.height = standingHeight;
+        controller.center = new Vector3(0, standingCenterY, 0);
+
+        if (playerCameraRoot == null)
+        {
+            Camera mainCam = GetComponentInChildren<Camera>();
+            if (mainCam != null) playerCameraRoot = mainCam.transform;
+        }
     }
 
     void Update()
     {
-        // Toda la lógica de movimiento está encapsulada en HandleMovement().
         HandleMovement();
     }
 
-    /// <summary>
-    /// Maneja todo el input de movimiento, gravedad y salto en cada frame.
-    /// </summary>
     private void HandleMovement()
     {
-        // Detiene todo movimiento si el juego está pausado.
-        if (GameManager.IsPaused || GameManager.GameIsOver)
-            return;
+        if (GameManager.IsPaused || GameManager.GameIsOver) return;
 
-        // Comprobar si el CharacterController está tocando el suelo.
+        // 1. Ground Check
         isGrounded = controller.isGrounded;
-
-        // Si estamos en el suelo y la velocidad Y es negativa, resetearla a un valor bajo.
-        // Esto evita que 'velocity.y' acumule gravedad indefinidamente.
         if (isGrounded && velocity.y < 0)
+        {
             velocity.y = -2f;
+        }
 
-        // --- Input Horizontal ---
+        // 2. Inputs
         float moveX = Input.GetAxis("Horizontal");
         float moveZ = Input.GetAxis("Vertical");
 
-        // Calcula el vector de movimiento relativo a la rotación actual del jugador
-        // (transform.right y transform.forward) en lugar de ejes globales.
-        Vector3 move = transform.right * moveX + transform.forward * moveZ;
+        // 3. Estados
+        bool isCrouchingInput = Input.GetKey(crouchKey);
+        bool isSprintingInput = Input.GetKey(sprintKey) && !isCrouchingInput;
 
-        // --- Lógica de Sonido de Pasos ---
-        bool isMoving = move.magnitude > 0.1f;
-        bool isSprinting = Input.GetKey(KeyCode.LeftShift);
+        // --- LÓGICA FÍSICA (INTERPOLACIÓN DE ALTURA Y CENTRO) ---
+        // Ahora usamos tus variables configurables standingCenterY y crouchCenterY
 
-        if (isMoving && isGrounded)
+        float targetHeight = isCrouchingInput ? crouchHeight : standingHeight;
+        float targetCenterY = isCrouchingInput ? crouchCenterY : standingCenterY;
+
+        float currentHeight = controller.height;
+        float currentCenterY = controller.center.y;
+
+        // Si hay diferencia, interpolamos suavemente
+        if (Mathf.Abs(currentHeight - targetHeight) > 0.01f || Mathf.Abs(currentCenterY - targetCenterY) > 0.01f)
         {
-            // Usar Time.time para un cooldown simple de sonido de pasos.
-            if (Time.time > nextStepTime)
-            {
-                // Seleccionar el intervalo basado en si está esprintando.
-                float interval = isSprinting ? sprintStepInterval : walkStepInterval;
+            float newHeight = Mathf.Lerp(currentHeight, targetHeight, crouchTransitionSpeed * Time.deltaTime);
+            float newCenterY = Mathf.Lerp(currentCenterY, targetCenterY, crouchTransitionSpeed * Time.deltaTime);
 
-                PlayRandomFootstep();
-
-                // Programar el siguiente paso.
-                nextStepTime = Time.time + interval;
-            }
+            controller.height = newHeight;
+            controller.center = new Vector3(0, newCenterY, 0);
         }
 
-        // --- Aplicación de Velocidad ---
-        float targetSpeed = currentSpeed * speedMultiplier;
-        if (isSprinting)
-            targetSpeed *= sprintMultiplier;
-
-        // Mover el CharacterController horizontalmente.
-        controller.Move(move * targetSpeed * Time.deltaTime);
-
-        // --- Salto ---
-        // Comprobar input de salto y si está en el suelo.
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        // --- CÁMARA ---
+        if (playerCameraRoot != null)
         {
-            // Aplicar la fórmula de salto (v = sqrt(h * -2 * g))
-            // para calcular la velocidad vertical necesaria para alcanzar 'jumpHeight'.
+            float targetCamY = isCrouchingInput ? cameraCrouchY : cameraStandY;
+            Vector3 camPos = playerCameraRoot.localPosition;
+            camPos.y = Mathf.Lerp(camPos.y, targetCamY, crouchTransitionSpeed * Time.deltaTime);
+            playerCameraRoot.localPosition = camPos;
+        }
+
+        // 4. Velocidad
+        float finalSpeed = currentSpeed;
+        if (isCrouchingInput) finalSpeed = crouchSpeed;
+        else if (isSprintingInput) finalSpeed = currentSpeed * sprintMultiplier;
+
+        finalSpeed *= speedMultiplier;
+
+        // 5. Mover
+        Vector3 move = transform.right * moveX + transform.forward * moveZ;
+        controller.Move(move * finalSpeed * Time.deltaTime);
+
+        // 6. Gravedad
+        if (Input.GetButtonDown("Jump") && isGrounded && !isCrouchingInput)
+        {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
 
-        // --- Gravedad ---
-        // Acumular gravedad a la velocidad vertical.
         velocity.y += gravity * Time.deltaTime;
-        // Mover el CharacterController verticalmente.
-        // Es importante llamar a .Move() dos veces (una para horizontal, otra para vertical)
-        // para que la gravedad y el movimiento no interfieran.
         controller.Move(velocity * Time.deltaTime);
+
+        // 7. Sonidos
+        HandleFootsteps(move.magnitude > 0.1f, isCrouchingInput, isSprintingInput);
     }
 
-    /// <summary>
-    /// Reproduce un sonido de paso aleatorio del array 'footstepSounds'.
-    /// </summary>
-    private void PlayRandomFootstep()
+    private void HandleFootsteps(bool isMoving, bool crouching, bool sprinting)
     {
-        // Comprobaciones para evitar errores si no hay AudioSource o clips asignados.
-        if (audioSource != null && footstepSounds != null && footstepSounds.Length > 0)
-        {
-            int index = Random.Range(0, footstepSounds.Length);
-            AudioClip clip = footstepSounds[index];
+        if (!isMoving || !isGrounded) return;
 
-            if (clip != null)
+        if (Time.time > nextStepTime)
+        {
+            float interval = walkStepInterval;
+            float volume = 1f;
+
+            if (crouching) { interval = crouchStepInterval; volume = 0.3f; }
+            else if (sprinting) { interval = sprintStepInterval; }
+
+            if (audioSource != null && footstepSounds.Length > 0)
             {
-                audioSource.PlayOneShot(clip);
+                audioSource.PlayOneShot(footstepSounds[Random.Range(0, footstepSounds.Length)], volume);
             }
+            nextStepTime = Time.time + interval;
         }
     }
 
-    // ---------------- MÉTODOS PARA POWERUPS ----------------
-    // Funcion pública para que otros scripts (PowerUpManager) modifiquen la velocidad.
-
-    /// <summary>
-    /// Establece el multiplicador de velocidad permanente (ej. por un PowerUp).
-    /// </summary>
-    public void SetPermanentSpeedMultiplier(float multiplier)
-    {
-        speedMultiplier = multiplier;
-    }
-
-    // --- Getters y Setters para controlar el estado de velocidad ---
-
+    // --- PowerUps ---
+    public void SetPermanentSpeedMultiplier(float multiplier) => speedMultiplier = multiplier;
     public float GetBaseSpeed() => defaultSpeed;
-
     public float GetVelocity() => currentSpeed;
-
     public void SetVelocity(float newSpeed) => currentSpeed = newSpeed;
-
     public void ResetVelocity() => currentSpeed = defaultSpeed;
-
     public float GetSprintMultiplier() => sprintMultiplier;
-
     public void SetSprintMultiplier(float newMultiplier) => sprintMultiplier = newMultiplier;
 }
