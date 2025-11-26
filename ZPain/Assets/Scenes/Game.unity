@@ -7709,7 +7709,7 @@ Transform:
   m_GameObject: {fileID: 350856989}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -560.47, y: -243.63, z: -259.89}
+  m_LocalPosition: {x: -560.44, y: -243.63, z: -259.89}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -12257,9 +12257,9 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 5323321647756456129, guid: 470580d6b892280438ed149455b521bc, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 0c3e9f531a5a0424e987ea178061ffeb, type: 3}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 0.3
+  m_Volume: 1
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -12268,9 +12268,9 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 1
-  MaxDistance: 500
+  MaxDistance: 100
   Pan2D: 0
-  rolloffMode: 0
+  rolloffMode: 2
   BypassEffects: 0
   BypassListenerEffects: 0
   BypassReverbZones: 0
@@ -12278,23 +12278,23 @@ AudioSource:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0
+      time: 0.005
       value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 0
+      outWeight: 0
     - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
+      time: 0.25357056
+      value: 0.0032958984
+      inSlope: -1.0050251
+      outSlope: -1.0050251
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 0
+      outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
@@ -12303,7 +12303,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -19012,8 +19012,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.11400222, y: 1, z: 2.8867774}
-  m_Center: {x: 0.04747289, y: 0, z: 0.080392115}
+  m_Size: {x: 0.15149783, y: 1.4578558, z: 2.8867774}
+  m_Center: {x: 0.066220686, y: 0.2289276, z: 0.080392115}
 --- !u!114 &809479163
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19356,8 +19356,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.11400222, y: 1, z: 2.8096814}
-  m_Center: {x: 0.04747289, y: 0, z: 0.041844286}
+  m_Size: {x: 0.15052474, y: 1.4352988, z: 2.8096826}
+  m_Center: {x: 0.029211624, y: 0.21764898, z: 0.041844286}
 --- !u!114 &876282422
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26941,9 +26941,9 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 5323321647756456129, guid: 470580d6b892280438ed149455b521bc, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 0c3e9f531a5a0424e987ea178061ffeb, type: 3}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 0.3
+  m_Volume: 1
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -26952,9 +26952,9 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 1
-  MaxDistance: 500
+  MaxDistance: 100
   Pan2D: 0
-  rolloffMode: 0
+  rolloffMode: 2
   BypassEffects: 0
   BypassListenerEffects: 0
   BypassReverbZones: 0
@@ -26962,23 +26962,23 @@ AudioSource:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0
+      time: 0.005
       value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 0
+      outWeight: 0
     - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
+      time: 0.25357056
+      value: 0.0032958984
+      inSlope: -1.0050251
+      outSlope: -1.0050251
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 0
+      outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
@@ -26987,7 +26987,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -36180,8 +36180,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.2142449, y: 0.3432189, z: 1.750421}
-  m_Center: {x: 0.037885282, y: -0.32839158, z: -0.6674207}
+  m_Size: {x: 0.21424492, y: 0.71291274, z: 1.750421}
+  m_Center: {x: 0.037885282, y: -0.14354548, z: -0.6674207}
 --- !u!114 &1604501308
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -40063,6 +40063,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1956473313298439792, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
+      propertyPath: near clip plane
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1956473313298439792, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: m_BackGroundColor.b
       value: 0.116945535
       objectReference: {fileID: 0}
@@ -40077,6 +40081,14 @@ PrefabInstance:
     - target: {fileID: 2171825167259851377, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: m_Name
       value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 2171825167259851377, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
+      propertyPath: m_Layer
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2171825167259851377, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2423239809853153516, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: maxHealth
@@ -40248,7 +40260,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3827252631700383044, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.499
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6020118131600127513, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: recoilMultiplier
