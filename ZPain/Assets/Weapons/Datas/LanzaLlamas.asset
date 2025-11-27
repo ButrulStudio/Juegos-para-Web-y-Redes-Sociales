@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: LanzaLlamas
   m_EditorClassIdentifier: 
   weaponType: 4
-  crosshairSize: {x: 50, y: 50}
+  crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: LanzaLlamas
   damage: 3
   range: 5
-  fireRate: 0.02
+  fireRate: 0.05
   price: 0
   ammoPrice: 50
   magCapacity: 50

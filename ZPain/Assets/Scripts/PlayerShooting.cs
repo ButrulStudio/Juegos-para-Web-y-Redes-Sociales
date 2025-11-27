@@ -22,6 +22,7 @@ public class PlayerShooting : MonoBehaviour
     [Header("Sistema de Puntuación")]
     [Tooltip("Puntos ganados por acertar una bala (sin matar)")]
     public int pointsPerHit = 10;
+    public float scorePerDamage = 1.0f;
 
     [Tooltip("Valor visual que se mostrará al matar (Asegúrate de configurar esto mismo en ScoreManager)")]
     public int pointsPerKillDisplay = 150;
@@ -498,12 +499,15 @@ public class PlayerShooting : MonoBehaviour
         // LÓGICA DE DAÑO Y PUNTUACIÓN
         if (zombieHealth != null)
         {
-            // Bloqueo: Si ya está muerto, no hacemos nada (evita farmear puntos del cadáver)
             if (zombieHealth.GetHP() <= 0)
             {
                 SpawnImpactEffects(hit);
                 return;
             }
+
+            // CALCULAR PUNTOS BASADOS EN EL DAÑO
+            // Convertimos el daño (float) a puntos (int) redondeando
+            int damagePoints = Mathf.RoundToInt(damage * scorePerDamage);
 
             // 1. Aplicar daño
             if (hitbox != null)
@@ -514,21 +518,22 @@ public class PlayerShooting : MonoBehaviour
             // 2. Comprobar si murió con este disparo
             if (zombieHealth.GetHP() <= 0)
             {
-                // -- KILL --
-                // Texto visual de muerte (+150)
+                // -- KILL (Muerte) --
+                // Aquí solemos mostrar un premio mayor por matar (ej. 150),
+                // independientemente del daño de la última bala.
                 ShowFloatingScore(hit.point, pointsPerKillDisplay);
-                // Nota: Los puntos reales se suman en ZombieController.Die() -> ScoreManager
             }
             else
             {
-                // -- HIT --
-                // Puntos reales (+10)
+                // -- HIT (Golpe Normal) --
+                // AQUI ESTA EL CAMBIO: Usamos 'damagePoints' en vez de 'pointsPerHit'
                 if (ScoreManager.Instance != null)
                 {
-                    ScoreManager.Instance.AddScore(pointsPerHit);
+                    ScoreManager.Instance.AddScore(damagePoints); // Sumar puntos reales
                 }
-                // Texto visual (+10)
-                ShowFloatingScore(hit.point, pointsPerHit);
+
+                // Mostrar texto flotante con la cantidad de daño/puntos
+                ShowFloatingScore(hit.point, damagePoints);
             }
         }
 
