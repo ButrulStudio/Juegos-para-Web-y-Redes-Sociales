@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 598507133729579655}
   - component: {fileID: 3083298633216689006}
   m_Layer: 0
-  m_Name: franco
+  m_Name: LanzaLlamas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -66,7 +66,8 @@ public class PlayerShooting : MonoBehaviour
     [Header("Decals (Escenario)")]
     [SerializeField] private GameObject bulletHoleBasePrefab;
     [SerializeField] private Sprite mapBulletHoleSprite;
-    // Eliminado: zombieBulletHoleSprites (ya no se usa)
+
+    private int shotTicker = 0;
 
     // --- APUNTADO ---
     [Header("Apuntado (ADS)")]
@@ -242,6 +243,7 @@ public class PlayerShooting : MonoBehaviour
         if (currentWeaponModel != null) Destroy(currentWeaponModel);
 
         currentWeapon = weaponData;
+        shotTicker = 0;
         StopAiming();
 
         if (currentWeapon == null)
@@ -289,7 +291,7 @@ public class PlayerShooting : MonoBehaviour
                 }
                 break;
             case WeaponType.Rifle:
-                if (Input.GetMouseButton(0) && Time.time >= nextFireTime) // GetMouseButton para automático
+                if (Input.GetMouseButton(0) && Time.time >= nextFireTime) 
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
                     ShootRifle();
@@ -307,6 +309,14 @@ public class PlayerShooting : MonoBehaviour
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
                     StartCoroutine(ShootSniperCoroutine());
+                }
+                break;
+            case WeaponType.flamethrower: 
+                                          
+                if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
+                {
+                    nextFireTime = Time.time + currentWeapon.fireRate;
+                    ShootFlamethrower();
                 }
                 break;
         }
@@ -416,6 +426,61 @@ public class PlayerShooting : MonoBehaviour
         {
             yield return new WaitForSeconds(currentWeapon.actionSoundDelay);
             PlaySound(currentWeapon.boltActionSound);
+        }
+    }
+
+    void ShootFlamethrower()
+    {
+        if (currentAmmoInMag <= 0)
+        {
+            HandleEmptyClip();
+            return;
+        }
+
+        PlaySound(currentWeapon.shootSound);
+        StartCoroutine(MuzzleFlashRoutine());
+
+        shotTicker++;
+
+        if (shotTicker >= currentWeapon.ammoUsageRate)
+        {
+            currentAmmoInMag--; // Gastamos la bala
+            shotTicker = 0;     // Reiniciamos el contador
+            UpdateAmmoUI();     // Actualizamos el texto
+        }
+
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+
+        RaycastHit[] hits = Physics.SphereCastAll(
+            ray.origin,
+            currentWeapon.flameRadius, 
+            ray.direction,
+            currentWeapon.range,       
+            Physics.DefaultRaycastLayers,
+            QueryTriggerInteraction.Ignore 
+        );
+
+        HashSet<ZombieController> burnedZombies = new HashSet<ZombieController>();
+
+        foreach (RaycastHit hit in hits)
+        {
+           
+            ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
+            ZombieController zombie = null;
+
+            if (hitbox != null)
+                zombie = hitbox.zombieController;
+            else
+                zombie = hit.collider.GetComponent<ZombieController>();
+
+            if (zombie != null)
+            {
+                if (burnedZombies.Add(zombie))
+                {
+                    zombie.TakeDamage(currentWeapon.damage * damageMultiplier);
+
+                }
+            }
         }
     }
 
@@ -862,5 +927,41 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentWeapon != null) return currentWeapon.weaponType;
         return (WeaponType)(-1);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------
+    void OnDrawGizmos()
+    {
+        // Verificamos que tengamos cámara y arma equipada para evitar errores
+        if (playerCamera == null || currentWeapon == null) return;
+
+        // 1. Configurar color (Rojo para el rango máximo)
+        Gizmos.color = Color.red;
+
+        Vector3 startPosition = playerCamera.transform.position;
+        Vector3 direction = playerCamera.transform.forward;
+        Vector3 endPosition = startPosition + (direction * currentWeapon.range);
+
+        // 2. Dibujar la línea central (el "núcleo" del disparo)
+        Gizmos.DrawLine(startPosition, endPosition);
+
+        // 3. VISUALIZACIÓN ESPECÍFICA PARA LANZALLAMAS (SphereCast)
+        if (currentWeapon.weaponType == WeaponType.flamethrower)
+        {
+            Gizmos.color = new Color(1, 0.5f, 0, 0.5f); // Naranja semitransparente
+
+            // Dibujamos una esfera al inicio y otra al final para ver el grosor
+            Gizmos.DrawWireSphere(startPosition, currentWeapon.flameRadius);
+            Gizmos.DrawWireSphere(endPosition, currentWeapon.flameRadius);
+
+            // Opcional: Dibujar líneas que conecten las esferas para simular el cilindro
+            Vector3 up = playerCamera.transform.up * currentWeapon.flameRadius;
+            Vector3 right = playerCamera.transform.right * currentWeapon.flameRadius;
+
+            Gizmos.DrawLine(startPosition + up, endPosition + up);
+            Gizmos.DrawLine(startPosition - up, endPosition - up);
+            Gizmos.DrawLine(startPosition + right, endPosition + right);
+            Gizmos.DrawLine(startPosition - right, endPosition - right);
+        }
     }
 }

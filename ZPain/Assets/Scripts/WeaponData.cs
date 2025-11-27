@@ -5,7 +5,8 @@ public enum WeaponType
     Pistol,
     Rifle,
     Shotgun,
-    Sniper
+    Sniper,
+    flamethrower
 }
 
 [CreateAssetMenu(fileName = "NewWeapon", menuName = "Weapons/Weapon Data")]
@@ -93,4 +94,11 @@ public class WeaponData : ScriptableObject
     public float actionSoundDelay = 0.4f;
     public AudioClip boltActionSound; // Para el cerrojo del Sniper
     public AudioClip pumpActionSound; // Para el cartucho de la Escopeta
+
+    [Header("Parámetros de Lanzallamas")]
+    [Tooltip("Radio del chorro de fuego (grosor del cilindro de detección)")]
+    public float flameRadius = 0.5f;
+    [Header("Consumo de Munición")]
+    [Tooltip("Cada cuántos disparos se gasta 1 bala real. 1 = Normal. 3 = El lanzallamas gasta 1 bala cada 3 frames de daño.")]
+    public int ammoUsageRate = 1;
 }

@@ -37,24 +37,24 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = maxHealth;
         currentArmor = 0f;
 
-        // Configuracin de la barra de salud
+        
         if (healthSlider != null)
         {
             healthSlider.maxValue = maxHealth;
             healthSlider.value = currentHealth;
         }
 
-        // Configuracin de la barra de armadura (si existe)
+       
         if (armorSlider != null)
         {
             armorSlider.maxValue = maxArmor;
             armorSlider.value = currentArmor;
         }
 
-        // --- INICIALIZAR SANGRE INVISIBLE ---
+        
         if (damageOverlay != null)
         {
-            // Ponemos el Alpha a 0 para que empiece limpio
+            
             Color c = damageOverlay.color;
             c.a = 0f;
             damageOverlay.color = c;
@@ -65,7 +65,7 @@ public class PlayerHealth : MonoBehaviour
 
     void Update()
     {
-        // 1. LÓGICA DE REGENERACIÓN (SOLO HEALTH)
+        
         if (Time.timeScale > 0 && Time.time >= lastDamageTime + timeUntilRegenStarts)
         {
             if (currentHealth < maxHealth)
@@ -80,10 +80,10 @@ public class PlayerHealth : MonoBehaviour
             }
         }
 
-        // 2. LÓGICA DE DESVANECIMIENTO DE SANGRE
+        
         if (damageOverlay != null)
         {
-            // Si la sangre es visible (alpha > 0), restamos alpha poco a poco
+            
             if (damageOverlay.color.a > 0)
             {
                 Color c = damageOverlay.color;
@@ -95,20 +95,20 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
-        // El jugador no puede recibir daño si el juego esta pausado
+       
         if (Time.timeScale == 0) return;
 
         PlayRandomDamageSound();
 
-        // --- MOSTRAR SANGRE AL RECIBIR DAÑO ---
+       
         if (damageOverlay != null)
         {
-            // Ponemos el Alpha a casi 1 (o 0.8 si quieres que sea un poco transparente)
+            
             Color c = damageOverlay.color;
             c.a = 0.8f;
             damageOverlay.color = c;
         }
-        // --------------------------------------
+        
 
         float damageRemaining = amount;
 
@@ -130,7 +130,7 @@ public class PlayerHealth : MonoBehaviour
         if (damageRemaining > 0f)
         {
             currentHealth -= damageRemaining;
-            currentHealth = Mathf.Max(currentHealth, 0f); // Asegura que la vida no sea negativa
+            currentHealth = Mathf.Max(currentHealth, 0f); 
 
             if (healthSlider != null)
             {
