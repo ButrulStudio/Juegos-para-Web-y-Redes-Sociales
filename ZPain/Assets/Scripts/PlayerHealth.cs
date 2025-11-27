@@ -20,6 +20,12 @@ public class PlayerHealth : MonoBehaviour
 
     private float lastDamageTime;
 
+    [Header("Efectos Visuales (Sangre)")]
+    [Tooltip("Arrastra aquí tu imagen UI de sangre (manchas rojas)")]
+    [SerializeField] private Image damageOverlay;
+    [Tooltip("Qué tan rápido desaparece la sangre. Un valor bajo (0.3) dura más tiempo.")]
+    [SerializeField] private float fadeSpeed = 0.5f;
+
     [Header("Sonido de Daño")]
     [Tooltip("El AudioSource para los sonidos de dolor/daño del jugador.")]
     [SerializeField] private AudioSource audioSource;
@@ -45,12 +51,21 @@ public class PlayerHealth : MonoBehaviour
             armorSlider.value = currentArmor;
         }
 
+        // --- INICIALIZAR SANGRE INVISIBLE ---
+        if (damageOverlay != null)
+        {
+            // Ponemos el Alpha a 0 para que empiece limpio
+            Color c = damageOverlay.color;
+            c.a = 0f;
+            damageOverlay.color = c;
+        }
+
         lastDamageTime = Time.time;
     }
 
     void Update()
     {
-        // LGICA DE REGENERACIN (SLO HEALTH)
+        // 1. LÓGICA DE REGENERACIÓN (SOLO HEALTH)
         if (Time.timeScale > 0 && Time.time >= lastDamageTime + timeUntilRegenStarts)
         {
             if (currentHealth < maxHealth)
@@ -64,6 +79,18 @@ public class PlayerHealth : MonoBehaviour
                 }
             }
         }
+
+        // 2. LÓGICA DE DESVANECIMIENTO DE SANGRE
+        if (damageOverlay != null)
+        {
+            // Si la sangre es visible (alpha > 0), restamos alpha poco a poco
+            if (damageOverlay.color.a > 0)
+            {
+                Color c = damageOverlay.color;
+                c.a -= fadeSpeed * Time.deltaTime;
+                damageOverlay.color = c;
+            }
+        }
     }
 
     public void TakeDamage(float amount)
@@ -72,6 +99,16 @@ public class PlayerHealth : MonoBehaviour
         if (Time.timeScale == 0) return;
 
         PlayRandomDamageSound();
+
+        // --- MOSTRAR SANGRE AL RECIBIR DAÑO ---
+        if (damageOverlay != null)
+        {
+            // Ponemos el Alpha a casi 1 (o 0.8 si quieres que sea un poco transparente)
+            Color c = damageOverlay.color;
+            c.a = 0.8f;
+            damageOverlay.color = c;
+        }
+        // --------------------------------------
 
         float damageRemaining = amount;
 
@@ -105,14 +142,13 @@ public class PlayerHealth : MonoBehaviour
 
         if (currentHealth <= 0f)
         {
-            // Llama al GameManager para manejar la muerte del jugador y el Game Over
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.PlayerDied();
             }
             else
             {
-                Debug.LogError("Player died but GameManager.Instance is null. Cannot handle game over properly.");
+                Debug.LogError("Player died but GameManager.Instance is null.");
             }
         }
     }
@@ -124,26 +160,18 @@ public class PlayerHealth : MonoBehaviour
         if (armorSlider != null) armorSlider.value = currentArmor;
     }
 
-    // -------------------- MÉTODOS PARA POWER-UPS --------------------
     public void RestoreArmor(float amount)
     {
         currentArmor += amount;
         currentArmor = Mathf.Min(currentArmor, maxArmor);
-        Debug.Log($"Armadura restaurada: +{amount}, actual: {currentArmor}");
-
-        if (armorSlider != null)
-        {
-            armorSlider.value = currentArmor;
-        }
+        if (armorSlider != null) armorSlider.value = currentArmor;
     }
 
-    // Establece la vida y armadura al cargar una partida guardada.
     public void SetHealthAndArmor(float newHealth, float newArmor)
     {
         currentHealth = Mathf.Clamp(newHealth, 0, maxHealth);
         currentArmor = Mathf.Clamp(newArmor, 0, maxArmor);
 
-        // Actualiza los sliders inmediatamente
         if (healthSlider != null) healthSlider.value = currentHealth;
         if (armorSlider != null) armorSlider.value = currentArmor;
     }
@@ -152,15 +180,9 @@ public class PlayerHealth : MonoBehaviour
     {
         if (audioSource != null && damageSounds != null && damageSounds.Length > 0)
         {
-            // Elige un clip aleatorio del array
             int index = Random.Range(0, damageSounds.Length);
             AudioClip clip = damageSounds[index];
-
-            // Reproduce ese clip
-            if (clip != null)
-            {
-                audioSource.PlayOneShot(clip);
-            }
+            if (clip != null) audioSource.PlayOneShot(clip);
         }
     }
 }
