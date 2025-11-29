@@ -488,56 +488,62 @@ public class PlayerShooting : MonoBehaviour
     // -----------------------------------------------------------------------------------
     // --- LÓGICA DE IMPACTO ---
     // -----------------------------------------------------------------------------------
+
     void HandleHit(RaycastHit hit, float damage)
     {
+
         ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
         ZombieController zombieHealth = null;
 
         if (hitbox != null) zombieHealth = hitbox.zombieController;
         else zombieHealth = hit.collider.GetComponent<ZombieController>();
 
-        // LÓGICA DE DAÑO Y PUNTUACIÓN
+
         if (zombieHealth != null)
         {
+
             if (zombieHealth.GetHP() <= 0)
             {
                 SpawnImpactEffects(hit);
                 return;
             }
 
-            // CALCULAR PUNTOS BASADOS EN EL DAÑO
-            // Convertimos el daño (float) a puntos (int) redondeando
-            int damagePoints = Mathf.RoundToInt(damage * scorePerDamage);
+            float calculatedDamage = damage; 
 
-            // 1. Aplicar daño
+            if (hitbox != null && hitbox.hitboxType == EHitboxType.Head)
+            {
+                calculatedDamage *= 2f; 
+            }
+
+            float damageToScore = calculatedDamage;
+            float currentZombieHP = zombieHealth.GetHP();
+
+            if (damageToScore > currentZombieHP)
+            {
+                damageToScore = currentZombieHP;
+            }
+
+            int damagePoints = Mathf.RoundToInt(damageToScore * scorePerDamage);
+
+            if (ScoreManager.Instance != null)
+            {
+                ScoreManager.Instance.AddScore(damagePoints);
+            }
             if (hitbox != null)
                 zombieHealth.TakeDamage(damage, hitbox.hitboxType);
             else
                 zombieHealth.TakeDamage(damage);
 
-            // 2. Comprobar si murió con este disparo
             if (zombieHealth.GetHP() <= 0)
             {
-                // -- KILL (Muerte) --
-                // Aquí solemos mostrar un premio mayor por matar (ej. 150),
-                // independientemente del daño de la última bala.
                 ShowFloatingScore(hit.point, pointsPerKillDisplay);
             }
             else
             {
-                // -- HIT (Golpe Normal) --
-                // AQUI ESTA EL CAMBIO: Usamos 'damagePoints' en vez de 'pointsPerHit'
-                if (ScoreManager.Instance != null)
-                {
-                    ScoreManager.Instance.AddScore(damagePoints); // Sumar puntos reales
-                }
-
-                // Mostrar texto flotante con la cantidad de daño/puntos
                 ShowFloatingScore(hit.point, damagePoints);
             }
         }
 
-        // Efectos (Sangre / Polvo)
         SpawnImpactEffects(hit);
     }
 
