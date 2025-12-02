@@ -540,56 +540,46 @@ public class PlayerShooting : MonoBehaviour
 
     void HandleHit(RaycastHit hit, float damage)
     {
-
         ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
         ZombieController zombieHealth = null;
 
         if (hitbox != null) zombieHealth = hitbox.zombieController;
         else zombieHealth = hit.collider.GetComponent<ZombieController>();
 
-
         if (zombieHealth != null)
         {
-
+            // Evitar golpear cadáveres
             if (zombieHealth.GetHP() <= 0)
             {
                 SpawnImpactEffects(hit);
                 return;
             }
 
-            float calculatedDamage = damage;
-
-            if (hitbox != null && hitbox.hitboxType == EHitboxType.Head)
-            {
-                calculatedDamage *= 2f;
-            }
-
-            float damageToScore = calculatedDamage;
-            float currentZombieHP = zombieHealth.GetHP();
-
-            if (damageToScore > currentZombieHP)
-            {
-                damageToScore = currentZombieHP;
-            }
-
-            int damagePoints = Mathf.RoundToInt(damageToScore * scorePerDamage);
-
+            // 1. PUNTUACIÓN FIJA POR IMPACTO
+            // Sumamos siempre los puntos fijos (ej. 10), sin importar el daño
             if (ScoreManager.Instance != null)
             {
-                ScoreManager.Instance.AddScore(damagePoints);
+                ScoreManager.Instance.AddScore(pointsPerHit);
             }
+
+            // 2. APLICAR DAÑO (Aquí sí importa si es cabeza para matar más rápido)
+            // Pasamos el hitboxType para que el ZombieController calcule si es x2 de daño
             if (hitbox != null)
                 zombieHealth.TakeDamage(damage, hitbox.hitboxType);
             else
                 zombieHealth.TakeDamage(damage);
 
+            // 3. FEEDBACK VISUAL
             if (zombieHealth.GetHP() <= 0)
             {
+                // Si muere, mostramos el premio gordo (150)
+                // (El ScoreManager sumará estos 150 automáticamente desde el script del Zombi)
                 ShowFloatingScore(hit.point, pointsPerKillDisplay);
             }
             else
             {
-                ShowFloatingScore(hit.point, damagePoints);
+                // Si sigue vivo, mostramos los puntos del golpe (10)
+                ShowFloatingScore(hit.point, pointsPerHit);
             }
         }
 
