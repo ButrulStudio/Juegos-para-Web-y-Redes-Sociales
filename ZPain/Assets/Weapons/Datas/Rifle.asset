@@ -37,11 +37,11 @@ MonoBehaviour:
   pelletCount: 5
   spreadAngle: 10
   penetrationCount: 1
-  recoilVerticalMin: 0.08
+  recoilVerticalMin: 0.14
   recoilVerticalMax: 0.08
-  recoilHorizontalMin: -0.04
-  recoilHorizontalMax: 0.08
-  weaponKickbackDistance: 0.05
+  recoilHorizontalMin: 0.04
+  recoilHorizontalMax: 0.2
+  weaponKickbackDistance: 1
   weaponKickbackReturnSpeed: 8
   shootSound: {fileID: 8300000, guid: c91c07e48f4c18a49ab7024938ad2fec, type: 3}
   reloadSound: {fileID: 8300000, guid: 38c806a719e3dc441b03d8047cb41629, type: 3}
@@ -49,3 +49,5 @@ MonoBehaviour:
   actionSoundDelay: 0.4
   boltActionSound: {fileID: 0}
   pumpActionSound: {fileID: 0}
+  flameRadius: 0.5
+  ammoUsageRate: 1

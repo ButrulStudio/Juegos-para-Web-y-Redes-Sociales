@@ -16,11 +16,11 @@ MonoBehaviour:
   crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: Escopeta
-  damage: 10
+  damage: 20
   range: 20
   fireRate: 0.9
-  price: 0
-  ammoPrice: 500
+  price: 10
+  ammoPrice: 0
   magCapacity: 6
   maxAmmo: 30
   reloadTime: 3
@@ -49,3 +49,5 @@ MonoBehaviour:
   actionSoundDelay: 0.4
   boltActionSound: {fileID: 0}
   pumpActionSound: {fileID: 8300000, guid: df81b8c5c70a7f24da0ee880662a4503, type: 3}
+  flameRadius: 0.5
+  ammoUsageRate: 1

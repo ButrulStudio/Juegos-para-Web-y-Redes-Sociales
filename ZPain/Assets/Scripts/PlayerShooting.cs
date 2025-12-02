@@ -85,6 +85,12 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private float reloadAnimSpeed = 8f;
     private Vector3 weaponInitialLocalRot;
 
+    [Header("Animación de Cambio de Arma")]
+    [SerializeField] private float switchDuration = 0.3f;
+    [SerializeField] private Vector3 switchUpOffset = new Vector3(0, 0.5f, 0);
+    [SerializeField] private float switchBackDistance = 0.1f;
+    [SerializeField] private Vector3 switchRotation = new Vector3(-35f, 0f, 0f);
+
     //====== AUDIO =======
     [SerializeField] private AudioSource audioSource;
 
@@ -130,58 +136,46 @@ public class PlayerShooting : MonoBehaviour
 
         HandleWeaponSwitching();
 
-        // Si recargamos, no calculamos posición/rotación aquí (lo hace la corrutina)
         if (isReloading) return;
 
         HandleShooting();
         HandleReloadInput();
         HandleAiming();
 
-        // =================================================================
-        // LÓGICA DE MOVIMIENTO Y ROTACIÓN DEL ARMA (Iron Sights)
-        // =================================================================
         if (weaponHolder != null && currentWeapon != null)
         {
-            // --- 1. POSICIÓN ---
-            Vector3 targetPosition = weaponInitialLocalPos; // Base: Cadera
+            Vector3 targetPosition = weaponInitialLocalPos;
 
-            // Si apuntamos y NO es modo sniper
             if (isAiming && currentWeapon.sniperScopeSprite == null)
             {
                 targetPosition = currentWeapon.aimPosition;
             }
 
-            // Interpolación suave de la posición
             Vector3 smoothPosition = Vector3.Lerp(
                 weaponHolder.localPosition - weaponCurrentOffset,
                 targetPosition,
                 Time.deltaTime * adsSpeed
             );
 
-            // --- 2. ROTACIÓN (Aquí estaba el problema) ---
-            Quaternion targetRotation = Quaternion.Euler(weaponInitialLocalRot); // Base: Cadera
+            Quaternion targetRotation = Quaternion.Euler(weaponInitialLocalRot);
 
-            // Si apuntamos y NO es modo sniper, usamos la rotación de apuntado SIEMPRE
             if (isAiming && currentWeapon.sniperScopeSprite == null)
             {
                 targetRotation = Quaternion.Euler(currentWeapon.aimRotation);
             }
 
-            // Interpolación suave de la rotación
             weaponHolder.localRotation = Quaternion.Slerp(
                 weaponHolder.localRotation,
                 targetRotation,
                 Time.deltaTime * adsSpeed
             );
 
-            // --- 3. RETROCESO (KICKBACK) ---
             weaponCurrentOffset = Vector3.Lerp(
                 weaponCurrentOffset,
                 Vector3.zero,
                 Time.deltaTime * currentWeapon.weaponKickbackReturnSpeed
             );
 
-            // Aplicar posición final (Base suavizada + Retroceso)
             weaponHolder.localPosition = smoothPosition + weaponCurrentOffset;
         }
     }
@@ -211,10 +205,70 @@ public class PlayerShooting : MonoBehaviour
 
     private void SwitchToSlot(int newIndex)
     {
+        StopAllCoroutines();
+        isReloading = false;
+        isBursting = false;
+
+        StopAiming();
+
         SaveCurrentAmmoState();
+
+        if (newIndex == currentSlotIndex) return;
+
+        StartCoroutine(SwitchWeaponCoroutine(newIndex));
+    }
+
+    private IEnumerator SwitchWeaponCoroutine(int newIndex)
+    {
+        isReloading = true;
+
+        Vector3 startPosition = weaponHolder.localPosition;
+        Quaternion startRotation = weaponHolder.localRotation;
+
+        Vector3 targetUpPosition = startPosition + switchUpOffset + (Vector3.back * switchBackDistance);
+
+        Quaternion targetRotation = Quaternion.Euler(switchRotation);
+
+        // 1. ANIMACIÓN DE SALIDA
+        float timer = 0f;
+        while (timer < switchDuration)
+        {
+            timer += Time.deltaTime;
+            float progress = timer / switchDuration;
+
+            weaponHolder.localPosition = Vector3.Lerp(startPosition, targetUpPosition, progress);
+            weaponHolder.localRotation = Quaternion.Slerp(startRotation, targetRotation, progress);
+
+            yield return null;
+        }
+
+        // 2. CAMBIO FÍSICO 
         currentSlotIndex = newIndex;
         RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
+
+        weaponHolder.localRotation = targetRotation;
+
+        // 3. ANIMACIÓN DE ENTRADA
+        Vector3 currentWeaponPos = weaponHolder.localPosition;
+        Quaternion finalRotation = Quaternion.Euler(weaponInitialLocalRot);
+
+        timer = 0f;
+        while (timer < switchDuration)
+        {
+            timer += Time.deltaTime;
+            float progress = timer / switchDuration;
+
+            weaponHolder.localPosition = Vector3.Lerp(currentWeaponPos, weaponInitialLocalPos, progress);
+            weaponHolder.localRotation = Quaternion.Slerp(targetRotation, finalRotation, progress);
+
+            yield return null;
+        }
+
+        weaponHolder.localPosition = weaponInitialLocalPos;
+        weaponHolder.localRotation = finalRotation;
+        isReloading = false;
     }
+
 
     public void EquipWeapon(WeaponData newWeapon)
     {
@@ -278,10 +332,6 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentWeapon == null) return;
 
-        // CAMBIO PRINCIPAL: Usamos GetMouseButton(0) en lugar de "Fire1".
-        // 0 = Clic Izquierdo del ratón.
-        // Esto evita que la tecla Ctrl (que a veces está mapeada a Fire1) dispare.
-
         switch (currentWeapon.weaponType)
         {
             case WeaponType.Pistol:
@@ -292,7 +342,7 @@ public class PlayerShooting : MonoBehaviour
                 }
                 break;
             case WeaponType.Rifle:
-                if (Input.GetMouseButton(0) && Time.time >= nextFireTime) 
+                if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
                     ShootRifle();
@@ -312,8 +362,7 @@ public class PlayerShooting : MonoBehaviour
                     StartCoroutine(ShootSniperCoroutine());
                 }
                 break;
-            case WeaponType.flamethrower: 
-                                          
+            case WeaponType.flamethrower:
                 if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
@@ -445,27 +494,27 @@ public class PlayerShooting : MonoBehaviour
 
         if (shotTicker >= currentWeapon.ammoUsageRate)
         {
-            currentAmmoInMag--; // Gastamos la bala
-            shotTicker = 0;     // Reiniciamos el contador
-            UpdateAmmoUI();     // Actualizamos el texto
+            currentAmmoInMag--;
+            shotTicker = 0;
+            UpdateAmmoUI();
         }
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
         RaycastHit[] hits = Physics.SphereCastAll(
             ray.origin,
-            currentWeapon.flameRadius, 
+            currentWeapon.flameRadius,
             ray.direction,
-            currentWeapon.range,       
+            currentWeapon.range,
             Physics.DefaultRaycastLayers,
-            QueryTriggerInteraction.Ignore 
+            QueryTriggerInteraction.Ignore
         );
 
         HashSet<ZombieController> burnedZombies = new HashSet<ZombieController>();
 
         foreach (RaycastHit hit in hits)
         {
-           
+
             ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
             ZombieController zombie = null;
 
@@ -508,11 +557,11 @@ public class PlayerShooting : MonoBehaviour
                 return;
             }
 
-            float calculatedDamage = damage; 
+            float calculatedDamage = damage;
 
             if (hitbox != null && hitbox.hitboxType == EHitboxType.Head)
             {
-                calculatedDamage *= 2f; 
+                calculatedDamage *= 2f;
             }
 
             float damageToScore = calculatedDamage;
@@ -588,7 +637,6 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // --- EFECTOS VISUALES LIMPIOS (SIN SPRITES DE ZOMBIES) ---
     private void SpawnImpactEffects(RaycastHit hit)
     {
         GameObject particlePrefab = null;
@@ -596,25 +644,20 @@ public class PlayerShooting : MonoBehaviour
 
         if (hit.collider.CompareTag("Zombie"))
         {
-            // Solo partículas de sangre
             particlePrefab = bloodParticlePrefab;
-            // decalSprite se queda nulo, así no ponemos pegatinas en los zombis
         }
         else if (hit.collider.CompareTag("Mapa"))
         {
-            // Polvo y agujero de bala en la pared
             particlePrefab = dustParticlePrefab;
             decalSprite = mapBulletHoleSprite;
         }
 
-        // 1. Instanciar Partículas (Sangre o Polvo)
         if (particlePrefab != null)
         {
             GameObject effect = Instantiate(particlePrefab, hit.point + (hit.normal * 0.02f), Quaternion.LookRotation(hit.normal));
             Destroy(effect, 2f);
         }
 
-        // 2. Instanciar Decal (Solo si es Mapa)
         if (decalSprite != null && bulletHoleBasePrefab != null)
         {
             Quaternion hitRotation = Quaternion.LookRotation(hit.normal);
@@ -624,7 +667,6 @@ public class PlayerShooting : MonoBehaviour
             hole.transform.SetParent(hit.collider.transform);
             Destroy(hole, 5f);
         }
-        // Eliminado bloque "Legacy Decal" que intentaba poner prefabs en zombis
     }
 
     private void ApplyRecoil()
@@ -741,35 +783,28 @@ public class PlayerShooting : MonoBehaviour
 
     void HandleAiming()
     {
-        // 1. Verificaciones de seguridad
         if (currentWeapon == null || !currentWeapon.canAim)
         {
-            // Si dejamos de poder apuntar, aseguramos restaurar la sensibilidad
             if (isAiming) StopAiming();
             return;
         }
 
-        // 2. Input (Clic Derecho)
         if (Input.GetMouseButtonDown(1)) isAiming = true;
         if (Input.GetMouseButtonUp(1)) isAiming = false;
 
-        // 3. Zoom de Cámara (FOV)
         float targetFOV = isAiming ? currentWeapon.aimedFOV : defaultFOV;
         playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * adsSpeed);
 
-        // 4. GESTIÓN DE SENSIBILIDAD (¡NUEVO!)
         if (cameraController != null)
         {
             if (isAiming)
-                cameraController.SetSensitivityMultiplier(aimSensitivityMultiplier); // Baja sensibilidad
+                cameraController.SetSensitivityMultiplier(aimSensitivityMultiplier);
             else
-                cameraController.SetSensitivityMultiplier(1f); // Restaura sensibilidad
+                cameraController.SetSensitivityMultiplier(1f);
         }
 
-        // 5. Lógica Visual (Sniper vs Iron Sights)
         if (isAiming && currentWeapon.sniperScopeSprite != null)
         {
-            // === MODO SNIPER ===
             if (crosshairRectTransform != null)
             {
                 crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
@@ -789,14 +824,12 @@ public class PlayerShooting : MonoBehaviour
         }
         else
         {
-            // === MODO NORMAL (Iron Sights) ===
             if (weaponHiddenForScope)
             {
                 if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
                 weaponHiddenForScope = false;
             }
 
-            // Ocultar cruz UI al apuntar con mira de hierro
             if (isAiming) crosshairImage.enabled = false;
             else UpdateCrosshair();
         }
@@ -806,7 +839,7 @@ public class PlayerShooting : MonoBehaviour
     {
         isAiming = false;
         if (cameraController != null) cameraController.SetSensitivityMultiplier(1f);
-        
+
         if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
         if (weaponHiddenForScope)
         {
@@ -873,7 +906,7 @@ public class PlayerShooting : MonoBehaviour
         else
         {
             currentAmmoInMag = weapon.magCapacity;
-            totalAmmo = weapon.maxAmmo - currentAmmoInMag;
+            totalAmmo = weapon.maxAmmo - currentWeapon.magCapacity;
             ammoInMagCache[weapon.weaponType] = currentAmmoInMag;
             totalAmmoCache[weapon.weaponType] = totalAmmo;
         }
@@ -943,29 +976,23 @@ public class PlayerShooting : MonoBehaviour
     //------------------------------------------------------------------------------------------------------------------------
     void OnDrawGizmos()
     {
-        // Verificamos que tengamos cámara y arma equipada para evitar errores
         if (playerCamera == null || currentWeapon == null) return;
 
-        // 1. Configurar color (Rojo para el rango máximo)
         Gizmos.color = Color.red;
 
         Vector3 startPosition = playerCamera.transform.position;
         Vector3 direction = playerCamera.transform.forward;
         Vector3 endPosition = startPosition + (direction * currentWeapon.range);
 
-        // 2. Dibujar la línea central (el "núcleo" del disparo)
         Gizmos.DrawLine(startPosition, endPosition);
 
-        // 3. VISUALIZACIÓN ESPECÍFICA PARA LANZALLAMAS (SphereCast)
         if (currentWeapon.weaponType == WeaponType.flamethrower)
         {
-            Gizmos.color = new Color(1, 0.5f, 0, 0.5f); // Naranja semitransparente
+            Gizmos.color = new Color(1, 0.5f, 0, 0.5f);
 
-            // Dibujamos una esfera al inicio y otra al final para ver el grosor
             Gizmos.DrawWireSphere(startPosition, currentWeapon.flameRadius);
             Gizmos.DrawWireSphere(endPosition, currentWeapon.flameRadius);
 
-            // Opcional: Dibujar líneas que conecten las esferas para simular el cilindro
             Vector3 up = playerCamera.transform.up * currentWeapon.flameRadius;
             Vector3 right = playerCamera.transform.right * currentWeapon.flameRadius;
 
