@@ -96,6 +96,7 @@ public class PlayerShooting : MonoBehaviour
     [Header("--- SYSTEMA DE ULTIMATE (LANZALLAMAS) ---")]
     [SerializeField] private WeaponData ultimateWeaponData;
     [SerializeField] private Image ultimateIconFill;
+    [SerializeField] private GameObject ultimateReadyVisual;
     [SerializeField] private KeyCode ultimateKey = KeyCode.X;
     [SerializeField] private float ultimateDuration = 20f;
 
@@ -210,31 +211,40 @@ public class PlayerShooting : MonoBehaviour
     // =================================================================================
     void HandleUltimateLogic()
     {
-        // 1. Si la ulti está activa, no hacemos nada (la corrutina gestiona el fin)
         if (isUltimateActive) return;
+        if (ultimateWeaponData == null) return;
 
-        // 2. Calcular porcentaje de carga basado en MUERTES
+        // 1. Calcular y pintar la barra
         float percentage = 0f;
-        if (ultimateWeaponData != null && ultimateWeaponData.requiredKillsForUlt > 0)
+        if (ultimateWeaponData.requiredKillsForUlt > 0)
         {
             percentage = (float)currentKillsCount / ultimateWeaponData.requiredKillsForUlt;
         }
 
-        // 3. Actualizar UI
-        if (ultimateIconFill != null)
-        {
-            ultimateIconFill.fillAmount = percentage;
-        }
+        if (ultimateIconFill != null) ultimateIconFill.fillAmount = percentage;
 
-        // 4. Activar si está lleno
+        // 2. Lógica de Activación visual (READY)
         if (currentKillsCount >= ultimateWeaponData.requiredKillsForUlt)
         {
-            // Aseguramos que el icono esté lleno visualmente
-            if (ultimateIconFill != null) ultimateIconFill.fillAmount = 1f;
+            // --- ESTÁ AL 100%: MOSTRAMOS EL EFECTO ---
+            if (ultimateReadyVisual != null && !ultimateReadyVisual.activeSelf)
+            {
+                ultimateReadyVisual.SetActive(true);
+            }
 
+            // Permitir activar
             if (Input.GetKeyDown(ultimateKey))
             {
                 StartCoroutine(ActivateUltimateRoutine());
+            }
+        }
+        else
+        {
+            // --- NO ESTÁ AL 100%: OCULTAMOS EL EFECTO ---
+            // Esto asegura que si se resetea, se apague la luz
+            if (ultimateReadyVisual != null && ultimateReadyVisual.activeSelf)
+            {
+                ultimateReadyVisual.SetActive(false);
             }
         }
     }
@@ -268,27 +278,27 @@ public class PlayerShooting : MonoBehaviour
     IEnumerator ActivateUltimateRoutine()
     {
         isUltimateActive = true;
-        preUltSlotIndex = currentSlotIndex;
 
+        // --- APAGAMOS EL EFECTO DE "LISTO" AL EMPEZAR A USARLA ---
+        if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
+
+        preUltSlotIndex = currentSlotIndex;
         RefreshWeaponVisuals(ultimateWeaponData);
 
         currentAmmoInMag = 9999;
         totalAmmo = 9999;
         UpdateAmmoUI();
 
-        // Lógica de duración (esto sí va por tiempo, dura 20 segundos activa)
         float timer = ultimateDuration;
         while (timer > 0)
         {
             timer -= Time.deltaTime;
-            // Opcional: El icono se va vaciando mientras la usas
+            // Hacemos que la barra se vacíe mientras disparamos
             if (ultimateIconFill != null) ultimateIconFill.fillAmount = timer / ultimateDuration;
             yield return null;
         }
 
         isUltimateActive = false;
-
-        // --- REINICIAMOS EL CONTADOR DE MUERTES A CERO ---
         currentKillsCount = 0;
 
         if (ultimateIconFill != null) ultimateIconFill.fillAmount = 0f;
