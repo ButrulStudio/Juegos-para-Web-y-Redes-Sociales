@@ -7,6 +7,8 @@ using System.Linq;
 
 public class PlayerShooting : MonoBehaviour
 {
+    public static PlayerShooting Instance { get; private set; }
+
     [Header("Referencias Generales")]
     [SerializeField] private Camera playerCamera;
     [SerializeField] private Transform weaponHolder;
@@ -106,6 +108,14 @@ public class PlayerShooting : MonoBehaviour
 
     void Awake()
     {
+
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
         if (crosshairImage != null)
             crosshairRectTransform = crosshairImage.GetComponent<RectTransform>();
 

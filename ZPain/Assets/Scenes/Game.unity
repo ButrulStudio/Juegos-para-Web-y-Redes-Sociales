@@ -30837,9 +30837,9 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1527172094}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.76133, y: 0.76133, z: 0.76133}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1197261527}
@@ -30873,8 +30873,8 @@ MonoBehaviour:
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
+  m_FillMethod: 1
+  m_FillAmount: 0
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
@@ -33079,7 +33079,7 @@ MonoBehaviour:
   switchBackDistance: 0.1
   switchRotation: {x: -90, y: 0, z: 0}
   ultimateWeaponData: {fileID: 11400000, guid: 6b24712bf09a51f40826b6e79f00b6d1, type: 2}
-  ultimateIconFill: {fileID: 1197261528}
+  ultimateIconFill: {fileID: 1527172096}
   ultimateKey: 120
   ultimateDuration: 20
   audioSource: {fileID: 1331496616}
