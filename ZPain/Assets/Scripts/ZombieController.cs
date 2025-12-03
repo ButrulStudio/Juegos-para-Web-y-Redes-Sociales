@@ -239,11 +239,32 @@ public class ZombieController : MonoBehaviour
             col.enabled = false;
         }
 
-            if (physicalCollider != null) physicalCollider.enabled = false;
+        if (physicalCollider != null) physicalCollider.enabled = false;
         if (agent != null) agent.enabled = false;
 
         if (scoreManager != null) scoreManager.ZombieKilled();
         if (waveManager != null) waveManager.ZombieDied();
+
+        
+        PlayerShooting ps = null;
+        if (player != null)
+        {
+            ps = player.GetComponent<PlayerShooting>();
+        }
+
+        if (ps == null)
+        {
+            ps = FindAnyObjectByType<PlayerShooting>();
+        }
+
+        if (ps != null)
+        {
+            ps.RegisterZombieKill();
+        }
+        else
+        {
+            Debug.LogError("[ERROR CRÍTICO] El Zombi murió pero NO ENCONTRÓ el script 'PlayerShooting' en la escena.");
+        }
 
         Destroy(gameObject, 2.8f);
     }

@@ -101,4 +101,5 @@ public class WeaponData : ScriptableObject
     [Header("Consumo de Munición")]
     [Tooltip("Cada cuántos disparos se gasta 1 bala real. 1 = Normal. 3 = El lanzallamas gasta 1 bala cada 3 frames de daño.")]
     public int ammoUsageRate = 1;
+    public int requiredKillsForUlt = 20;
 }

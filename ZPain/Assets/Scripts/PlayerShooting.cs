@@ -91,6 +91,16 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private float switchBackDistance = 0.1f;
     [SerializeField] private Vector3 switchRotation = new Vector3(-35f, 0f, 0f);
 
+    [Header("--- SYSTEMA DE ULTIMATE (LANZALLAMAS) ---")]
+    [SerializeField] private WeaponData ultimateWeaponData;
+    [SerializeField] private Image ultimateIconFill;
+    [SerializeField] private KeyCode ultimateKey = KeyCode.X;
+    [SerializeField] private float ultimateDuration = 20f;
+
+    private int currentKillsCount = 0; 
+    private bool isUltimateActive = false;
+    private int preUltSlotIndex = 0;
+
     //====== AUDIO =======
     [SerializeField] private AudioSource audioSource;
 
@@ -134,7 +144,12 @@ public class PlayerShooting : MonoBehaviour
     {
         if (GameManager.IsPaused || GameManager.GameIsOver) return;
 
-        HandleWeaponSwitching();
+        HandleUltimateLogic();
+
+        if (!isUltimateActive)
+        {
+            HandleWeaponSwitching();
+        }
 
         if (isReloading) return;
 
@@ -178,6 +193,97 @@ public class PlayerShooting : MonoBehaviour
 
             weaponHolder.localPosition = smoothPosition + weaponCurrentOffset;
         }
+    }
+
+    // =================================================================================
+    //                        SISTEMA DE ULTI
+    // =================================================================================
+    void HandleUltimateLogic()
+    {
+        // 1. Si la ulti está activa, no hacemos nada (la corrutina gestiona el fin)
+        if (isUltimateActive) return;
+
+        // 2. Calcular porcentaje de carga basado en MUERTES
+        float percentage = 0f;
+        if (ultimateWeaponData != null && ultimateWeaponData.requiredKillsForUlt > 0)
+        {
+            percentage = (float)currentKillsCount / ultimateWeaponData.requiredKillsForUlt;
+        }
+
+        // 3. Actualizar UI
+        if (ultimateIconFill != null)
+        {
+            ultimateIconFill.fillAmount = percentage;
+        }
+
+        // 4. Activar si está lleno
+        if (currentKillsCount >= ultimateWeaponData.requiredKillsForUlt)
+        {
+            // Aseguramos que el icono esté lleno visualmente
+            if (ultimateIconFill != null) ultimateIconFill.fillAmount = 1f;
+
+            if (Input.GetKeyDown(ultimateKey))
+            {
+                StartCoroutine(ActivateUltimateRoutine());
+            }
+        }
+    }
+
+    // --- NUEVA FUNCIÓN PÚBLICA PARA CONTAR MUERTES ---
+    public void RegisterZombieKill()
+    {
+        if (isUltimateActive) return;
+
+        if (ultimateWeaponData != null)
+        {
+            if (currentKillsCount < ultimateWeaponData.requiredKillsForUlt)
+            {
+                currentKillsCount++;
+
+                // --- MENSAJE DE DEBUG ---
+                Debug.Log($"[DEBUG] Kill sumada. Llevas {currentKillsCount} / {ultimateWeaponData.requiredKillsForUlt}");
+
+                if (currentKillsCount >= ultimateWeaponData.requiredKillsForUlt)
+                {
+                    Debug.Log("<color=green>[DEBUG] ¡ULTI LISTA! PULSA LA TECLA.</color>");
+                }
+            }
+        }
+        else
+        {
+            Debug.LogError("[DEBUG ERROR] No has asignado el 'UltimateWeaponData' en el Inspector del PlayerShooting.");
+        }
+    }
+
+    IEnumerator ActivateUltimateRoutine()
+    {
+        isUltimateActive = true;
+        preUltSlotIndex = currentSlotIndex;
+
+        RefreshWeaponVisuals(ultimateWeaponData);
+
+        currentAmmoInMag = 9999;
+        totalAmmo = 9999;
+        UpdateAmmoUI();
+
+        // Lógica de duración (esto sí va por tiempo, dura 20 segundos activa)
+        float timer = ultimateDuration;
+        while (timer > 0)
+        {
+            timer -= Time.deltaTime;
+            // Opcional: El icono se va vaciando mientras la usas
+            if (ultimateIconFill != null) ultimateIconFill.fillAmount = timer / ultimateDuration;
+            yield return null;
+        }
+
+        isUltimateActive = false;
+
+        // --- REINICIAMOS EL CONTADOR DE MUERTES A CERO ---
+        currentKillsCount = 0;
+
+        if (ultimateIconFill != null) ultimateIconFill.fillAmount = 0f;
+
+        SelectSlot(preUltSlotIndex);
     }
 
     // =================================================================================
@@ -713,6 +819,8 @@ public class PlayerShooting : MonoBehaviour
     // === MÉTODOS DE RECARGA ===
     void HandleReloadInput()
     {
+        if (isUltimateActive) return;
+
         if (currentWeapon == null) return;
         if (Input.GetKeyDown(KeyCode.R) && !isReloading && currentAmmoInMag < currentWeapon.magCapacity && totalAmmo > 0)
         {

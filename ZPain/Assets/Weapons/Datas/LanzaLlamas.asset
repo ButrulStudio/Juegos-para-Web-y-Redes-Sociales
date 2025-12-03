@@ -29,7 +29,7 @@ MonoBehaviour:
   weaponModelPrefab: {fileID: 7741221897465811734, guid: 96d90b5bbe9528a4abc9dd6b017ed1af, type: 3}
   bulletHolePrefab: {fileID: 0}
   crosshairIcon: {fileID: 21300000, guid: c1503a56258b70947befccadad6322a2, type: 3}
-  canAim: 1
+  canAim: 0
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
   aimPosition: {x: 0, y: 0, z: 0}
@@ -51,3 +51,4 @@ MonoBehaviour:
   pumpActionSound: {fileID: 0}
   flameRadius: 0.5
   ammoUsageRate: 5
+  requiredKillsForUlt: 5
