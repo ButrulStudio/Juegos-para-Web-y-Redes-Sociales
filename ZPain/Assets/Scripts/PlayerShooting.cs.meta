@@ -1,2 +1,27 @@
 fileFormatVersion: 2
 guid: 3ad87a248192f424c85f6b7cdaca137c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - playerCamera: {instanceID: 0}
+  - weaponHolder: {instanceID: 0}
+  - cameraController: {instanceID: 0}
+  - ammoText: {instanceID: 0}
+  - crosshairImage: {instanceID: 0}
+  - floatingTextPrefab: {instanceID: 0}
+  - currentWeapon: {instanceID: 0}
+  - bloodParticlePrefab: {instanceID: 0}
+  - dustParticlePrefab: {instanceID: 0}
+  - bulletHoleBasePrefab: {instanceID: 0}
+  - mapBulletHoleSprite: {instanceID: 0}
+  - knifeSwingSound: {instanceID: 0}
+  - knifeHitSound: {instanceID: 0}
+  - ultimateWeaponData: {instanceID: 0}
+  - ultimateIconFill: {instanceID: 0}
+  - audioSource: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
