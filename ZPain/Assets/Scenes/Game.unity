@@ -33061,7 +33061,7 @@ MonoBehaviour:
   scorePerDamage: 1
   pointsPerKillDisplay: 150
   floatingTextPrefab: {fileID: 2497785663808996913, guid: 259bd71c1a8e4954aac4e3708134daa8, type: 3}
-  currentWeapon: {fileID: 11400000, guid: be749ca6a0f68c244b19916f5ef803f5, type: 2}
+  currentWeapon: {fileID: 11400000, guid: b54dae3deb2bb42409c38217fd1e3301, type: 2}
   reloadTimeMultiplier: 1
   damageMultiplier: 1
   flashDuration: 0.05
@@ -33078,15 +33078,10 @@ MonoBehaviour:
   switchUpOffset: {x: 0, y: 0.1, z: 0}
   switchBackDistance: 0.1
   switchRotation: {x: -90, y: 0, z: 0}
-  knifeAttackRadius: 0.5
-  knifeImpactDelay: 0.15
-  knifeSwingSound: {fileID: 0}
-  knifeHitSound: {fileID: 0}
   ultimateWeaponData: {fileID: 11400000, guid: 6b24712bf09a51f40826b6e79f00b6d1, type: 2}
   ultimateIconFill: {fileID: 1197261528}
   ultimateKey: 120
   ultimateDuration: 20
-  shotgunUIReloadSpeedFactor: 1.25
   audioSource: {fileID: 1331496616}
 --- !u!4 &1837902159
 Transform:

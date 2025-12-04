@@ -2,7 +2,6 @@ using UnityEngine;
 
 public enum WeaponType
 {
-    Knife,
     Pistol,
     Rifle,
     Shotgun,
@@ -33,6 +32,7 @@ public class WeaponData : ScriptableObject
 
     [Tooltip("Precio para rellenar la munición (si ya la tienes)")]
     public int ammoPrice = 50;
+
 
     [Header("Munición")]
     [Tooltip("Balas que caben en el cargador")]
@@ -102,8 +102,4 @@ public class WeaponData : ScriptableObject
     [Tooltip("Cada cuántos disparos se gasta 1 bala real. 1 = Normal. 3 = El lanzallamas gasta 1 bala cada 3 frames de daño.")]
     public int ammoUsageRate = 1;
     public int requiredKillsForUlt = 20;
-
-    [Header("Ajuste de Posición")]
-    [Tooltip("Offset local del modelo respecto al WeaponHolder. Útil para el cuchillo.")]
-    public Vector3 modelLocalOffset = Vector3.zero;
 }

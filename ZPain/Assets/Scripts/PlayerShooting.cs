@@ -4,7 +4,6 @@ using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 
 public class PlayerShooting : MonoBehaviour
 {
@@ -21,9 +20,14 @@ public class PlayerShooting : MonoBehaviour
     private Color defaultAmmoColor;
 
     [Header("Sistema de Puntuación")]
+    [Tooltip("Puntos ganados por acertar una bala (sin matar)")]
     public int pointsPerHit = 10;
     public float scorePerDamage = 1.0f;
+
+    [Tooltip("Valor visual que se mostrará al matar (Asegúrate de configurar esto mismo en ScoreManager)")]
     public int pointsPerKillDisplay = 150;
+
+    [Tooltip("El Prefab del texto flotante 3D (FloatingScoreText)")]
     [SerializeField] private GameObject floatingTextPrefab;
 
     [Header("Sistema de Inventario (2 Slots)")]
@@ -36,9 +40,7 @@ public class PlayerShooting : MonoBehaviour
     private float nextFireTime = 0f;
     private bool isBursting = false;
 
-    // Referencia al Animator del arma (usado para el Cuchillo)
-    private Animator currentWeaponAnimator;
-
+    // Variables para el retroceso visual (Kickback)
     private Vector3 weaponInitialLocalPos;
     private Vector3 weaponCurrentOffset;
 
@@ -46,10 +48,11 @@ public class PlayerShooting : MonoBehaviour
     private int currentAmmoInMag;
     private int totalAmmo;
     private bool isReloading = false;
+
     private Dictionary<WeaponType, int> ammoInMagCache = new Dictionary<WeaponType, int>();
     private Dictionary<WeaponType, int> totalAmmoCache = new Dictionary<WeaponType, int>();
 
-    // === MULTIPLICADORES ===
+    // === MULTIPLICADORES DE POWER-UP ===
     [HideInInspector] public float reloadTimeMultiplier = 1f;
     [HideInInspector] public float damageMultiplier = 1f;
 
@@ -60,6 +63,8 @@ public class PlayerShooting : MonoBehaviour
     [Header("Efectos de Impacto")]
     [SerializeField] private GameObject bloodParticlePrefab;
     [SerializeField] private GameObject dustParticlePrefab;
+
+    [Header("Decals (Escenario)")]
     [SerializeField] private GameObject bulletHoleBasePrefab;
     [SerializeField] private Sprite mapBulletHoleSprite;
 
@@ -71,7 +76,9 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private float defaultFOV = 60f;
     private bool isAiming = false;
     private bool weaponHiddenForScope = false;
+
     [SerializeField][Range(0.1f, 1f)] private float aimSensitivityMultiplier = 0.7f;
+    private Vector3 currentWeaponPositionVelocity;
 
     [Header("Animación de Recarga")]
     [SerializeField] private Vector3 reloadRotation = new Vector3(35f, 0f, 0f);
@@ -84,35 +91,26 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private float switchBackDistance = 0.1f;
     [SerializeField] private Vector3 switchRotation = new Vector3(-35f, 0f, 0f);
 
-    [Header("--- CONFIGURACIÓN MELEE (CUCHILLO) ---")]
-    [Tooltip("Radio de la esfera de impacto (grosor del ataque)")]
-    [SerializeField] private float knifeAttackRadius = 0.5f;
-    [Tooltip("Retraso desde el clic hasta que se aplica el daño (sincronizar con animación)")]
-    [SerializeField] private float knifeImpactDelay = 0.15f;
-    
-    [Header("Sonidos Melee")]
-    [SerializeField] private AudioClip knifeSwingSound;
-    [SerializeField] private AudioClip knifeHitSound;
-
-    [Header("--- SYSTEMA DE ULTIMATE ---")]
+    [Header("--- SYSTEMA DE ULTIMATE (LANZALLAMAS) ---")]
     [SerializeField] private WeaponData ultimateWeaponData;
     [SerializeField] private Image ultimateIconFill;
     [SerializeField] private KeyCode ultimateKey = KeyCode.X;
     [SerializeField] private float ultimateDuration = 20f;
+
     private int currentKillsCount = 0; 
     private bool isUltimateActive = false;
     private int preUltSlotIndex = 0;
 
-    [Header("Ajuste de UI")]
-    [Tooltip("Factor para acelerar el llenado de munición en la UI de la escopeta.")]
-    [SerializeField] private float shotgunUIReloadSpeedFactor = 1.25f;
-
+    //====== AUDIO =======
     [SerializeField] private AudioSource audioSource;
 
     void Awake()
     {
-        if (crosshairImage != null) crosshairRectTransform = crosshairImage.GetComponent<RectTransform>();
+        if (crosshairImage != null)
+            crosshairRectTransform = crosshairImage.GetComponent<RectTransform>();
+
         if (ammoText != null) defaultAmmoColor = ammoText.color;
+
         if (weaponHolder != null)
         {
             weaponInitialLocalPos = weaponHolder.localPosition;
@@ -122,26 +120,11 @@ public class PlayerShooting : MonoBehaviour
 
     void Start()
     {
-        // Si se va a cargar una partida, no hacer nada aquí.
-        if (SaveLoadManager.ShouldLoadGame) return;
-
-        // --- LÓGICA DE PARTIDA NUEVA ---
-        // Aquí se equipa el arma que hayas puesto en "Current Weapon" en el Inspector (pon el Cuchillo ahí)
-        if (currentWeapon != null)
-        {
-            currentWeapon = Instantiate(currentWeapon);
-            EquipWeapon(currentWeapon);
-            
-            // Registramos el arma inicial en la tienda
-            WeaponStore.RegisterStartingWeapon(currentWeapon);
-        }
-
         UpdateAmmoUI();
         UpdateCrosshair();
         if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
     }
 
-    // Método llamado por el SaveLoadManager si carga partida
     public void InitializeNewGame(WeaponData weaponToEquip)
     {
         weaponSlots[0] = null;
@@ -152,8 +135,7 @@ public class PlayerShooting : MonoBehaviour
         {
             WeaponData newInstance = Instantiate(weaponToEquip);
             EquipWeapon(newInstance);
-            if(newInstance.weaponType != WeaponType.Knife) 
-                ForceCurrentWeaponAmmoToFull();
+            ForceCurrentWeaponAmmoToFull();
             WeaponStore.RegisterStartingWeapon(newInstance);
         }
     }
@@ -164,7 +146,10 @@ public class PlayerShooting : MonoBehaviour
 
         HandleUltimateLogic();
 
-        if (!isUltimateActive) HandleWeaponSwitching();
+        if (!isUltimateActive)
+        {
+            HandleWeaponSwitching();
+        }
 
         if (isReloading) return;
 
@@ -172,49 +157,101 @@ public class PlayerShooting : MonoBehaviour
         HandleReloadInput();
         HandleAiming();
 
-        // Lógica de posición del arma (ADS / Recoil return)
         if (weaponHolder != null && currentWeapon != null)
         {
             Vector3 targetPosition = weaponInitialLocalPos;
-            if (isAiming && currentWeapon.sniperScopeSprite == null) targetPosition = currentWeapon.aimPosition;
 
-            Vector3 smoothPosition = Vector3.Lerp(weaponHolder.localPosition - weaponCurrentOffset, targetPosition, Time.deltaTime * adsSpeed);
-            
+            if (isAiming && currentWeapon.sniperScopeSprite == null)
+            {
+                targetPosition = currentWeapon.aimPosition;
+            }
+
+            Vector3 smoothPosition = Vector3.Lerp(
+                weaponHolder.localPosition - weaponCurrentOffset,
+                targetPosition,
+                Time.deltaTime * adsSpeed
+            );
+
             Quaternion targetRotation = Quaternion.Euler(weaponInitialLocalRot);
-            if (isAiming && currentWeapon.sniperScopeSprite == null) targetRotation = Quaternion.Euler(currentWeapon.aimRotation);
 
-            weaponHolder.localRotation = Quaternion.Slerp(weaponHolder.localRotation, targetRotation, Time.deltaTime * adsSpeed);
-            
-            weaponCurrentOffset = Vector3.Lerp(weaponCurrentOffset, Vector3.zero, Time.deltaTime * currentWeapon.weaponKickbackReturnSpeed);
+            if (isAiming && currentWeapon.sniperScopeSprite == null)
+            {
+                targetRotation = Quaternion.Euler(currentWeapon.aimRotation);
+            }
+
+            weaponHolder.localRotation = Quaternion.Slerp(
+                weaponHolder.localRotation,
+                targetRotation,
+                Time.deltaTime * adsSpeed
+            );
+
+            weaponCurrentOffset = Vector3.Lerp(
+                weaponCurrentOffset,
+                Vector3.zero,
+                Time.deltaTime * currentWeapon.weaponKickbackReturnSpeed
+            );
+
             weaponHolder.localPosition = smoothPosition + weaponCurrentOffset;
         }
     }
 
     // =================================================================================
-    //                        SISTEMA DE ULTIMATE
+    //                        SISTEMA DE ULTI
     // =================================================================================
     void HandleUltimateLogic()
     {
+        // 1. Si la ulti está activa, no hacemos nada (la corrutina gestiona el fin)
         if (isUltimateActive) return;
+
+        // 2. Calcular porcentaje de carga basado en MUERTES
         float percentage = 0f;
         if (ultimateWeaponData != null && ultimateWeaponData.requiredKillsForUlt > 0)
+        {
             percentage = (float)currentKillsCount / ultimateWeaponData.requiredKillsForUlt;
+        }
 
-        if (ultimateIconFill != null) ultimateIconFill.fillAmount = percentage;
+        // 3. Actualizar UI
+        if (ultimateIconFill != null)
+        {
+            ultimateIconFill.fillAmount = percentage;
+        }
 
+        // 4. Activar si está lleno
         if (currentKillsCount >= ultimateWeaponData.requiredKillsForUlt)
         {
+            // Aseguramos que el icono esté lleno visualmente
             if (ultimateIconFill != null) ultimateIconFill.fillAmount = 1f;
-            if (Input.GetKeyDown(ultimateKey)) StartCoroutine(ActivateUltimateRoutine());
+
+            if (Input.GetKeyDown(ultimateKey))
+            {
+                StartCoroutine(ActivateUltimateRoutine());
+            }
         }
     }
 
+    // --- NUEVA FUNCIÓN PÚBLICA PARA CONTAR MUERTES ---
     public void RegisterZombieKill()
     {
         if (isUltimateActive) return;
+
         if (ultimateWeaponData != null)
         {
-            if (currentKillsCount < ultimateWeaponData.requiredKillsForUlt) currentKillsCount++;
+            if (currentKillsCount < ultimateWeaponData.requiredKillsForUlt)
+            {
+                currentKillsCount++;
+
+                // --- MENSAJE DE DEBUG ---
+                Debug.Log($"[DEBUG] Kill sumada. Llevas {currentKillsCount} / {ultimateWeaponData.requiredKillsForUlt}");
+
+                if (currentKillsCount >= ultimateWeaponData.requiredKillsForUlt)
+                {
+                    Debug.Log("<color=green>[DEBUG] ¡ULTI LISTA! PULSA LA TECLA.</color>");
+                }
+            }
+        }
+        else
+        {
+            Debug.LogError("[DEBUG ERROR] No has asignado el 'UltimateWeaponData' en el Inspector del PlayerShooting.");
         }
     }
 
@@ -222,34 +259,52 @@ public class PlayerShooting : MonoBehaviour
     {
         isUltimateActive = true;
         preUltSlotIndex = currentSlotIndex;
+
         RefreshWeaponVisuals(ultimateWeaponData);
-        currentAmmoInMag = 9999; 
+
+        currentAmmoInMag = 9999;
         totalAmmo = 9999;
         UpdateAmmoUI();
 
+        // Lógica de duración (esto sí va por tiempo, dura 20 segundos activa)
         float timer = ultimateDuration;
         while (timer > 0)
         {
             timer -= Time.deltaTime;
+            // Opcional: El icono se va vaciando mientras la usas
             if (ultimateIconFill != null) ultimateIconFill.fillAmount = timer / ultimateDuration;
             yield return null;
         }
 
         isUltimateActive = false;
+
+        // --- REINICIAMOS EL CONTADOR DE MUERTES A CERO ---
         currentKillsCount = 0;
+
         if (ultimateIconFill != null) ultimateIconFill.fillAmount = 0f;
+
         SelectSlot(preUltSlotIndex);
     }
 
     // =================================================================================
     //                        SISTEMA DE CAMBIO DE ARMA
     // =================================================================================
+
     void HandleWeaponSwitching()
     {
         if (isReloading || isAiming || isBursting) return;
+
         float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll > 0f) { if (currentSlotIndex != 0 && weaponSlots[0] != null) SwitchToSlot(0); }
-        else if (scroll < 0f) { if (currentSlotIndex != 1 && weaponSlots[1] != null) SwitchToSlot(1); }
+
+        if (scroll > 0f)
+        {
+            if (currentSlotIndex != 0 && weaponSlots[0] != null) SwitchToSlot(0);
+        }
+        else if (scroll < 0f)
+        {
+            if (currentSlotIndex != 1 && weaponSlots[1] != null) SwitchToSlot(1);
+        }
+
         if (Input.GetKeyDown(KeyCode.Alpha1) && currentSlotIndex != 0 && weaponSlots[0] != null) SwitchToSlot(0);
         if (Input.GetKeyDown(KeyCode.Alpha2) && currentSlotIndex != 1 && weaponSlots[1] != null) SwitchToSlot(1);
     }
@@ -259,34 +314,47 @@ public class PlayerShooting : MonoBehaviour
         StopAllCoroutines();
         isReloading = false;
         isBursting = false;
+
         StopAiming();
+
         SaveCurrentAmmoState();
+
         if (newIndex == currentSlotIndex) return;
+
         StartCoroutine(SwitchWeaponCoroutine(newIndex));
     }
 
     private IEnumerator SwitchWeaponCoroutine(int newIndex)
     {
         isReloading = true;
+
         Vector3 startPosition = weaponHolder.localPosition;
         Quaternion startRotation = weaponHolder.localRotation;
+
         Vector3 targetUpPosition = startPosition + switchUpOffset + (Vector3.back * switchBackDistance);
+
         Quaternion targetRotation = Quaternion.Euler(switchRotation);
 
+        // 1. ANIMACIÓN DE SALIDA
         float timer = 0f;
         while (timer < switchDuration)
         {
             timer += Time.deltaTime;
             float progress = timer / switchDuration;
+
             weaponHolder.localPosition = Vector3.Lerp(startPosition, targetUpPosition, progress);
             weaponHolder.localRotation = Quaternion.Slerp(startRotation, targetRotation, progress);
+
             yield return null;
         }
 
+        // 2. CAMBIO FÍSICO 
         currentSlotIndex = newIndex;
         RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
+
         weaponHolder.localRotation = targetRotation;
 
+        // 3. ANIMACIÓN DE ENTRADA
         Vector3 currentWeaponPos = weaponHolder.localPosition;
         Quaternion finalRotation = Quaternion.Euler(weaponInitialLocalRot);
 
@@ -295,8 +363,10 @@ public class PlayerShooting : MonoBehaviour
         {
             timer += Time.deltaTime;
             float progress = timer / switchDuration;
+
             weaponHolder.localPosition = Vector3.Lerp(currentWeaponPos, weaponInitialLocalPos, progress);
             weaponHolder.localRotation = Quaternion.Slerp(targetRotation, finalRotation, progress);
+
             yield return null;
         }
 
@@ -305,13 +375,27 @@ public class PlayerShooting : MonoBehaviour
         isReloading = false;
     }
 
+
     public void EquipWeapon(WeaponData newWeapon)
     {
         if (newWeapon == null) return;
         SaveCurrentAmmoState();
-        if (weaponSlots[0] == null) { weaponSlots[0] = newWeapon; currentSlotIndex = 0; }
-        else if (weaponSlots[1] == null) { weaponSlots[1] = newWeapon; currentSlotIndex = 1; }
-        else { weaponSlots[currentSlotIndex] = newWeapon; }
+
+        if (weaponSlots[0] == null)
+        {
+            weaponSlots[0] = newWeapon;
+            currentSlotIndex = 0;
+        }
+        else if (weaponSlots[1] == null)
+        {
+            weaponSlots[1] = newWeapon;
+            currentSlotIndex = 1;
+        }
+        else
+        {
+            weaponSlots[currentSlotIndex] = newWeapon;
+        }
+
         RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
     }
 
@@ -321,7 +405,6 @@ public class PlayerShooting : MonoBehaviour
 
         currentWeapon = weaponData;
         shotTicker = 0;
-        currentWeaponAnimator = null; // Reiniciar Animator
         StopAiming();
 
         if (currentWeapon == null)
@@ -334,21 +417,11 @@ public class PlayerShooting : MonoBehaviour
         if (currentWeapon.weaponModelPrefab != null && weaponHolder != null)
         {
             currentWeaponModel = Instantiate(currentWeapon.weaponModelPrefab, weaponHolder);
-            currentWeaponModel.transform.localPosition = currentWeapon.modelLocalOffset;
+            currentWeaponModel.transform.localPosition = Vector3.zero;
             currentWeaponModel.transform.localRotation = Quaternion.identity;
-            // 1. Obtener Animator (Importante para el Cuchillo)
-            currentWeaponAnimator = currentWeaponModel.GetComponent<Animator>();
 
-            // 2. Configurar Luz de Fogonazo
-            if (currentWeapon.weaponType == WeaponType.Knife)
-            {
-                muzzleLight = null; // El cuchillo no tiene fogonazo
-            }
-            else
-            {
-                Light newMuzzleLight = currentWeaponModel.GetComponentInChildren<Light>();
-                muzzleLight = newMuzzleLight;
-            }
+            Light newMuzzleLight = currentWeaponModel.GetComponentInChildren<Light>();
+            muzzleLight = newMuzzleLight;
         }
 
         LoadAmmoStateForWeapon(currentWeapon);
@@ -358,7 +431,7 @@ public class PlayerShooting : MonoBehaviour
     }
 
     // =================================================================================
-    //                        SISTEMA DE DISPARO Y ATAQUE
+    //                        SISTEMA DE DISPARO (SOLO CLIC IZQUIERDO)
     // =================================================================================
 
     void HandleShooting()
@@ -367,15 +440,6 @@ public class PlayerShooting : MonoBehaviour
 
         switch (currentWeapon.weaponType)
         {
-            case WeaponType.Knife:
-                // El cuchillo usa fireRate como cooldown entre ataques
-                if (Input.GetMouseButtonDown(0) && Time.time >= nextFireTime)
-                {
-                    nextFireTime = Time.time + currentWeapon.fireRate;
-                    StartCoroutine(PerformKnifeAttack());
-                }
-                break;
-
             case WeaponType.Pistol:
                 if (Input.GetMouseButtonDown(0) && Time.time >= nextFireTime && !isBursting)
                 {
@@ -414,59 +478,167 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // --- ATAQUE CUERPO A CUERPO (CUCHILLO) ---
-    IEnumerator PerformKnifeAttack()
+    void Shoot()
     {
-        // 1. Animación
-        if (currentWeaponAnimator != null) currentWeaponAnimator.SetTrigger("Attack");
-
-        // 2. Sonido Swing
-        if (knifeSwingSound != null) PlaySound(knifeSwingSound);
-
-        // 3. Esperar Impacto
-        yield return new WaitForSeconds(knifeImpactDelay);
-
-        // 4. SphereCast para detectar golpe
+        if (currentAmmoInMag <= 0) { HandleEmptyClip(); return; }
+        FireBaseLogic();
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        RaycastHit hit;
+        if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
+            HandleHit(hit, currentWeapon.damage * damageMultiplier);
+        ApplyRecoil();
+    }
 
-        if (Physics.SphereCast(ray, knifeAttackRadius, out hit, currentWeapon.range))
+    private IEnumerator BurstFire()
+    {
+        if (isBursting) yield break;
+        isBursting = true;
+        int burstCount = 3;
+        for (int i = 0; i < burstCount; i++)
         {
-            ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
-            ZombieController zombieHealth = null;
+            if (currentAmmoInMag <= 0) { HandleEmptyClip(); break; }
+            FireBaseLogic();
+            Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+            if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
+                HandleHit(hit, currentWeapon.damage * damageMultiplier);
+            ApplyRecoil();
+            yield return new WaitForSeconds(currentWeapon.fireRate);
+        }
+        yield return new WaitForSeconds(0.1f);
+        isBursting = false;
+    }
 
-            if (hitbox != null) zombieHealth = hitbox.zombieController;
-            else zombieHealth = hit.collider.GetComponent<ZombieController>();
+    void ShootRifle()
+    {
+        if (currentAmmoInMag <= 0) { HandleEmptyClip(); return; }
+        FireBaseLogic();
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
+            HandleHit(hit, currentWeapon.damage * damageMultiplier);
+        ApplyRecoil();
+    }
 
-            if (zombieHealth != null)
-            {
-                if (zombieHealth.GetHP() <= 0) { SpawnImpactEffects(hit); yield break; }
+    IEnumerator ShootShotgunCoroutine()
+    {
+        if (currentAmmoInMag <= 0) { HandleEmptyClip(); yield break; }
+        FireBaseLogic();
+        for (int i = 0; i < currentWeapon.pelletCount; i++)
+        {
+            Vector3 direction = playerCamera.transform.forward;
+            direction = Quaternion.Euler(
+                Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle),
+                Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle),
+                0
+            ) * direction;
 
-                // Sonido Impacto Carne
-                if (knifeHitSound != null) PlaySound(knifeHitSound);
-
-                // Aplicar Daño
-                float damage = currentWeapon.damage * damageMultiplier;
-                if (hitbox != null) zombieHealth.TakeDamage(damage, hitbox.hitboxType);
-                else zombieHealth.TakeDamage(damage);
-
-                // Puntuación
-                if (ScoreManager.Instance != null) ScoreManager.Instance.AddScore(pointsPerHit);
-                ShowFloatingScore(hit.point, (zombieHealth.GetHP() <= 0) ? pointsPerKillDisplay : pointsPerHit);
-            }
-            
-            // Efectos visuales (sangre/pared)
-            SpawnImpactEffects(hit);
+            Ray ray = new Ray(playerCamera.transform.position, direction);
+            if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
+                HandleHit(hit, currentWeapon.damage * damageMultiplier);
+        }
+        ApplyRecoil();
+        if (currentWeapon.pumpActionSound != null)
+        {
+            yield return new WaitForSeconds(currentWeapon.actionSoundDelay);
+            PlaySound(currentWeapon.pumpActionSound);
         }
     }
 
-    // --- MÉTODOS DE DISPARO ARMAS DE FUEGO ---
-    void Shoot() { if (currentAmmoInMag <= 0) { HandleEmptyClip(); return; } FireBaseLogic(); Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward); if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range)) HandleHit(hit, currentWeapon.damage * damageMultiplier); ApplyRecoil(); }
-    private IEnumerator BurstFire() { if (isBursting) yield break; isBursting = true; int burstCount = 3; for (int i = 0; i < burstCount; i++) { if (currentAmmoInMag <= 0) { HandleEmptyClip(); break; } FireBaseLogic(); Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward); if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range)) HandleHit(hit, currentWeapon.damage * damageMultiplier); ApplyRecoil(); yield return new WaitForSeconds(currentWeapon.fireRate); } yield return new WaitForSeconds(0.1f); isBursting = false; }
-    void ShootRifle() { if (currentAmmoInMag <= 0) { HandleEmptyClip(); return; } FireBaseLogic(); Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward); if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range)) HandleHit(hit, currentWeapon.damage * damageMultiplier); ApplyRecoil(); }
-    IEnumerator ShootShotgunCoroutine() { if (currentAmmoInMag <= 0) { HandleEmptyClip(); yield break; } FireBaseLogic(); for (int i = 0; i < currentWeapon.pelletCount; i++) { Vector3 direction = playerCamera.transform.forward; direction = Quaternion.Euler(Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle), Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle), 0) * direction; Ray ray = new Ray(playerCamera.transform.position, direction); if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range)) HandleHit(hit, currentWeapon.damage * damageMultiplier); } ApplyRecoil(); if (currentWeapon.pumpActionSound != null) { yield return new WaitForSeconds(currentWeapon.actionSoundDelay); PlaySound(currentWeapon.pumpActionSound); } }
-    IEnumerator ShootSniperCoroutine() { if (currentAmmoInMag <= 0) { HandleEmptyClip(); yield break; } FireBaseLogic(); ApplyRecoil(); Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward); RaycastHit[] hits = Physics.RaycastAll(ray, currentWeapon.range); if (hits.Length > 0) { var sortedHits = hits.OrderBy(h => h.distance); HashSet<ZombieController> alreadyDamaged = new HashSet<ZombieController>(); int targetsHit = 0; foreach (var hit in sortedHits) { ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>(); ZombieController zombieHealth = null; if (hitbox != null) zombieHealth = hitbox.zombieController; else zombieHealth = hit.collider.GetComponent<ZombieController>(); if (zombieHealth != null) { if (!alreadyDamaged.Contains(zombieHealth)) { HandleHit(hit, currentWeapon.damage * damageMultiplier); alreadyDamaged.Add(zombieHealth); targetsHit++; if (targetsHit >= currentWeapon.penetrationCount) break; } } else HandleHit(hit, currentWeapon.damage * damageMultiplier); } } if (currentWeapon.boltActionSound != null) { yield return new WaitForSeconds(currentWeapon.actionSoundDelay); PlaySound(currentWeapon.boltActionSound); } }
-    void ShootFlamethrower() { if (currentAmmoInMag <= 0) { HandleEmptyClip(); return; } PlaySound(currentWeapon.shootSound); StartCoroutine(MuzzleFlashRoutine()); shotTicker++; if (shotTicker >= currentWeapon.ammoUsageRate) { currentAmmoInMag--; shotTicker = 0; UpdateAmmoUI(); } Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward); RaycastHit[] hits = Physics.SphereCastAll(ray.origin, currentWeapon.flameRadius, ray.direction, currentWeapon.range, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore); HashSet<ZombieController> burnedZombies = new HashSet<ZombieController>(); foreach (RaycastHit hit in hits) { ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>(); ZombieController zombie = null; if (hitbox != null) zombie = hitbox.zombieController; else zombie = hit.collider.GetComponent<ZombieController>(); if (zombie != null) { if (burnedZombies.Add(zombie)) { zombie.TakeDamage(currentWeapon.damage * damageMultiplier); } } } }
+    IEnumerator ShootSniperCoroutine()
+    {
+        if (currentAmmoInMag <= 0) { HandleEmptyClip(); yield break; }
+        FireBaseLogic();
+        ApplyRecoil();
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        RaycastHit[] hits = Physics.RaycastAll(ray, currentWeapon.range);
+
+        if (hits.Length > 0)
+        {
+            var sortedHits = hits.OrderBy(h => h.distance);
+            HashSet<ZombieController> alreadyDamaged = new HashSet<ZombieController>();
+            int targetsHit = 0;
+
+            foreach (var hit in sortedHits)
+            {
+                ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
+                ZombieController zombieHealth = null;
+
+                if (hitbox != null) zombieHealth = hitbox.zombieController;
+                else zombieHealth = hit.collider.GetComponent<ZombieController>();
+
+                if (zombieHealth != null)
+                {
+                    if (!alreadyDamaged.Contains(zombieHealth))
+                    {
+                        HandleHit(hit, currentWeapon.damage * damageMultiplier);
+                        alreadyDamaged.Add(zombieHealth);
+                        targetsHit++;
+                        if (targetsHit >= currentWeapon.penetrationCount) break;
+                    }
+                }
+                else HandleHit(hit, currentWeapon.damage * damageMultiplier);
+            }
+        }
+
+        if (currentWeapon.boltActionSound != null)
+        {
+            yield return new WaitForSeconds(currentWeapon.actionSoundDelay);
+            PlaySound(currentWeapon.boltActionSound);
+        }
+    }
+
+    void ShootFlamethrower()
+    {
+        if (currentAmmoInMag <= 0)
+        {
+            HandleEmptyClip();
+            return;
+        }
+
+        PlaySound(currentWeapon.shootSound);
+        StartCoroutine(MuzzleFlashRoutine());
+
+        shotTicker++;
+
+        if (shotTicker >= currentWeapon.ammoUsageRate)
+        {
+            currentAmmoInMag--;
+            shotTicker = 0;
+            UpdateAmmoUI();
+        }
+
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+
+        RaycastHit[] hits = Physics.SphereCastAll(
+            ray.origin,
+            currentWeapon.flameRadius,
+            ray.direction,
+            currentWeapon.range,
+            Physics.DefaultRaycastLayers,
+            QueryTriggerInteraction.Ignore
+        );
+
+        HashSet<ZombieController> burnedZombies = new HashSet<ZombieController>();
+
+        foreach (RaycastHit hit in hits)
+        {
+
+            ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
+            ZombieController zombie = null;
+
+            if (hitbox != null)
+                zombie = hitbox.zombieController;
+            else
+                zombie = hit.collider.GetComponent<ZombieController>();
+
+            if (zombie != null)
+            {
+                if (burnedZombies.Add(zombie))
+                {
+                    zombie.TakeDamage(currentWeapon.damage * damageMultiplier);
+
+                }
+            }
+        }
+    }
 
     // -----------------------------------------------------------------------------------
     // --- LÓGICA DE IMPACTO ---
@@ -482,15 +654,41 @@ public class PlayerShooting : MonoBehaviour
 
         if (zombieHealth != null)
         {
-            if (zombieHealth.GetHP() <= 0) { SpawnImpactEffects(hit); return; }
+            // Evitar golpear cadáveres
+            if (zombieHealth.GetHP() <= 0)
+            {
+                SpawnImpactEffects(hit);
+                return;
+            }
 
-            if (ScoreManager.Instance != null) ScoreManager.Instance.AddScore(pointsPerHit);
+            // 1. PUNTUACIÓN FIJA POR IMPACTO
+            // Sumamos siempre los puntos fijos (ej. 10), sin importar el daño
+            if (ScoreManager.Instance != null)
+            {
+                ScoreManager.Instance.AddScore(pointsPerHit);
+            }
 
-            if (hitbox != null) zombieHealth.TakeDamage(damage, hitbox.hitboxType);
-            else zombieHealth.TakeDamage(damage);
+            // 2. APLICAR DAÑO (Aquí sí importa si es cabeza para matar más rápido)
+            // Pasamos el hitboxType para que el ZombieController calcule si es x2 de daño
+            if (hitbox != null)
+                zombieHealth.TakeDamage(damage, hitbox.hitboxType);
+            else
+                zombieHealth.TakeDamage(damage);
 
-            ShowFloatingScore(hit.point, (zombieHealth.GetHP() <= 0) ? pointsPerKillDisplay : pointsPerHit);
+            // 3. FEEDBACK VISUAL
+            if (zombieHealth.GetHP() <= 0)
+            {
+                // Si muere, mostramos el premio gordo (150)
+                // (El ScoreManager sumará estos 150 automáticamente desde el script del Zombi)
+                ShowFloatingScore(hit.point, pointsPerKillDisplay);
+            }
+            else
+            {
+                // Si sigue vivo, mostramos los puntos del golpe (10)
+                ShowFloatingScore(hit.point, pointsPerHit);
+            }
         }
+
         SpawnImpactEffects(hit);
     }
 
@@ -499,9 +697,14 @@ public class PlayerShooting : MonoBehaviour
         if (floatingTextPrefab != null)
         {
             Vector3 spawnPos = position + (Vector3.up * 0.3f);
+
             GameObject ft = Instantiate(floatingTextPrefab, spawnPos, Quaternion.identity);
+
             FloatingText textScript = ft.GetComponent<FloatingText>();
-            if (textScript != null) textScript.Setup(points);
+            if (textScript != null)
+            {
+                textScript.Setup(points);
+            }
         }
     }
 
@@ -535,8 +738,15 @@ public class PlayerShooting : MonoBehaviour
         GameObject particlePrefab = null;
         Sprite decalSprite = null;
 
-        if (hit.collider.CompareTag("Zombie")) particlePrefab = bloodParticlePrefab;
-        else if (hit.collider.CompareTag("Mapa")) { particlePrefab = dustParticlePrefab; decalSprite = mapBulletHoleSprite; }
+        if (hit.collider.CompareTag("Zombie"))
+        {
+            particlePrefab = bloodParticlePrefab;
+        }
+        else if (hit.collider.CompareTag("Mapa"))
+        {
+            particlePrefab = dustParticlePrefab;
+            decalSprite = mapBulletHoleSprite;
+        }
 
         if (particlePrefab != null)
         {
@@ -571,16 +781,8 @@ public class PlayerShooting : MonoBehaviour
         if (ammoText == null) return;
         if (currentWeapon != null)
         {
-            // SI ES CUCHILLO: Ocultamos texto
-            if (currentWeapon.weaponType == WeaponType.Knife)
-            {
-                ammoText.text = ""; 
-            }
-            else
-            {
-                ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
-                ammoText.color = (currentAmmoInMag == 0 && totalAmmo == 0) ? Color.red : defaultAmmoColor;
-            }
+            ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
+            ammoText.color = (currentAmmoInMag == 0 && totalAmmo == 0) ? Color.red : defaultAmmoColor;
         }
         else { ammoText.text = ""; ammoText.color = defaultAmmoColor; }
     }
@@ -618,10 +820,8 @@ public class PlayerShooting : MonoBehaviour
     void HandleReloadInput()
     {
         if (isUltimateActive) return;
-        if (currentWeapon == null) return;
-        // El cuchillo no recarga
-        if (currentWeapon.weaponType == WeaponType.Knife) return;
 
+        if (currentWeapon == null) return;
         if (Input.GetKeyDown(KeyCode.R) && !isReloading && currentAmmoInMag < currentWeapon.magCapacity && totalAmmo > 0)
         {
             StartCoroutine(ReloadCoroutine());
@@ -650,11 +850,7 @@ public class PlayerShooting : MonoBehaviour
 
         if (currentWeapon.weaponType == WeaponType.Shotgun && ammoToLoad > 0)
         {
-            // UI Rápida para escopeta
-            float uiFillDuration = waitTime / shotgunUIReloadSpeedFactor;
-            if (uiFillDuration < 0) uiFillDuration = 0;
-            float timePerBullet = (uiFillDuration > 0 && ammoToLoad > 0) ? uiFillDuration / ammoToLoad : 0;
-
+            float timePerBullet = (waitTime > 0 && ammoToLoad > 0) ? waitTime / ammoToLoad : 0;
             for (int i = 0; i < ammoToLoad; i++)
             {
                 if (timePerBullet > 0) yield return new WaitForSeconds(timePerBullet);
@@ -662,8 +858,6 @@ public class PlayerShooting : MonoBehaviour
                 totalAmmo--;
                 UpdateAmmoUI();
             }
-            float timeRemaining = waitTime - uiFillDuration;
-            if (timeRemaining > 0) yield return new WaitForSeconds(timeRemaining);
         }
         else
         {
@@ -684,6 +878,7 @@ public class PlayerShooting : MonoBehaviour
         if (currentWeapon.weaponType != WeaponType.Shotgun) UpdateAmmoUI();
     }
 
+
     void HandleAiming()
     {
         if (currentWeapon == null || !currentWeapon.canAim)
@@ -700,8 +895,10 @@ public class PlayerShooting : MonoBehaviour
 
         if (cameraController != null)
         {
-            if (isAiming) cameraController.SetSensitivityMultiplier(aimSensitivityMultiplier);
-            else cameraController.SetSensitivityMultiplier(1f);
+            if (isAiming)
+                cameraController.SetSensitivityMultiplier(aimSensitivityMultiplier);
+            else
+                cameraController.SetSensitivityMultiplier(1f);
         }
 
         if (isAiming && currentWeapon.sniperScopeSprite != null)
@@ -740,6 +937,7 @@ public class PlayerShooting : MonoBehaviour
     {
         isAiming = false;
         if (cameraController != null) cameraController.SetSensitivityMultiplier(1f);
+
         if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
         if (weaponHiddenForScope)
         {
@@ -752,144 +950,150 @@ public class PlayerShooting : MonoBehaviour
     // === MÉTODOS DE GESTIÓN DE SLOTS Y GUARDADO ===
 
     public int GetWeaponTypeInSlot(int slotIndex)
-    { 
-        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) 
-            return -1;
-        if (weaponSlots[slotIndex] != null) 
-            return (int)weaponSlots[slotIndex].weaponType; return -1;
+    {
+        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return -1;
+        if (weaponSlots[slotIndex] != null) return (int)weaponSlots[slotIndex].weaponType;
+        return -1;
     }
-    
+
     public int GetCurrentSlotIndex()
-    { 
+    {
         return currentSlotIndex;
     }
-    
+
     public void ForceWeaponToSlot(int slotIndex, WeaponData weapon)
-    { 
-        if (slotIndex < 0 || slotIndex >= weaponSlots.Length)
-            return; weaponSlots[slotIndex] = weapon;
-        if (slotIndex == currentSlotIndex)
-            RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
+    {
+        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
+        weaponSlots[slotIndex] = weapon;
+        if (slotIndex == currentSlotIndex) RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
     }
-    
+
     public void SelectSlot(int slotIndex)
-    { 
-        if (slotIndex < 0 || slotIndex >= weaponSlots.Length)
-            return; SaveCurrentAmmoState();
-            currentSlotIndex = slotIndex;
-            RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
+    {
+        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
+        SaveCurrentAmmoState();
+        currentSlotIndex = slotIndex;
+        RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
     }
-    
+
     public void ClearInventory()
-    { 
+    {
         weaponSlots[0] = null;
         weaponSlots[1] = null;
-        
-        if (currentWeaponModel != null)
-            Destroy(currentWeaponModel);
-            currentWeapon = null;
+        if (currentWeaponModel != null) Destroy(currentWeaponModel);
+        currentWeapon = null;
     }
-    
+
+    // --- Helpers de Munición ---
     private void SaveCurrentAmmoState()
     {
         if (currentWeapon != null)
-        { 
+        {
             ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
             totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
         }
     }
-    
+
     private void LoadAmmoStateForWeapon(WeaponData weapon)
-    { 
+    {
         if (ammoInMagCache.ContainsKey(weapon.weaponType))
         {
             currentAmmoInMag = ammoInMagCache[weapon.weaponType];
             totalAmmo = totalAmmoCache[weapon.weaponType];
-        } else
-        { 
+        }
+        else
+        {
             currentAmmoInMag = weapon.magCapacity;
             totalAmmo = weapon.maxAmmo - currentWeapon.magCapacity;
             ammoInMagCache[weapon.weaponType] = currentAmmoInMag;
             totalAmmoCache[weapon.weaponType] = totalAmmo;
         }
     }
-    
+
     public List<WeaponAmmoData> GetAmmoData()
-    { 
+    {
         SaveCurrentAmmoState();
         List<WeaponAmmoData> dataList = new List<WeaponAmmoData>();
         foreach (var key in ammoInMagCache.Keys)
-        { 
-            dataList.Add(new WeaponAmmoData { weaponType = key, currentMagAmmo = ammoInMagCache[key],currentTotalAmmo = totalAmmoCache[key] });
-        } return dataList;
+        {
+            dataList.Add(new WeaponAmmoData { weaponType = key, currentMagAmmo = ammoInMagCache[key], currentTotalAmmo = totalAmmoCache[key] });
+        }
+        return dataList;
     }
-    
+
     public void LoadAmmoData(List<WeaponAmmoData> dataList)
-    { 
+    {
         ammoInMagCache.Clear();
         totalAmmoCache.Clear();
-
         if (dataList == null) return;
         foreach (var data in dataList)
-        { 
-            ammoInMagCache[data.weaponType] = data.currentMagAmmo; totalAmmoCache[data.weaponType] = data.currentTotalAmmo;
+        {
+            ammoInMagCache[data.weaponType] = data.currentMagAmmo;
+            totalAmmoCache[data.weaponType] = data.currentTotalAmmo;
         }
-        Debug.Log("Datos de munición cargados en el caché de PlayerShooting.");
     }
-    
+
     public void ForceCurrentWeaponAmmoToFull()
-    { 
+    {
         if (currentWeapon == null) return;
         currentAmmoInMag = currentWeapon.magCapacity;
         totalAmmo = currentWeapon.maxAmmo - currentWeapon.magCapacity;
         SaveCurrentAmmoState();
         UpdateAmmoUI();
     }
-    
+
     public bool IsAmmoFull(WeaponData weaponData)
-    { 
+    {
         if (weaponData == null) return true;
-        int currentMag = 0; 
+        int currentMag = 0;
         int currentTotal = 0;
+
         if (currentWeapon != null && weaponData.weaponType == currentWeapon.weaponType)
-        { 
-            currentMag = currentAmmoInMag; currentTotal = totalAmmo;
-        } else if (ammoInMagCache.ContainsKey(weaponData.weaponType))
-        { 
+        {
+            currentMag = currentAmmoInMag;
+            currentTotal = totalAmmo;
+        }
+        else if (ammoInMagCache.ContainsKey(weaponData.weaponType))
+        {
             currentMag = ammoInMagCache[weaponData.weaponType];
             currentTotal = totalAmmoCache[weaponData.weaponType];
-        } else return false; 
-        
+        }
+        else return false;
+
         int maxMag = weaponData.magCapacity;
         int maxTotal = weaponData.maxAmmo - weaponData.magCapacity;
-        
         return currentMag >= maxMag && currentTotal >= maxTotal;
     }
-    
+
     public WeaponType GetEquippedWeaponType()
-    { 
+    {
         if (currentWeapon != null) return currentWeapon.weaponType;
-        
         return (WeaponType)(-1);
     }
-    
+
+    //------------------------------------------------------------------------------------------------------------------------
     void OnDrawGizmos()
     {
         if (playerCamera == null || currentWeapon == null) return;
-        
+
         Gizmos.color = Color.red;
+
         Vector3 startPosition = playerCamera.transform.position;
         Vector3 direction = playerCamera.transform.forward;
         Vector3 endPosition = startPosition + (direction * currentWeapon.range);
+
         Gizmos.DrawLine(startPosition, endPosition);
 
         if (currentWeapon.weaponType == WeaponType.flamethrower)
         {
             Gizmos.color = new Color(1, 0.5f, 0, 0.5f);
+
             Gizmos.DrawWireSphere(startPosition, currentWeapon.flameRadius);
             Gizmos.DrawWireSphere(endPosition, currentWeapon.flameRadius);
+
             Vector3 up = playerCamera.transform.up * currentWeapon.flameRadius;
             Vector3 right = playerCamera.transform.right * currentWeapon.flameRadius;
+
             Gizmos.DrawLine(startPosition + up, endPosition + up);
             Gizmos.DrawLine(startPosition - up, endPosition - up);
             Gizmos.DrawLine(startPosition + right, endPosition + right);
