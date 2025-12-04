@@ -2,6 +2,7 @@ using UnityEngine;
 
 public enum WeaponType
 {
+    Knife,
     Pistol,
     Rifle,
     Shotgun,

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a8d08586d887ca40939c1b07c163a91, type: 3}
   m_Name: Rifle
   m_EditorClassIdentifier: 
-  weaponType: 1
+  weaponType: 2
   crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 130, y: 130}
   weaponName: Rifle
@@ -50,4 +50,4 @@ MonoBehaviour:
   boltActionSound: {fileID: 0}
   pumpActionSound: {fileID: 0}
   flameRadius: 0.5
-  ammoUsageRate: 1
+  requiredKillsForUlt: 20

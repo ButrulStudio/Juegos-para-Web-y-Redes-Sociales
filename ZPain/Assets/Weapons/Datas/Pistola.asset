@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a8d08586d887ca40939c1b07c163a91, type: 3}
   m_Name: Pistola
   m_EditorClassIdentifier: 
-  weaponType: 0
+  weaponType: 1
   crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: Pistola
@@ -49,3 +49,5 @@ MonoBehaviour:
   actionSoundDelay: 0.4
   boltActionSound: {fileID: 0}
   pumpActionSound: {fileID: 0}
+  flameRadius: 0.5
+  requiredKillsForUlt: 20

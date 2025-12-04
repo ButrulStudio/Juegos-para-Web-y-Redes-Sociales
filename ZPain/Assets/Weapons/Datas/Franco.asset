@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a8d08586d887ca40939c1b07c163a91, type: 3}
   m_Name: Franco
   m_EditorClassIdentifier: 
-  weaponType: 3
+  weaponType: 4
   crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 15, y: 12}
   weaponName: Francotirador
@@ -32,6 +32,8 @@ MonoBehaviour:
   canAim: 1
   aimedFOV: 10
   sniperScopeSprite: {fileID: 21300000, guid: 6f9532cea3a02e2409b4169fb74afdd5, type: 3}
+  aimPosition: {x: 0, y: 0, z: 0}
+  aimRotation: {x: 0, y: 0, z: 0}
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1
@@ -47,3 +49,5 @@ MonoBehaviour:
   actionSoundDelay: 0.6
   boltActionSound: {fileID: 8300000, guid: 00a8856296d98ac4fb24ba46f5e2605e, type: 3}
   pumpActionSound: {fileID: 0}
+  flameRadius: 0.5
+  requiredKillsForUlt: 20

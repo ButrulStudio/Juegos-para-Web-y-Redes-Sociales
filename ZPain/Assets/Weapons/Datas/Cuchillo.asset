@@ -10,25 +10,25 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4a8d08586d887ca40939c1b07c163a91, type: 3}
-  m_Name: LanzaLlamas
+  m_Name: Cuchillo
   m_EditorClassIdentifier: 
-  weaponType: 5
-  crosshairSize: {x: 13, y: 9}
+  weaponType: 0
+  crosshairSize: {x: 50, y: 50}
   aimedCrosshairSize: {x: 100, y: 100}
-  weaponName: LanzaLlamas
-  damage: 3
-  range: 5
-  fireRate: 0.05
+  weaponName: 
+  damage: 20
+  range: 100
+  fireRate: 0.2
   price: 0
   ammoPrice: 50
-  magCapacity: 50
-  maxAmmo: 200
+  magCapacity: 8
+  maxAmmo: 32
   reloadTime: 2
   isUpgraded: 0
   upgradeCost: 100
-  weaponModelPrefab: {fileID: 7741221897465811734, guid: 96d90b5bbe9528a4abc9dd6b017ed1af, type: 3}
+  weaponModelPrefab: {fileID: 0}
   bulletHolePrefab: {fileID: 0}
-  crosshairIcon: {fileID: 21300000, guid: c1503a56258b70947befccadad6322a2, type: 3}
+  crosshairIcon: {fileID: 0}
   canAim: 0
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
@@ -50,4 +50,4 @@ MonoBehaviour:
   boltActionSound: {fileID: 0}
   pumpActionSound: {fileID: 0}
   flameRadius: 0.5
-  requiredKillsForUlt: 5
+  requiredKillsForUlt: 20
