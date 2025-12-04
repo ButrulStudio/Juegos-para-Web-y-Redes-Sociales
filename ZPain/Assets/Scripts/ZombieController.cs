@@ -245,9 +245,25 @@ public class ZombieController : MonoBehaviour
         if (scoreManager != null) scoreManager.ZombieKilled();
         if (waveManager != null) waveManager.ZombieDied();
 
-        if (PlayerShooting.Instance != null)
+        
+        PlayerShooting ps = null;
+        if (player != null)
         {
-            PlayerShooting.Instance.RegisterZombieKill();
+            ps = player.GetComponent<PlayerShooting>();
+        }
+
+        if (ps == null)
+        {
+            ps = FindAnyObjectByType<PlayerShooting>();
+        }
+
+        if (ps != null)
+        {
+            ps.RegisterZombieKill();
+        }
+        else
+        {
+            Debug.LogError("[ERROR CRÍTICO] El Zombi murió pero NO ENCONTRÓ el script 'PlayerShooting' en la escena.");
         }
 
         Destroy(gameObject, 2.8f);
