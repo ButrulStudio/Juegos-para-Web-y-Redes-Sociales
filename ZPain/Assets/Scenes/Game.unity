@@ -16131,6 +16131,81 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.36953485, y: 0.029309258, z: 0.0073022568}
   m_Center: {x: -0.012107089, y: 0.035326242, z: 0.0022319176}
+--- !u!1 &1049868181
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1049868182}
+  - component: {fileID: 1049868184}
+  - component: {fileID: 1049868183}
+  m_Layer: 5
+  m_Name: Ready
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1049868182
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1049868181}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1197261527}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1049868183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1049868181}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 08100fc6b2eacbf4e908e4dd2cb55f9c, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1049868184
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1049868181}
+  m_CullTransparentMesh: 1
 --- !u!1 &1052607250
 GameObject:
   m_ObjectHideFlags: 0
@@ -22600,17 +22675,18 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1197261526}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0.20309706, w: 0.9791587}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.4684, y: 2.5419471, z: 1.4684}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1049868182}
   - {fileID: 1527172095}
   m_Father: {fileID: 1821393757}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -23.436}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 872, y: -257}
+  m_AnchoredPosition: {x: 829, y: -215.5}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1197261528
@@ -22633,7 +22709,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 6b6f2ce557037ad41b2678110767fcaf, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -30869,12 +30945,12 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: d175e1b3cadc52b4ca7c1b76e032a979, type: 3}
+  m_Sprite: {fileID: 21300000, guid: a72b540c4053c864195e5aa1e91751d6, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
+  m_FillMethod: 1
+  m_FillAmount: 0
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
@@ -33058,9 +33134,13 @@ MonoBehaviour:
   ammoText: {fileID: 1666018140}
   crosshairImage: {fileID: 986990805}
   pointsPerHit: 10
-  scorePerDamage: 1
   pointsPerKillDisplay: 150
   floatingTextPrefab: {fileID: 2497785663808996913, guid: 259bd71c1a8e4954aac4e3708134daa8, type: 3}
+  ultimateWeaponData: {fileID: 11400000, guid: 6b24712bf09a51f40826b6e79f00b6d1, type: 2}
+  ultimateIconFill: {fileID: 1527172096}
+  ultimateReadyVisual: {fileID: 1049868181}
+  ultimateKey: 120
+  ultimateDuration: 20
   currentWeapon: {fileID: 11400000, guid: b54dae3deb2bb42409c38217fd1e3301, type: 2}
   reloadTimeMultiplier: 1
   damageMultiplier: 1
@@ -33078,10 +33158,6 @@ MonoBehaviour:
   switchUpOffset: {x: 0, y: 0.1, z: 0}
   switchBackDistance: 0.1
   switchRotation: {x: -90, y: 0, z: 0}
-  ultimateWeaponData: {fileID: 11400000, guid: 6b24712bf09a51f40826b6e79f00b6d1, type: 2}
-  ultimateIconFill: {fileID: 1197261528}
-  ultimateKey: 120
-  ultimateDuration: 20
   audioSource: {fileID: 1331496616}
 --- !u!4 &1837902159
 Transform:

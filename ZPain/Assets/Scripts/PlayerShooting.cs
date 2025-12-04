@@ -7,6 +7,9 @@ using System.Linq;
 
 public class PlayerShooting : MonoBehaviour
 {
+    // --- SINGLETON (Para que los zombis encuentren este script fácilmente) ---
+    public static PlayerShooting Instance { get; private set; }
+
     [Header("Referencias Generales")]
     [SerializeField] private Camera playerCamera;
     [SerializeField] private Transform weaponHolder;
@@ -20,15 +23,27 @@ public class PlayerShooting : MonoBehaviour
     private Color defaultAmmoColor;
 
     [Header("Sistema de Puntuación")]
-    [Tooltip("Puntos ganados por acertar una bala (sin matar)")]
+    [Tooltip("Puntos fijos ganados por acertar una bala (sin matar)")]
     public int pointsPerHit = 10;
-    public float scorePerDamage = 1.0f;
 
     [Tooltip("Valor visual que se mostrará al matar (Asegúrate de configurar esto mismo en ScoreManager)")]
     public int pointsPerKillDisplay = 150;
 
     [Tooltip("El Prefab del texto flotante 3D (FloatingScoreText)")]
     [SerializeField] private GameObject floatingTextPrefab;
+
+    [Header("--- SISTEMA DE ULTIMATE (LANZALLAMAS) ---")]
+    [SerializeField] private WeaponData ultimateWeaponData; // Arrastra el ScriptableObject del Lanzallamas
+    [SerializeField] private Image ultimateIconFill; // La imagen circular (Filled)
+    [Tooltip("Imagen o efecto que aparece cuando la ulti está cargada al 100%")]
+    [SerializeField] private GameObject ultimateReadyVisual;
+    [SerializeField] private KeyCode ultimateKey = KeyCode.X;
+    [SerializeField] private float ultimateDuration = 20f;
+
+    // Variables internas de la Ulti
+    private int currentKillsCount = 0;
+    private bool isUltimateActive = false;
+    private int preUltSlotIndex = 0; // Para recordar qué arma tenías antes
 
     [Header("Sistema de Inventario (2 Slots)")]
     private WeaponData[] weaponSlots = new WeaponData[2];
@@ -68,6 +83,7 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private GameObject bulletHoleBasePrefab;
     [SerializeField] private Sprite mapBulletHoleSprite;
 
+    // Ticker para el lanzallamas (gastar munición más lento)
     private int shotTicker = 0;
 
     // --- APUNTADO ---
@@ -78,7 +94,7 @@ public class PlayerShooting : MonoBehaviour
     private bool weaponHiddenForScope = false;
 
     [SerializeField][Range(0.1f, 1f)] private float aimSensitivityMultiplier = 0.7f;
-    private Vector3 currentWeaponPositionVelocity;
+    private Vector3 currentWeaponPositionVelocity; // No se usa actualmente pero se mantiene por si acaso
 
     [Header("Animación de Recarga")]
     [SerializeField] private Vector3 reloadRotation = new Vector3(35f, 0f, 0f);
@@ -91,21 +107,19 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private float switchBackDistance = 0.1f;
     [SerializeField] private Vector3 switchRotation = new Vector3(-35f, 0f, 0f);
 
-    [Header("--- SYSTEMA DE ULTIMATE (LANZALLAMAS) ---")]
-    [SerializeField] private WeaponData ultimateWeaponData;
-    [SerializeField] private Image ultimateIconFill;
-    [SerializeField] private KeyCode ultimateKey = KeyCode.X;
-    [SerializeField] private float ultimateDuration = 20f;
-
-    private int currentKillsCount = 0; 
-    private bool isUltimateActive = false;
-    private int preUltSlotIndex = 0;
-
     //====== AUDIO =======
     [SerializeField] private AudioSource audioSource;
 
     void Awake()
     {
+        // Configuración Singleton
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
         if (crosshairImage != null)
             crosshairRectTransform = crosshairImage.GetComponent<RectTransform>();
 
@@ -123,6 +137,9 @@ public class PlayerShooting : MonoBehaviour
         UpdateAmmoUI();
         UpdateCrosshair();
         if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
+
+        // Aseguramos que el efecto de Ulti Ready empiece apagado
+        if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
     }
 
     public void InitializeNewGame(WeaponData weaponToEquip)
@@ -144,8 +161,10 @@ public class PlayerShooting : MonoBehaviour
     {
         if (GameManager.IsPaused || GameManager.GameIsOver) return;
 
+        // 1. LÓGICA DE ULTIMATE
         HandleUltimateLogic();
 
+        // 2. CAMBIO DE ARMA (Bloqueado si la ulti está activa)
         if (!isUltimateActive)
         {
             HandleWeaponSwitching();
@@ -157,6 +176,7 @@ public class PlayerShooting : MonoBehaviour
         HandleReloadInput();
         HandleAiming();
 
+        // Lerp de posición del arma (ADS y Recoil return)
         if (weaponHolder != null && currentWeapon != null)
         {
             Vector3 targetPosition = weaponInitialLocalPos;
@@ -196,40 +216,49 @@ public class PlayerShooting : MonoBehaviour
     }
 
     // =================================================================================
-    //                        SISTEMA DE ULTI
+    //                        SISTEMA DE ULTIMATE
     // =================================================================================
+
     void HandleUltimateLogic()
     {
-        // 1. Si la ulti está activa, no hacemos nada (la corrutina gestiona el fin)
         if (isUltimateActive) return;
+        if (ultimateWeaponData == null) return;
 
-        // 2. Calcular porcentaje de carga basado en MUERTES
+        // 1. Calcular porcentaje (Casting a float para decimales)
         float percentage = 0f;
-        if (ultimateWeaponData != null && ultimateWeaponData.requiredKillsForUlt > 0)
+        if (ultimateWeaponData.requiredKillsForUlt > 0)
         {
             percentage = (float)currentKillsCount / ultimateWeaponData.requiredKillsForUlt;
         }
 
-        // 3. Actualizar UI
-        if (ultimateIconFill != null)
-        {
-            ultimateIconFill.fillAmount = percentage;
-        }
+        if (ultimateIconFill != null) ultimateIconFill.fillAmount = percentage;
 
-        // 4. Activar si está lleno
+        // 2. Lógica de Activación
         if (currentKillsCount >= ultimateWeaponData.requiredKillsForUlt)
         {
-            // Aseguramos que el icono esté lleno visualmente
-            if (ultimateIconFill != null) ultimateIconFill.fillAmount = 1f;
+            // MOSTRAR VISUAL "READY"
+            if (ultimateReadyVisual != null && !ultimateReadyVisual.activeSelf)
+            {
+                ultimateReadyVisual.SetActive(true);
+            }
+            if (ultimateIconFill != null) ultimateIconFill.fillAmount = 1f; // Asegurar lleno visual
 
+            // DETECTAR INPUT
             if (Input.GetKeyDown(ultimateKey))
             {
                 StartCoroutine(ActivateUltimateRoutine());
             }
         }
+        else
+        {
+            // OCULTAR VISUAL "READY"
+            if (ultimateReadyVisual != null && ultimateReadyVisual.activeSelf)
+            {
+                ultimateReadyVisual.SetActive(false);
+            }
+        }
     }
 
-    // --- NUEVA FUNCIÓN PÚBLICA PARA CONTAR MUERTES ---
     public void RegisterZombieKill()
     {
         if (isUltimateActive) return;
@@ -239,50 +268,43 @@ public class PlayerShooting : MonoBehaviour
             if (currentKillsCount < ultimateWeaponData.requiredKillsForUlt)
             {
                 currentKillsCount++;
-
-                // --- MENSAJE DE DEBUG ---
-                Debug.Log($"[DEBUG] Kill sumada. Llevas {currentKillsCount} / {ultimateWeaponData.requiredKillsForUlt}");
-
-                if (currentKillsCount >= ultimateWeaponData.requiredKillsForUlt)
-                {
-                    Debug.Log("<color=green>[DEBUG] ¡ULTI LISTA! PULSA LA TECLA.</color>");
-                }
             }
-        }
-        else
-        {
-            Debug.LogError("[DEBUG ERROR] No has asignado el 'UltimateWeaponData' en el Inspector del PlayerShooting.");
         }
     }
 
     IEnumerator ActivateUltimateRoutine()
     {
         isUltimateActive = true;
+
+        // Apagamos el efecto de "Listo"
+        if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
+
+        // Guardar slot anterior
         preUltSlotIndex = currentSlotIndex;
 
+        // Equipar visualmente la ulti (sin guardarla en slots normales)
         RefreshWeaponVisuals(ultimateWeaponData);
 
+        // Munición infinita para la ulti
         currentAmmoInMag = 9999;
         totalAmmo = 9999;
         UpdateAmmoUI();
 
-        // Lógica de duración (esto sí va por tiempo, dura 20 segundos activa)
         float timer = ultimateDuration;
         while (timer > 0)
         {
             timer -= Time.deltaTime;
-            // Opcional: El icono se va vaciando mientras la usas
+            // Vaciar barra visualmente mientras se usa
             if (ultimateIconFill != null) ultimateIconFill.fillAmount = timer / ultimateDuration;
             yield return null;
         }
 
+        // Fin de la ulti
         isUltimateActive = false;
-
-        // --- REINICIAMOS EL CONTADOR DE MUERTES A CERO ---
-        currentKillsCount = 0;
-
+        currentKillsCount = 0; // Reiniciar contador
         if (ultimateIconFill != null) ultimateIconFill.fillAmount = 0f;
 
+        // Volver al arma anterior
         SelectSlot(preUltSlotIndex);
     }
 
@@ -314,13 +336,10 @@ public class PlayerShooting : MonoBehaviour
         StopAllCoroutines();
         isReloading = false;
         isBursting = false;
-
         StopAiming();
-
         SaveCurrentAmmoState();
 
         if (newIndex == currentSlotIndex) return;
-
         StartCoroutine(SwitchWeaponCoroutine(newIndex));
     }
 
@@ -330,31 +349,26 @@ public class PlayerShooting : MonoBehaviour
 
         Vector3 startPosition = weaponHolder.localPosition;
         Quaternion startRotation = weaponHolder.localRotation;
-
         Vector3 targetUpPosition = startPosition + switchUpOffset + (Vector3.back * switchBackDistance);
-
         Quaternion targetRotation = Quaternion.Euler(switchRotation);
 
-        // 1. ANIMACIÓN DE SALIDA
+        // Animación salida
         float timer = 0f;
         while (timer < switchDuration)
         {
             timer += Time.deltaTime;
             float progress = timer / switchDuration;
-
             weaponHolder.localPosition = Vector3.Lerp(startPosition, targetUpPosition, progress);
             weaponHolder.localRotation = Quaternion.Slerp(startRotation, targetRotation, progress);
-
             yield return null;
         }
 
-        // 2. CAMBIO FÍSICO 
+        // Cambio físico
         currentSlotIndex = newIndex;
         RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
-
         weaponHolder.localRotation = targetRotation;
 
-        // 3. ANIMACIÓN DE ENTRADA
+        // Animación entrada
         Vector3 currentWeaponPos = weaponHolder.localPosition;
         Quaternion finalRotation = Quaternion.Euler(weaponInitialLocalRot);
 
@@ -363,10 +377,8 @@ public class PlayerShooting : MonoBehaviour
         {
             timer += Time.deltaTime;
             float progress = timer / switchDuration;
-
             weaponHolder.localPosition = Vector3.Lerp(currentWeaponPos, weaponInitialLocalPos, progress);
             weaponHolder.localRotation = Quaternion.Slerp(targetRotation, finalRotation, progress);
-
             yield return null;
         }
 
@@ -374,7 +386,6 @@ public class PlayerShooting : MonoBehaviour
         weaponHolder.localRotation = finalRotation;
         isReloading = false;
     }
-
 
     public void EquipWeapon(WeaponData newWeapon)
     {
@@ -404,7 +415,7 @@ public class PlayerShooting : MonoBehaviour
         if (currentWeaponModel != null) Destroy(currentWeaponModel);
 
         currentWeapon = weaponData;
-        shotTicker = 0;
+        shotTicker = 0; // Resetear ticker del lanzallamas
         StopAiming();
 
         if (currentWeapon == null)
@@ -431,7 +442,7 @@ public class PlayerShooting : MonoBehaviour
     }
 
     // =================================================================================
-    //                        SISTEMA DE DISPARO (SOLO CLIC IZQUIERDO)
+    //                        SISTEMA DE DISPARO
     // =================================================================================
 
     void HandleShooting()
@@ -469,6 +480,7 @@ public class PlayerShooting : MonoBehaviour
                 }
                 break;
             case WeaponType.flamethrower:
+                // Lanzallamas es continuo (GetMouseButton)
                 if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
@@ -587,24 +599,13 @@ public class PlayerShooting : MonoBehaviour
 
     void ShootFlamethrower()
     {
-        if (currentAmmoInMag <= 0)
-        {
-            HandleEmptyClip();
-            return;
-        }
-
+        // 1. LÓGICA VISUAL Y SONORA
+        // Al ser infinita, no restamos balas ni comprobamos si está vacío
         PlaySound(currentWeapon.shootSound);
         StartCoroutine(MuzzleFlashRoutine());
 
-        shotTicker++;
-
-        if (shotTicker >= currentWeapon.ammoUsageRate)
-        {
-            currentAmmoInMag--;
-            shotTicker = 0;
-            UpdateAmmoUI();
-        }
-
+        // 2. DETECCIÓN DE ENEMIGOS (DAÑO EN ÁREA)
+        // SphereCastAll atraviesa a todos los enemigos en su camino (como un tubo)
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
 
         RaycastHit[] hits = Physics.SphereCastAll(
@@ -616,11 +617,11 @@ public class PlayerShooting : MonoBehaviour
             QueryTriggerInteraction.Ignore
         );
 
+        // Usamos HashSet para asegurar que cada zombi solo recibe daño 1 vez por frame
         HashSet<ZombieController> burnedZombies = new HashSet<ZombieController>();
 
         foreach (RaycastHit hit in hits)
         {
-
             ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
             ZombieController zombie = null;
 
@@ -631,10 +632,11 @@ public class PlayerShooting : MonoBehaviour
 
             if (zombie != null)
             {
+                // Si el zombi no ha sido quemado en este frame todavía...
                 if (burnedZombies.Add(zombie))
                 {
-                    zombie.TakeDamage(currentWeapon.damage * damageMultiplier);
-
+                    // Aplicamos el daño
+                    HandleHit(hit, currentWeapon.damage * damageMultiplier);
                 }
             }
         }
@@ -661,31 +663,36 @@ public class PlayerShooting : MonoBehaviour
                 return;
             }
 
-            // 1. PUNTUACIÓN FIJA POR IMPACTO
-            // Sumamos siempre los puntos fijos (ej. 10), sin importar el daño
-            if (ScoreManager.Instance != null)
+            // --- FILTRO DE PUNTOS ---
+            // Solo damos puntos por impacto si NO es el lanzallamas
+            if (currentWeapon.weaponType != WeaponType.flamethrower)
             {
-                ScoreManager.Instance.AddScore(pointsPerHit);
+                if (ScoreManager.Instance != null)
+                {
+                    ScoreManager.Instance.AddScore(pointsPerHit);
+                }
             }
 
-            // 2. APLICAR DAÑO (Aquí sí importa si es cabeza para matar más rápido)
-            // Pasamos el hitboxType para que el ZombieController calcule si es x2 de daño
+            // APLICAR DAÑO (Esto siempre ocurre)
             if (hitbox != null)
                 zombieHealth.TakeDamage(damage, hitbox.hitboxType);
             else
                 zombieHealth.TakeDamage(damage);
 
-            // 3. FEEDBACK VISUAL
+            // FEEDBACK VISUAL
             if (zombieHealth.GetHP() <= 0)
             {
-                // Si muere, mostramos el premio gordo (150)
-                // (El ScoreManager sumará estos 150 automáticamente desde el script del Zombi)
+                // Si MUERE, siempre mostramos el bonus grande (incluso con lanzallamas)
                 ShowFloatingScore(hit.point, pointsPerKillDisplay);
             }
             else
             {
-                // Si sigue vivo, mostramos los puntos del golpe (10)
-                ShowFloatingScore(hit.point, pointsPerHit);
+                // Si vive, solo mostramos el texto flotante si NO es lanzallamas
+                // (Para evitar que la pantalla se llene de cientos de numeritos)
+                if (currentWeapon.weaponType != WeaponType.flamethrower)
+                {
+                    ShowFloatingScore(hit.point, pointsPerHit);
+                }
             }
         }
 
@@ -697,9 +704,7 @@ public class PlayerShooting : MonoBehaviour
         if (floatingTextPrefab != null)
         {
             Vector3 spawnPos = position + (Vector3.up * 0.3f);
-
             GameObject ft = Instantiate(floatingTextPrefab, spawnPos, Quaternion.identity);
-
             FloatingText textScript = ft.GetComponent<FloatingText>();
             if (textScript != null)
             {
@@ -722,6 +727,9 @@ public class PlayerShooting : MonoBehaviour
 
     void HandleEmptyClip()
     {
+        // Si estamos en ulti, no suena click (se supone munición infinita)
+        if (isUltimateActive) return;
+
         PlaySound(currentWeapon.emptyClipSound);
         if (totalAmmo > 0)
         {
@@ -767,6 +775,8 @@ public class PlayerShooting : MonoBehaviour
 
     private void ApplyRecoil()
     {
+        if (isUltimateActive) return; // Opcional: El lanzallamas/Ulti no tiene retroceso brusco
+
         if (cameraController != null)
         {
             float vertical = Random.Range(currentWeapon.recoilVerticalMin, currentWeapon.recoilVerticalMax);
@@ -781,8 +791,17 @@ public class PlayerShooting : MonoBehaviour
         if (ammoText == null) return;
         if (currentWeapon != null)
         {
-            ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
-            ammoText.color = (currentAmmoInMag == 0 && totalAmmo == 0) ? Color.red : defaultAmmoColor;
+            // Si es ulti, mostramos infinito o texto especial
+            if (isUltimateActive)
+            {
+                ammoText.text = "∞ / ∞";
+                ammoText.color = Color.yellow;
+            }
+            else
+            {
+                ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
+                ammoText.color = (currentAmmoInMag == 0 && totalAmmo == 0) ? Color.red : defaultAmmoColor;
+            }
         }
         else { ammoText.text = ""; ammoText.color = defaultAmmoColor; }
     }
@@ -819,6 +838,7 @@ public class PlayerShooting : MonoBehaviour
     // === MÉTODOS DE RECARGA ===
     void HandleReloadInput()
     {
+        // No recargar durante la ulti
         if (isUltimateActive) return;
 
         if (currentWeapon == null) return;
@@ -948,7 +968,6 @@ public class PlayerShooting : MonoBehaviour
     }
 
     // === MÉTODOS DE GESTIÓN DE SLOTS Y GUARDADO ===
-
     public int GetWeaponTypeInSlot(int slotIndex)
     {
         if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return -1;
@@ -987,7 +1006,7 @@ public class PlayerShooting : MonoBehaviour
     // --- Helpers de Munición ---
     private void SaveCurrentAmmoState()
     {
-        if (currentWeapon != null)
+        if (currentWeapon != null && !isUltimateActive) // No guardar estado si es la ulti
         {
             ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
             totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
@@ -1071,6 +1090,8 @@ public class PlayerShooting : MonoBehaviour
         return (WeaponType)(-1);
     }
 
+    //------------------------------------------------------------------------------------------------------------------------
+    // GIZMOS DE DEBUG (Para ver el alcance del fuego en el Editor)
     //------------------------------------------------------------------------------------------------------------------------
     void OnDrawGizmos()
     {
