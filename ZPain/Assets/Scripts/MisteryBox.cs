@@ -161,7 +161,7 @@ public class MysteryBox : MonoBehaviour
             if (spinningPart != null)
             {
                 // Giramos sobre el eje Y (o el que necesites, cámbialo a Vector3.right o forward si gira mal)
-                spinningPart.Rotate(Vector3.right * currentSpeed * Time.deltaTime);
+                spinningPart.Rotate(Vector3.forward * currentSpeed * Time.deltaTime);
             }
 
             yield return null;
