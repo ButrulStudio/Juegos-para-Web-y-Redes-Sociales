@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a8d08586d887ca40939c1b07c163a91, type: 3}
+  m_Name: L11
+  m_EditorClassIdentifier: 
+  weaponType: 4
+  crosshairSize: {x: 13, y: 9}
+  aimedCrosshairSize: {x: 15, y: 12}
+  weaponName: L11
+  damage: 150
+  range: 100
+  fireRate: 1.6
+  price: 2500
+  ammoPrice: 2000
+  magCapacity: 6
+  maxAmmo: 24
+  reloadTime: 2.5
+  isUpgraded: 0
+  upgradeCost: 4000
+  weaponModelPrefab: {fileID: 4680586100702163245, guid: 6b86e6184656e984abb47b89c541db07, type: 3}
+  bulletHolePrefab: {fileID: 2212925028312433708, guid: edc92b779abc45d478d8dfeda3fc979a, type: 3}
+  crosshairIcon: {fileID: 21300000, guid: c1503a56258b70947befccadad6322a2, type: 3}
+  canAim: 1
+  aimedFOV: 10
+  sniperScopeSprite: {fileID: 21300000, guid: 6f9532cea3a02e2409b4169fb74afdd5, type: 3}
+  aimPosition: {x: 0, y: 0, z: 0}
+  aimRotation: {x: 0, y: 0, z: 0}
+  pelletCount: 4
+  spreadAngle: 10
+  penetrationCount: 1
+  recoilVerticalMin: 1
+  recoilVerticalMax: 2
+  recoilHorizontalMin: -0.5
+  recoilHorizontalMax: 0.5
+  weaponKickbackDistance: 0.05
+  weaponKickbackReturnSpeed: 8
+  shootSound: {fileID: 8300000, guid: cc49a5698401211429ca89620b9bd574, type: 3}
+  reloadSound: {fileID: 8300000, guid: e6cde911cc95b924caf2911250ca4669, type: 3}
+  emptyClipSound: {fileID: 8300000, guid: c108c6e93fff29f47a2a779d1644af0f, type: 3}
+  actionSoundDelay: 0.6
+  boltActionSound: {fileID: 8300000, guid: 00a8856296d98ac4fb24ba46f5e2605e, type: 3}
+  pumpActionSound: {fileID: 0}
+  flameRadius: 0.5
+  requiredKillsForUlt: 20

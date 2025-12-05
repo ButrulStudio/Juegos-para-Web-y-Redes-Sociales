@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a8d08586d887ca40939c1b07c163a91, type: 3}
+  m_Name: MTAR
+  m_EditorClassIdentifier: 
+  weaponType: 1
+  crosshairSize: {x: 50, y: 50}
+  aimedCrosshairSize: {x: 100, y: 100}
+  weaponName: MTAR
+  damage: 20
+  range: 100
+  fireRate: 0.2
+  price: 0
+  ammoPrice: 50
+  magCapacity: 8
+  maxAmmo: 32
+  reloadTime: 2
+  isUpgraded: 0
+  upgradeCost: 100
+  weaponModelPrefab: {fileID: 0}
+  bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
+  crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}
+  canAim: 1
+  aimedFOV: 60
+  sniperScopeSprite: {fileID: 0}
+  aimPosition: {x: 0, y: 0, z: 0}
+  aimRotation: {x: 0, y: 0, z: 0}
+  pelletCount: 4
+  spreadAngle: 10
+  penetrationCount: 1
+  recoilVerticalMin: 1
+  recoilVerticalMax: 2
+  recoilHorizontalMin: -0.5
+  recoilHorizontalMax: 0.5
+  weaponKickbackDistance: 0.05
+  weaponKickbackReturnSpeed: 8
+  shootSound: {fileID: 0}
+  reloadSound: {fileID: 0}
+  emptyClipSound: {fileID: 0}
+  actionSoundDelay: 0.4
+  boltActionSound: {fileID: 0}
+  pumpActionSound: {fileID: 0}
+  flameRadius: 0.5
+  requiredKillsForUlt: 20

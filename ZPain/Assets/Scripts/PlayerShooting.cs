@@ -135,11 +135,41 @@ public class PlayerShooting : MonoBehaviour
     void Start()
     {
         UpdateAmmoUI();
-        UpdateCrosshair();
+        UpdateCrosshair(); //
         if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
 
         // Aseguramos que el efecto de Ulti Ready empiece apagado
         if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
+
+        // --- CORRECCIÓN START DIRECTO ---
+        // Verificamos si necesitamos auto-inicializarnos (Modo Debug / Start Directo)
+        CheckForDirectStart();
+    }
+
+    private void CheckForDirectStart()
+    {
+        // 1. Si SaveLoadManager no existe (porque no venimos del menú y no está en la escena), no podemos pedir el arma.
+        if (SaveLoadManager.Instance == null)
+        {
+            Debug.LogWarning("PlayerShooting: SaveLoadManager no encontrado. No se puede equipar arma inicial por defecto.");
+            return;
+        }
+
+        // 2. Si hay una carga de partida pendiente (ShouldLoadGame = true), NO hacemos nada.
+        // Dejamos que SaveLoadManager.LoadGame() se encargue de restaurar el inventario.
+        if (SaveLoadManager.ShouldLoadGame) return;
+
+        // 3. Si no tenemos arma actual (slots vacíos) y no estamos cargando...
+        // Significa que hemos empezado partida nueva o entrado directo a la escena.
+        if (currentWeapon == null)
+        {
+            WeaponData starterWeapon = SaveLoadManager.Instance.GetStartingWeapon(); //
+            if (starterWeapon != null)
+            {
+                InitializeNewGame(starterWeapon); //
+                Debug.Log("PlayerShooting: Inicio directo detectado. Arma inicial equipada automáticamente.");
+            }
+        }
     }
 
     public void InitializeNewGame(WeaponData weaponToEquip)
