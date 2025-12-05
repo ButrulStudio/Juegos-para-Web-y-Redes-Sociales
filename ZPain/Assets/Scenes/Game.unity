@@ -35077,7 +35077,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   allGamePowerUps: []
   allGameWeapons: []
-  startingWeaponAsset: {fileID: 11400000, guid: ced4f53474c9b584d9b5ab442ebfad97, type: 2}
+  startingWeaponAsset: {fileID: 11400000, guid: 4664bce2b62c0a04ba1535bac67e3d3e, type: 2}
 --- !u!1 &1947213090
 GameObject:
   m_ObjectHideFlags: 0
@@ -36422,6 +36422,10 @@ PrefabInstance:
     - target: {fileID: 8705484057191545052, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: cameraCrouchY
       value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8705484057191545052, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
+      propertyPath: crouchCenterY
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8705484057191545052, guid: 8be0e56ac75d3364ba87c6a55849a6d6, type: 3}
       propertyPath: standingCenterY

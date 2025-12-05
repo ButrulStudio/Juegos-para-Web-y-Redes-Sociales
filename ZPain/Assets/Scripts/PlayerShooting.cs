@@ -460,6 +460,7 @@ public class PlayerShooting : MonoBehaviour
             currentWeaponModel = Instantiate(currentWeapon.weaponModelPrefab, weaponHolder);
             currentWeaponModel.transform.localPosition = Vector3.zero;
             currentWeaponModel.transform.localRotation = Quaternion.identity;
+            currentWeaponModel.transform.localScale = Vector3.one;
 
             Light newMuzzleLight = currentWeaponModel.GetComponentInChildren<Light>();
             muzzleLight = newMuzzleLight;

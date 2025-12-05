@@ -26,10 +26,10 @@ MonoBehaviour:
   reloadTime: 2
   isUpgraded: 0
   upgradeCost: 100
-  weaponModelPrefab: {fileID: 919132149155446097, guid: 75b0b212f26305a47a4b92b2df4595f4, type: 3}
+  weaponModelPrefab: {fileID: 4885547653825972024, guid: 63c845751c36b8b44972bf4dbd04bb45, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
   crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}
-  canAim: 0
+  canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
   aimPosition: {x: 0, y: 0, z: 0}
