@@ -10,33 +10,39 @@ public class WeaponUpgradeShop : MonoBehaviour
     [Header("UI del mensaje")]
     public TextMeshProUGUI interactionText;
 
-    [Header("Valores de mejora (Mecánicas)")]
+    [Header("Valores de mejora (Mecánicas Base)")]
     [SerializeField] private int shotgunUpgradePellets = 8;
-    [SerializeField] private float rifleUpgradeFireRate = 0.08f; // Cuidado con poner 1f aqui, seria muy lento. Menor es mas rapido.
+    [SerializeField] private float rifleUpgradeFireRate = 0.08f;
     [SerializeField] private float pistolBurstFireRate = 0.1f;
     [SerializeField] private int sniperUpgradePenetration = 3;
+   
+    [Header("Valores de mejora (Nuevas Clases)")]
+    [Tooltip("Balas que recupera el SMG por muerte al mejorarse")]
+    [SerializeField] private int smgUpgradeVampireAmmo = 3;
+    [Tooltip("Multiplicador de daño máximo para la LMG al calentarse")]
+    [SerializeField] private float lmgUpgradeMaxHeatMult = 2.5f;
 
     [Header("Valores de mejora (Munición: Cargador / Total)")]
-    [Tooltip("Nuevo tamaño del cargador para la Pistola mejorada")]
     [SerializeField] private int pistolUpgradedMag = 20;
-    [Tooltip("Nueva munición total para la Pistola mejorada")]
     [SerializeField] private int pistolUpgradedMaxAmmo = 120;
 
-    [Tooltip("Nuevo tamaño del cargador para el Rifle mejorado")]
     [SerializeField] private int rifleUpgradedMag = 45;
-    [Tooltip("Nueva munición total para el Rifle mejorado")]
     [SerializeField] private int rifleUpgradedMaxAmmo = 270;
 
-    [Tooltip("Nuevo tamaño del cargador para la Escopeta mejorada")]
     [SerializeField] private int shotgunUpgradedMag = 12;
-    [Tooltip("Nueva munición total para la Escopeta mejorada")]
     [SerializeField] private int shotgunUpgradedMaxAmmo = 64;
 
-    [Tooltip("Nuevo tamaño del cargador para el Sniper mejorado")]
     [SerializeField] private int sniperUpgradedMag = 10;
-    [Tooltip("Nueva munición total para el Sniper mejorado")]
     [SerializeField] private int sniperUpgradedMaxAmmo = 50;
 
+    // --- NUEVO: Munición para SMG y LMG ---
+    [Header("Munición Mejorada (Nuevas Clases)")]
+    [SerializeField] private int smgUpgradedMag = 50;
+    [SerializeField] private int smgUpgradedMaxAmmo = 300;
+
+    [SerializeField] private int lmgUpgradedMag = 100;
+    [SerializeField] private int lmgUpgradedMaxAmmo = 400;
+    // --------------------------------------
 
     private Camera playerCamera;
     private PlayerShooting playerShooting;
@@ -124,46 +130,48 @@ public class WeaponUpgradeShop : MonoBehaviour
             case WeaponType.Pistol:
                 weapon.isUpgraded = true;
                 weapon.fireRate = pistolBurstFireRate;
-
-                // Nuevas capacidades
                 weapon.magCapacity = pistolUpgradedMag;
                 weapon.maxAmmo = pistolUpgradedMaxAmmo;
-
-                Debug.Log("Pistola mejorada: ráfagas y más munición.");
                 break;
 
             case WeaponType.Rifle:
                 weapon.isUpgraded = true;
                 weapon.fireRate = rifleUpgradeFireRate;
-
-                // Nuevas capacidades
                 weapon.magCapacity = rifleUpgradedMag;
                 weapon.maxAmmo = rifleUpgradedMaxAmmo;
-
-                Debug.Log($"Rifle mejorado: disparo rápido y más munición.");
                 break;
 
             case WeaponType.Shotgun:
                 weapon.isUpgraded = true;
                 weapon.pelletCount = shotgunUpgradePellets;
-
-                // Nuevas capacidades
                 weapon.magCapacity = shotgunUpgradedMag;
                 weapon.maxAmmo = shotgunUpgradedMaxAmmo;
-
-                Debug.Log("Escopeta mejorada: más perdigones y más munición.");
                 break;
 
             case WeaponType.Sniper:
                 weapon.isUpgraded = true;
                 weapon.penetrationCount = sniperUpgradePenetration;
-
-                // Nuevas capacidades
                 weapon.magCapacity = sniperUpgradedMag;
                 weapon.maxAmmo = sniperUpgradedMaxAmmo;
-
-                Debug.Log("Sniper mejorado: perforación y más munición.");
                 break;
+
+            case WeaponType.SMG:
+                weapon.isUpgraded = true;
+                weapon.vampireAmmoRestore = smgUpgradeVampireAmmo;
+                weapon.magCapacity = smgUpgradedMag;
+                weapon.maxAmmo = smgUpgradedMaxAmmo;
+                Debug.Log("SMG Mejorada: Vampirismo activado.");
+                break;
+
+            case WeaponType.LMG:
+                weapon.isUpgraded = true;
+                // Activamos el daño por calor
+                weapon.maxHeatDamageMultiplier = lmgUpgradeMaxHeatMult;
+                weapon.magCapacity = lmgUpgradedMag;
+                weapon.maxAmmo = lmgUpgradedMaxAmmo;
+                Debug.Log("LMG Mejorada: Daño progresivo activado.");
+                break;
+                // ----------------------------------------------
         }
 
         // Rellenar la munición cuando se mejoran las armas
