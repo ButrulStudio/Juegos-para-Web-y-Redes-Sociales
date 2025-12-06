@@ -33512,7 +33512,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1703894337}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -34899,7 +34899,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   allGamePowerUps: []
   allGameWeapons: []
-  startingWeaponAsset: {fileID: 11400000, guid: b54dae3deb2bb42409c38217fd1e3301, type: 2}
+  startingWeaponAsset: {fileID: 11400000, guid: a1108ff31783fe74eb755443928c552a, type: 2}
 --- !u!1 &1947213090
 GameObject:
   m_ObjectHideFlags: 0

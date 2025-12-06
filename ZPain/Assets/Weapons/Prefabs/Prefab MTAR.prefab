@@ -92,6 +92,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: fe653f4935727784a8562d6d56db5d42, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 91d75ebdd859a6d4192428eb7e086a65, type: 2}
     - target: {fileID: 919132149155446097, guid: fe653f4935727784a8562d6d56db5d42, type: 3}
       propertyPath: m_Name
       value: MTAR
