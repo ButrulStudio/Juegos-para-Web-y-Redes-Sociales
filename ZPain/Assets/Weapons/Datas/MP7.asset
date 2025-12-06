@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a8d08586d887ca40939c1b07c163a91, type: 3}
   m_Name: MP7
   m_EditorClassIdentifier: 
-  weaponType: 2
+  weaponType: 6
   crosshairSize: {x: 50, y: 50}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: mp7
@@ -26,10 +26,10 @@ MonoBehaviour:
   reloadTime: 2
   isUpgraded: 0
   upgradeCost: 100
-  weaponModelPrefab: {fileID: 0}
-  bulletHolePrefab: {fileID: 0}
-  crosshairIcon: {fileID: 0}
-  canAim: 0
+  weaponModelPrefab: {fileID: 8597322114058471871, guid: dedfd110e665b974c94885dd9a1374a9, type: 3}
+  bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
+  crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}
+  canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
   aimPosition: {x: 0, y: 0, z: 0}
@@ -37,6 +37,10 @@ MonoBehaviour:
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1
+  vampireAmmoRestore: 3
+  maxHeatDamageMultiplier: 2
+  heatRampUpTime: 3
+  heatCooldownTime: 1.5
   recoilVerticalMin: 1
   recoilVerticalMax: 2
   recoilHorizontalMin: -0.5
