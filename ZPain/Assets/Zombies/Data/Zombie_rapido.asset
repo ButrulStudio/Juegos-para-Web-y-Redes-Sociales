@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   zombieName: 
   prefab: {fileID: 2909164642969342993, guid: bf649c81a15841d44b60111391ad1076, type: 3}
-  speed: 8
+  speed: 6
   maxHp: 60
-  damage: 30
+  damage: 10
   attackRange: 2
   attackCooldown: 1
   detectionRange: 15

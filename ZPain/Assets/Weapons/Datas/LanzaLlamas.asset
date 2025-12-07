@@ -37,10 +37,6 @@ MonoBehaviour:
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1
-  vampireAmmoRestore: 3
-  maxHeatDamageMultiplier: 2
-  heatRampUpTime: 3
-  heatCooldownTime: 1.5
   recoilVerticalMin: 1
   recoilVerticalMax: 2
   recoilHorizontalMin: -0.5
