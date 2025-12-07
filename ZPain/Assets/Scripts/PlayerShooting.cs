@@ -34,6 +34,20 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private KeyCode ultimateKey = KeyCode.X;
     [SerializeField] private float ultimateDuration = 20f;
 
+    [Header("--- ATAQUE CUCHILLO (QUICK MELEE) ---")]
+    [SerializeField] private KeyCode meleeKey = KeyCode.C;
+    [SerializeField] private GameObject knifeGameObject; // <-- ARRASTRA AQUÍ EL OBJETO CUCHILLO DE LA JERARQUÍA
+    [SerializeField] private float meleeDuration = 0.6f;
+    [SerializeField] private float damageDelay = 0.2f;
+    [SerializeField] private float knifeDamage = 50f;
+    [SerializeField] private float knifeRange = 2.5f;
+    [SerializeField] private AudioClip knifeSwingSound;
+    [SerializeField] private string meleeAnimationName = "Attack"; // El nombre exacto del Trigger en tu Animator
+
+    private Animator knifeAnimator; // Lo buscaremos automáticamente por código
+    private Vector3 originalWeaponLocalPosition; // Guarda la posición local correcta del arma
+    private bool isMeleeAttacking = false;
+
     private int currentKillsCount = 0;
     private bool isUltimateActive = false;
     private int preUltSlotIndex = 0;
@@ -127,6 +141,18 @@ public class PlayerShooting : MonoBehaviour
         if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
         if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
         CheckForDirectStart();
+
+        // --- NUEVO: Buscar el animator dentro del objeto del cuchillo ---
+        if (knifeGameObject != null)
+        {
+            knifeAnimator = knifeGameObject.GetComponent<Animator>();
+            if (knifeAnimator == null) 
+            {
+                knifeAnimator = knifeGameObject.GetComponentInChildren<Animator>();
+            }
+            // Nos aseguramos que empiece apagado
+            knifeGameObject.SetActive(false); 
+        }
     }
 
     private void CheckForDirectStart()
@@ -165,8 +191,9 @@ public class PlayerShooting : MonoBehaviour
 
         HandleUltimateLogic();
 
-        if (!isUltimateActive)
+        if (!isUltimateActive && !isMeleeAttacking)
         {
+            HandleMeleeInput();
             HandleWeaponSwitching();
         }
 
@@ -174,7 +201,7 @@ public class PlayerShooting : MonoBehaviour
         HandleLMGHeat();
         // ---------------------------------------------
 
-        if (isReloading) return;
+        if (isReloading || isMeleeAttacking) return;
 
         HandleShooting();
         HandleReloadInput();
@@ -297,6 +324,111 @@ public class PlayerShooting : MonoBehaviour
         {
             if (ultimateReadyVisual != null && ultimateReadyVisual.activeSelf)
                 ultimateReadyVisual.SetActive(false);
+        }
+    }
+
+    // Detecta la tecla C
+    void HandleMeleeInput()
+    {
+        // Solo atacamos si no estamos haciendo otra cosa crítica
+        if (Input.GetKeyDown(meleeKey) && !isReloading && !isUltimateActive && currentWeapon != null)
+        {
+            StartCoroutine(QuickMeleeRoutine());
+        }
+    }
+
+    private IEnumerator QuickMeleeRoutine()
+    {
+        if (knifeGameObject == null)
+        {
+            Debug.LogError("KnifeGameObject no asignado!");
+            yield break;
+        }
+
+        // Bloqueos
+        isMeleeAttacking = true;
+        isReloading = false;
+        isBursting = false;
+        StopAiming();
+
+        // Guardar arma activa
+        Vector3 savedWeaponPos = Vector3.zero;
+        Quaternion savedWeaponRot = Quaternion.identity;
+
+        if (currentWeaponModel != null)
+        {
+            savedWeaponPos = currentWeaponModel.transform.localPosition;
+            savedWeaponRot = currentWeaponModel.transform.localRotation;
+            currentWeaponModel.SetActive(false);
+        }
+
+        // Ocultar HUD + cámara
+        if (crosshairImage != null) crosshairImage.enabled = false;
+        if (cameraController != null) cameraController.enabled = false;
+
+        // Activar cuchillo
+        knifeGameObject.SetActive(true);
+
+        if (knifeAnimator != null)
+            knifeAnimator.SetTrigger(meleeAnimationName);
+
+        // Esperar al "impacto"
+        yield return new WaitForSeconds(damageDelay);
+
+        // Raycast de golpe
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hit, knifeRange))
+        {
+            HandleHit(hit, knifeDamage);
+        }
+
+        // Esperar hasta final de animación
+        yield return new WaitForSeconds(meleeDuration - damageDelay);
+
+        // OCULTAR CUCHILLO
+        knifeGameObject.SetActive(false);
+
+        // RECUPERAR ARMA
+        if (currentWeaponModel != null)
+        {
+            currentWeaponModel.SetActive(true);
+            currentWeaponModel.transform.localPosition = savedWeaponPos;
+            currentWeaponModel.transform.localRotation = savedWeaponRot;
+        }
+
+        // Restaurar cámara y HUD
+        if (cameraController != null) cameraController.enabled = true;
+        if (crosshairImage != null) crosshairImage.enabled = true;
+
+        isMeleeAttacking = false;
+    }
+
+    // NUEVA FUNCIÓN: Intenta reproducir la animación y devuelve si fue exitoso
+    private bool TryPlayKnifeAnimation()
+    {
+        if (knifeGameObject == null) return false;
+
+        knifeGameObject.SetActive(true); // Sacar cuchillo
+        
+        // Necesario para que el Animator se inicialice.
+        // Esto resuelve problemas de animaciones que no se reproducen en el primer frame.
+        // Si tu código de movimiento de cámara es muy agresivo, podría ser necesario un Yield return null.
+        
+        if (knifeAnimator == null)
+        {
+            knifeAnimator = knifeGameObject.GetComponent<Animator>();
+        }
+
+        if (knifeAnimator != null)
+        {
+            Debug.Log("Triggering animation: " + meleeAnimationName);
+            knifeAnimator.SetTrigger(meleeAnimationName);
+            return true;
+        }
+        else
+        {
+            Debug.LogError("ERROR: 'knifeAnimator' es null. Asegúrate que el objeto del cuchillo tiene un componente Animator.");
+            return false;
         }
     }
 
