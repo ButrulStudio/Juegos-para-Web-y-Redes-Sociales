@@ -14,6 +14,11 @@ public class PointDoor : MonoBehaviour
     [Tooltip("Curva de animación para la subida (opcional).")]
     [SerializeField] private AnimationCurve liftCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
+    [Header("Sincronización")] // NUEVO ENCABEZADO
+    [Tooltip("Otra puerta PointDoor que debe desaparecer simultáneamente (opcional).")]
+    // **NUEVA VARIABLE PÚBLICA**
+    public PointDoor syncedDoor;
+
     [Header("Interacción")]
     [SerializeField] private float interactionDistance = 3f;
     [SerializeField] private KeyCode interactionKey = KeyCode.E;
@@ -24,6 +29,8 @@ public class PointDoor : MonoBehaviour
     private Renderer doorRenderer;
     private Camera playerCamera;
     private bool isPlayerLooking = false;
+    // Variable para evitar aperturas múltiples
+    private bool isOpened = false;
 
     void Start()
     {
@@ -46,8 +53,13 @@ public class PointDoor : MonoBehaviour
 
     void Update()
     {
+        // 1. Añadimos la condición de que si ya se abrió, no haga nada
+        if (isOpened) return;
+
         CheckForInteraction();
     }
+
+    // El resto de CheckForInteraction() y Show/HideInteractionMessage() permanece igual...
 
     private void CheckForInteraction()
     {
@@ -115,19 +127,42 @@ public class PointDoor : MonoBehaviour
 
     private void TryOpenDoor()
     {
-        if (ScoreManager.Instance == null) return;
+        if (ScoreManager.Instance == null || isOpened) return;
 
         // Intentamos gastar los puntos usando el método existente de ScoreManager
         if (ScoreManager.Instance.TrySpendPoints(cost))
         {
             // Pago exitoso, iniciar animación
-            StartCoroutine(DisappearAnimation());
+
+            // **SINCRONIZACIÓN: Abrir la puerta principal**
+            OpenDoorInternal();
+
+            // **SINCRONIZACIÓN: Abrir la puerta secundaria si está asignada**
+            if (syncedDoor != null)
+            {
+                // Asegurarse de que la otra puerta no intente pagar de nuevo.
+                // Usamos el mismo método interno, sin coste.
+                syncedDoor.OpenDoorInternal();
+            }
         }
         else
         {
             // Pago fallido
             Debug.Log($"No tienes suficientes puntos para abrir la puerta ({cost} pts).");
         }
+    }
+
+    // **NUEVO MÉTODO PÚBLICO** para ser llamado por la puerta sincronizada.
+    // Lo hacemos público para que la otra instancia de PointDoor pueda llamarlo,
+    // pero TryOpenDoor se asegura de que solo se pague una vez.
+    public void OpenDoorInternal()
+    {
+        if (isOpened) return; // Doble chequeo
+
+        isOpened = true; // Marcar como abierta
+
+        // Iniciar animación
+        StartCoroutine(DisappearAnimation());
     }
 
     private IEnumerator DisappearAnimation()

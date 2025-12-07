@@ -1,5 +1,73 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &245172852082388776
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8234074415861123946}
+  - component: {fileID: 1796888097910665710}
+  - component: {fileID: 3599149049619734578}
+  m_Layer: 2
+  m_Name: NoSubirse
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8234074415861123946
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 245172852082388776}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.429, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2527853617375874731}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1796888097910665710
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 245172852082388776}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.4838364, y: 1.7067229, z: 0.35986727}
+  m_Center: {x: -0.02485111, y: 0.85656035, z: 0.0020406104}
+--- !u!114 &3599149049619734578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 245172852082388776}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 014463bd9f362444cbd1264081d078af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hitboxType: 2
+  zombieController: {fileID: 2861911678726899246}
 --- !u!1 &641489404582227634
 GameObject:
   m_ObjectHideFlags: 0
@@ -421,6 +489,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8412801364336708166}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8234074415861123946}
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 69f819a7fadd93147b3c9dad0d61d548, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2550431164610638950}
