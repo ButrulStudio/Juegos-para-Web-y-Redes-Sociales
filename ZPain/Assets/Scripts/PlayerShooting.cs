@@ -7,7 +7,6 @@ using System.Linq;
 
 public class PlayerShooting : MonoBehaviour
 {
-    // --- SINGLETON ---
     public static PlayerShooting Instance { get; private set; }
 
     [Header("Referencias Generales")]
@@ -36,16 +35,16 @@ public class PlayerShooting : MonoBehaviour
 
     [Header("--- ATAQUE CUCHILLO (QUICK MELEE) ---")]
     [SerializeField] private KeyCode meleeKey = KeyCode.C;
-    [SerializeField] private GameObject knifeGameObject; // <-- ARRASTRA AQUÍ EL OBJETO CUCHILLO DE LA JERARQUÍA
+    [SerializeField] private GameObject knifeGameObject; 
     [SerializeField] private float meleeDuration = 0.6f;
     [SerializeField] private float damageDelay = 0.2f;
     [SerializeField] private float knifeDamage = 50f;
     [SerializeField] private float knifeRange = 2.5f;
     [SerializeField] private AudioClip knifeSwingSound;
-    [SerializeField] private string meleeAnimationName = "Attack"; // El nombre exacto del Trigger en tu Animator
+    [SerializeField] private string meleeAnimationName = "Attack"; 
 
-    private Animator knifeAnimator; // Lo buscaremos automáticamente por código
-    private Vector3 originalWeaponLocalPosition; // Guarda la posición local correcta del arma
+    private Animator knifeAnimator; 
+    private Vector3 originalWeaponLocalPosition; 
     private bool isMeleeAttacking = false;
 
     private int currentKillsCount = 0;
@@ -62,14 +61,11 @@ public class PlayerShooting : MonoBehaviour
     private float nextFireTime = 0f;
     private bool isBursting = false;
 
-    // --- NUEVO: Variable para el calor de la LMG ---
     private float lmgCurrentHeatTime = 0f;
-    // -----------------------------------------------
 
     private Vector3 weaponInitialLocalPos;
     private Vector3 weaponCurrentOffset;
 
-    // === MUNICIÓN ===
     private int currentAmmoInMag;
     private int totalAmmo;
     private bool isReloading = false;
@@ -108,10 +104,30 @@ public class PlayerShooting : MonoBehaviour
     [Header("Animación de Cambio de Arma")]
     [SerializeField] private float switchDuration = 0.3f;
     [SerializeField] private Vector3 switchUpOffset = new Vector3(0, 0.5f, 0);
-    [SerializeField] private float switchBackDistance = 0.1f;
+    [SerializeField] private Vector3 switchBackDistance = new Vector3(0, 0, 0.1f);
     [SerializeField] private Vector3 switchRotation = new Vector3(-35f, 0f, 0f);
 
     [SerializeField] private AudioSource audioSource;
+    
+    [Header("Weapon Drop/Pickup (NUEVO)")]
+    public bool isWeaponDropped = false; 
+
+    [Header("Sistema de Coleccionables (NUEVO)")]
+    [SerializeField] private int totalCollectiblesRequired = 5;
+    private int currentCollectiblesFound = 0;
+    private bool hasFlamethrowerUltimate = false; 
+
+    [Header("--- Lógica de Desbloqueo Ultimate ---")]
+    [Tooltip("El GameObject padre que contiene el icono y la barra de carga.")]
+    [SerializeField] private GameObject ultimateUIParent; 
+    [SerializeField] private int killsToUnlockUltimate = 5; 
+    private int killsSinceStart = 0;
+    private bool ultimateIsUnlocked = false;
+
+    [Header("UI Notificación")]
+    [SerializeField] private TextMeshProUGUI unlockMessageText; 
+    [SerializeField] private float messageDisplayDuration = 5f; 
+
 
     void Awake()
     {
@@ -142,7 +158,6 @@ public class PlayerShooting : MonoBehaviour
         if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
         CheckForDirectStart();
 
-        // --- NUEVO: Buscar el animator dentro del objeto del cuchillo ---
         if (knifeGameObject != null)
         {
             knifeAnimator = knifeGameObject.GetComponent<Animator>();
@@ -150,8 +165,20 @@ public class PlayerShooting : MonoBehaviour
             {
                 knifeAnimator = knifeGameObject.GetComponentInChildren<Animator>();
             }
-            // Nos aseguramos que empiece apagado
             knifeGameObject.SetActive(false); 
+        }
+
+        currentCollectiblesFound = 0;
+        currentKillsCount = 0;
+
+        if (ultimateUIParent != null)
+        {
+            ultimateUIParent.SetActive(false);
+        }
+        
+        if (unlockMessageText != null)
+        {
+            unlockMessageText.gameObject.SetActive(false);
         }
     }
 
@@ -190,6 +217,8 @@ public class PlayerShooting : MonoBehaviour
         if (GameManager.IsPaused || GameManager.GameIsOver) return;
 
         HandleUltimateLogic();
+        
+        if (isWeaponDropped) return; 
 
         if (!isUltimateActive && !isMeleeAttacking)
         {
@@ -197,9 +226,7 @@ public class PlayerShooting : MonoBehaviour
             HandleWeaponSwitching();
         }
 
-        // --- NUEVO: Lógica de Calentamiento de LMG ---
         HandleLMGHeat();
-        // ---------------------------------------------
 
         if (isReloading || isMeleeAttacking) return;
 
@@ -207,7 +234,6 @@ public class PlayerShooting : MonoBehaviour
         HandleReloadInput();
         HandleAiming();
 
-        // Lerp de posición del arma (ADS y Recoil return)
         if (weaponHolder != null && currentWeapon != null)
         {
             Vector3 targetPosition = weaponInitialLocalPos;
@@ -241,30 +267,24 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // --- NUEVO: Función para gestionar el calor de la LMG ---
     void HandleLMGHeat()
     {
         if (currentWeapon == null) return;
 
-        // Solo procesamos si es una LMG y está mejorada
         if (currentWeapon.weaponType == WeaponType.LMG && currentWeapon.isUpgraded)
         {
-            // Si estamos disparando y tenemos balas
             if (Input.GetMouseButton(0) && currentAmmoInMag > 0 && !isReloading && !isUltimateActive)
             {
                 lmgCurrentHeatTime += Time.deltaTime;
-                // Topeamos el tiempo al máximo definido en el scriptable
                 if (lmgCurrentHeatTime > currentWeapon.heatRampUpTime)
                     lmgCurrentHeatTime = currentWeapon.heatRampUpTime;
             }
             else
             {
-                // Si no disparamos, se enfría
                 lmgCurrentHeatTime -= Time.deltaTime * (currentWeapon.heatRampUpTime / currentWeapon.heatCooldownTime);
                 if (lmgCurrentHeatTime < 0) lmgCurrentHeatTime = 0;
             }
 
-            // Opcional: Feedback visual en la UI de munición (Texto rojo si está muy caliente)
             if (ammoText != null)
             {
                 float heatFactor = lmgCurrentHeatTime / currentWeapon.heatRampUpTime;
@@ -278,27 +298,31 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // --- NUEVO: Función para calcular daño dinámico (incluye LMG) ---
     float GetCurrentWeaponDamage()
     {
         if (currentWeapon == null) return 0f;
 
         float baseDmg = currentWeapon.damage;
 
-        // Lógica LMG Mejorada
         if (currentWeapon.weaponType == WeaponType.LMG && currentWeapon.isUpgraded)
         {
-            float heatProgress = lmgCurrentHeatTime / currentWeapon.heatRampUpTime; // De 0 a 1
-            // Interpolamos entre 1.0 (daño normal) y el multiplicador máximo
+            float heatProgress = lmgCurrentHeatTime / currentWeapon.heatRampUpTime; 
             float heatMultiplier = Mathf.Lerp(1.0f, currentWeapon.maxHeatDamageMultiplier, heatProgress);
             baseDmg *= heatMultiplier;
         }
 
-        return baseDmg * damageMultiplier; // Multiplicador global (powerups)
+        return baseDmg * damageMultiplier; 
     }
 
     void HandleUltimateLogic()
     {
+        if (!hasFlamethrowerUltimate)
+        {
+            if (ultimateIconFill != null) ultimateIconFill.fillAmount = 0f;
+            if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
+            return;
+        }
+
         if (isUltimateActive) return;
         if (ultimateWeaponData == null) return;
 
@@ -327,10 +351,8 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // Detecta la tecla C
     void HandleMeleeInput()
     {
-        // Solo atacamos si no estamos haciendo otra cosa crítica
         if (Input.GetKeyDown(meleeKey) && !isReloading && !isUltimateActive && currentWeapon != null)
         {
             StartCoroutine(QuickMeleeRoutine());
@@ -345,13 +367,11 @@ public class PlayerShooting : MonoBehaviour
             yield break;
         }
 
-        // Bloqueos
         isMeleeAttacking = true;
         isReloading = false;
         isBursting = false;
         StopAiming();
 
-        // Guardar arma activa
         Vector3 savedWeaponPos = Vector3.zero;
         Quaternion savedWeaponRot = Quaternion.identity;
 
@@ -362,33 +382,26 @@ public class PlayerShooting : MonoBehaviour
             currentWeaponModel.SetActive(false);
         }
 
-        // Ocultar HUD + cámara
         if (crosshairImage != null) crosshairImage.enabled = false;
         if (cameraController != null) cameraController.enabled = false;
 
-        // Activar cuchillo
         knifeGameObject.SetActive(true);
 
         if (knifeAnimator != null)
             knifeAnimator.SetTrigger(meleeAnimationName);
 
-        // Esperar al "impacto"
         yield return new WaitForSeconds(damageDelay);
 
-        // Raycast de golpe
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, knifeRange))
         {
             HandleHit(hit, knifeDamage);
         }
 
-        // Esperar hasta final de animación
         yield return new WaitForSeconds(meleeDuration - damageDelay);
 
-        // OCULTAR CUCHILLO
         knifeGameObject.SetActive(false);
 
-        // RECUPERAR ARMA
         if (currentWeaponModel != null)
         {
             currentWeaponModel.SetActive(true);
@@ -396,23 +409,17 @@ public class PlayerShooting : MonoBehaviour
             currentWeaponModel.transform.localRotation = savedWeaponRot;
         }
 
-        // Restaurar cámara y HUD
         if (cameraController != null) cameraController.enabled = true;
         if (crosshairImage != null) crosshairImage.enabled = true;
 
         isMeleeAttacking = false;
     }
 
-    // NUEVA FUNCIÓN: Intenta reproducir la animación y devuelve si fue exitoso
     private bool TryPlayKnifeAnimation()
     {
         if (knifeGameObject == null) return false;
 
-        knifeGameObject.SetActive(true); // Sacar cuchillo
-        
-        // Necesario para que el Animator se inicialice.
-        // Esto resuelve problemas de animaciones que no se reproducen en el primer frame.
-        // Si tu código de movimiento de cámara es muy agresivo, podría ser necesario un Yield return null.
+        knifeGameObject.SetActive(true); 
         
         if (knifeAnimator == null)
         {
@@ -421,7 +428,6 @@ public class PlayerShooting : MonoBehaviour
 
         if (knifeAnimator != null)
         {
-            Debug.Log("Triggering animation: " + meleeAnimationName);
             knifeAnimator.SetTrigger(meleeAnimationName);
             return true;
         }
@@ -440,6 +446,17 @@ public class PlayerShooting : MonoBehaviour
         {
             if (currentKillsCount < ultimateWeaponData.requiredKillsForUlt)
                 currentKillsCount++;
+        }
+
+        if (!ultimateIsUnlocked)
+        {
+            killsSinceStart++;
+
+            if (killsSinceStart >= killsToUnlockUltimate)
+            {
+                ultimateIsUnlocked = true;
+                ActivateUltimateRoutine();
+            }
         }
     }
 
@@ -464,10 +481,45 @@ public class PlayerShooting : MonoBehaviour
         }
 
         isUltimateActive = false;
-        currentKillsCount = 0;
+        currentKillsCount = 0; 
         if (ultimateIconFill != null) ultimateIconFill.fillAmount = 0f;
 
         SelectSlot(preUltSlotIndex);
+    }
+
+    private void UnlockUltimateCharge()
+    {
+        hasFlamethrowerUltimate = true;
+        Debug.Log("¡Recompensa desbloqueada! Lanzallamas (Ultimate) disponible.");
+
+        if (ultimateWeaponData != null)
+        {
+            currentKillsCount = ultimateWeaponData.requiredKillsForUlt; 
+        }
+
+        if (ultimateUIParent != null)
+        {
+            ultimateUIParent.SetActive(true);
+        }
+        
+        // Muestra el mensaje solo UNA VEZ, al desbloquearse.
+        if (unlockMessageText != null)
+        {
+            StopCoroutine("DisplayUnlockMessageRoutine");
+            StartCoroutine("DisplayUnlockMessageRoutine");
+        }
+    }
+
+    private IEnumerator DisplayUnlockMessageRoutine()
+    {
+        string key = ultimateKey.ToString(); 
+        
+        unlockMessageText.text = $"¡Has desbloqueado el arma especial! Pulsa [{key}] para utilizarla";
+        unlockMessageText.gameObject.SetActive(true);
+        
+        yield return new WaitForSeconds(messageDisplayDuration);
+        
+        unlockMessageText.gameObject.SetActive(false);
     }
 
     void HandleWeaponSwitching()
@@ -494,7 +546,7 @@ public class PlayerShooting : MonoBehaviour
         StopAllCoroutines();
         isReloading = false;
         isBursting = false;
-        lmgCurrentHeatTime = 0; // Resetear calor al cambiar
+        lmgCurrentHeatTime = 0; 
         StopAiming();
         SaveCurrentAmmoState();
 
@@ -507,7 +559,7 @@ public class PlayerShooting : MonoBehaviour
         isReloading = true;
         Vector3 startPosition = weaponHolder.localPosition;
         Quaternion startRotation = weaponHolder.localRotation;
-        Vector3 targetUpPosition = startPosition + switchUpOffset + (Vector3.back * switchBackDistance);
+        Vector3 targetUpPosition = startPosition + switchUpOffset + (Vector3.back * switchBackDistance.z);
         Quaternion targetRotation = Quaternion.Euler(switchRotation);
 
         float timer = 0f;
@@ -571,7 +623,7 @@ public class PlayerShooting : MonoBehaviour
 
         currentWeapon = weaponData;
         shotTicker = 0;
-        lmgCurrentHeatTime = 0; // Resetear calor
+        lmgCurrentHeatTime = 0; 
         StopAiming();
 
         if (currentWeapon == null)
@@ -613,12 +665,12 @@ public class PlayerShooting : MonoBehaviour
                 break;
 
             case WeaponType.Rifle:
-            case WeaponType.SMG: // SMG se comporta como Rifle (automática)
-            case WeaponType.LMG: // LMG se comporta como Rifle (automática)
+            case WeaponType.SMG: 
+            case WeaponType.LMG: 
                 if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    ShootRifle(); // Usamos la misma lógica base
+                    ShootRifle(); 
                 }
                 break;
 
@@ -652,7 +704,7 @@ public class PlayerShooting : MonoBehaviour
         FireBaseLogic();
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-            HandleHit(hit, GetCurrentWeaponDamage()); // USAR NUEVO CÁLCULO DE DAÑO
+            HandleHit(hit, GetCurrentWeaponDamage()); 
         ApplyRecoil();
     }
 
@@ -681,7 +733,7 @@ public class PlayerShooting : MonoBehaviour
         FireBaseLogic();
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-            HandleHit(hit, GetCurrentWeaponDamage()); // USAR NUEVO CÁLCULO DE DAÑO (Incluye calor LMG)
+            HandleHit(hit, GetCurrentWeaponDamage()); 
         ApplyRecoil();
     }
 
@@ -785,7 +837,6 @@ public class PlayerShooting : MonoBehaviour
             {
                 if (burnedZombies.Add(zombie))
                 {
-                    // El lanzallamas tiene daño fijo, no se ve afectado por la lógica de LMG
                     HandleHit(hit, currentWeapon.damage * damageMultiplier);
                 }
             }
@@ -794,6 +845,14 @@ public class PlayerShooting : MonoBehaviour
 
     void HandleHit(RaycastHit hit, float damage)
     {
+        Palomas collectible = hit.collider.GetComponent<Palomas>();
+        if (collectible != null)
+        {
+            collectible.TakeDamage(damage * damageMultiplier); 
+            SpawnImpactEffects(hit);
+            return; 
+        }
+
         ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
         ZombieController zombieHealth = null;
 
@@ -819,20 +878,17 @@ public class PlayerShooting : MonoBehaviour
             else
                 zombieHealth.TakeDamage(damage);
 
-            // --- CHEQUEO DE MUERTE PARA VAMPIRISMO (SMG) ---
             if (zombieHealth.GetHP() <= 0)
             {
                 ShowFloatingScore(hit.point, pointsPerKillDisplay);
 
-                // LÓGICA VAMPIRISMO SMG MEJORADA
                 if (currentWeapon.weaponType == WeaponType.SMG && currentWeapon.isUpgraded)
                 {
-                    // Recuperamos balas pero sin pasarnos del máximo del cargador
                     if (currentAmmoInMag < currentWeapon.magCapacity)
                     {
                         currentAmmoInMag += currentWeapon.vampireAmmoRestore;
-                        if (currentAmmoInMag > currentWeapon.magCapacity)
-                            currentAmmoInMag = currentWeapon.magCapacity;
+                        if (currentAmmoInMag > currentAmmoInMag)
+                            currentAmmoInMag = currentAmmoInMag;
 
                         UpdateAmmoUI();
                     }
@@ -943,8 +999,6 @@ public class PlayerShooting : MonoBehaviour
             else
             {
                 ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
-                // Si la LMG está caliente, el color lo maneja HandleLMGHeat, 
-                // pero si no, o si está vacía, usamos lógica normal:
                 if (currentWeapon.weaponType != WeaponType.LMG || !currentWeapon.isUpgraded)
                 {
                     ammoText.color = (currentAmmoInMag == 0 && totalAmmo == 0) ? Color.red : defaultAmmoColor;
@@ -953,6 +1007,19 @@ public class PlayerShooting : MonoBehaviour
         }
         else { ammoText.text = ""; ammoText.color = defaultAmmoColor; }
     }
+    
+    private void ClearCrosshair()
+    {
+        if (crosshairImage != null) crosshairImage.enabled = false;
+    }
+    
+    public void SetCrosshair(Vector2 size, Vector2 aimedSize)
+    {
+        if (crosshairRectTransform == null) return;
+        crosshairRectTransform.sizeDelta = size;
+        crosshairImage.enabled = true;
+    }
+
 
     private void UpdateCrosshair()
     {
@@ -983,7 +1050,6 @@ public class PlayerShooting : MonoBehaviour
         if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
     }
 
-    // === MÉTODOS DE RECARGA ===
     void HandleReloadInput()
     {
         if (isUltimateActive) return;
@@ -999,7 +1065,6 @@ public class PlayerShooting : MonoBehaviour
     {
         isReloading = true;
         PlaySound(currentWeapon.reloadSound);
-        // Si recargamos, la LMG se enfría de golpe
         lmgCurrentHeatTime = 0;
 
         float reloadTime = currentWeapon.reloadTime * reloadTimeMultiplier;
@@ -1115,8 +1180,69 @@ public class PlayerShooting : MonoBehaviour
         }
         UpdateCrosshair();
     }
+    
+    public bool DropCurrentWeapon(out WeaponData dataToDrop, out GameObject modelToDrop)
+    {
+        dataToDrop = null;
+        modelToDrop = null;
 
-    // === MÉTODOS DE GESTIÓN DE SLOTS Y GUARDADO ===
+        if (currentWeapon == null)
+        {
+            Debug.LogError("PlayerShooting: Intentando soltar un arma que no existe.");
+            return false;
+        }
+
+        dataToDrop = currentWeapon;
+        modelToDrop = currentWeaponModel;
+        
+        currentWeapon = null;
+        currentWeaponModel = null;
+        
+        if (modelToDrop != null)
+        {
+            modelToDrop.transform.SetParent(null); 
+            modelToDrop.SetActive(false);         
+        }
+
+        UpdateAmmoUI();
+        ClearCrosshair();
+        isWeaponDropped = true;
+
+        return true;
+    }
+
+    public void PickupUpgradedWeapon(WeaponData newWeaponData, GameObject model)
+    {
+        if (newWeaponData == null) return;
+
+        EquipWeapon(newWeaponData);
+        ForceCurrentWeaponAmmoToFull(); 
+
+        currentWeaponModel = model; 
+        currentWeaponModel.transform.SetParent(weaponHolder);
+        
+        currentWeaponModel.transform.localPosition = Vector3.zero;
+        currentWeaponModel.transform.localRotation = Quaternion.identity;
+        currentWeaponModel.SetActive(true);
+
+        isWeaponDropped = false;
+
+        Debug.Log($"¡{newWeaponData.weaponName} mejorada recogida!");
+    }
+    
+    public void RegisterCollectibleFound()
+    {
+        if (hasFlamethrowerUltimate) return;
+
+        currentCollectiblesFound++;
+        Debug.Log($"Paloma encontrada: {currentCollectiblesFound} / {totalCollectiblesRequired}");
+
+        if (currentCollectiblesFound >= totalCollectiblesRequired && !hasFlamethrowerUltimate)
+        {
+            UnlockUltimateCharge();
+        }
+    }
+
     public int GetWeaponTypeInSlot(int slotIndex)
     {
         if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return -1;
@@ -1133,7 +1259,7 @@ public class PlayerShooting : MonoBehaviour
     {
         if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
         weaponSlots[slotIndex] = weapon;
-        if (slotIndex == currentSlotIndex) RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
+        if (slotIndex == currentSlotIndex) RefreshWeaponVisuals(weaponSlots[slotIndex]);
     }
 
     public void SelectSlot(int slotIndex)
