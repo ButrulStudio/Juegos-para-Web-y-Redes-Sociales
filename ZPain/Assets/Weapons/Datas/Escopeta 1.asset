@@ -15,15 +15,15 @@ MonoBehaviour:
   weaponType: 3
   crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 100, y: 100}
-  weaponName: Escopeta CAZA
+  weaponName: Escopeta de caza
   damage: 20
-  range: 20
+  range: 40
   fireRate: 0.9
-  price: 10
+  price: 0
   ammoPrice: 0
-  magCapacity: 6
-  maxAmmo: 30
-  reloadTime: 3
+  magCapacity: 2
+  maxAmmo: 18
+  reloadTime: 2
   isUpgraded: 0
   upgradeCost: 4000
   weaponModelPrefab: {fileID: 1635676967855476245, guid: 95d6c2fd51d2b574cadb8c39aef5f9f2, type: 3}
@@ -34,9 +34,13 @@ MonoBehaviour:
   sniperScopeSprite: {fileID: 0}
   aimPosition: {x: 0, y: -0.05, z: 0}
   aimRotation: {x: -5, y: 0, z: 0}
-  pelletCount: 4
-  spreadAngle: 10
+  pelletCount: 6
+  spreadAngle: 6
   penetrationCount: 1
+  vampireAmmoRestore: 3
+  maxHeatDamageMultiplier: 2
+  heatRampUpTime: 3
+  heatCooldownTime: 1.5
   recoilVerticalMin: 0.5
   recoilVerticalMax: 0.8
   recoilHorizontalMin: -0.2

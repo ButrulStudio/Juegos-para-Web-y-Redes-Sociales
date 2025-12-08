@@ -16,16 +16,16 @@ MonoBehaviour:
   crosshairSize: {x: 50, y: 50}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: MTAR
-  damage: 20
+  damage: 50
   range: 100
-  fireRate: 0.2
+  fireRate: 0.15
   price: 0
-  ammoPrice: 50
-  magCapacity: 8
-  maxAmmo: 32
-  reloadTime: 2
-  isUpgraded: 0
-  upgradeCost: 100
+  ammoPrice: 0
+  magCapacity: 100
+  maxAmmo: 400
+  reloadTime: 5
+  isUpgraded: 1
+  upgradeCost: 4000
   weaponModelPrefab: {fileID: 8606067927134420824, guid: 843071a44c0c95d499df00d68d88cb38, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
   crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}
@@ -38,7 +38,7 @@ MonoBehaviour:
   spreadAngle: 10
   penetrationCount: 1
   vampireAmmoRestore: 3
-  maxHeatDamageMultiplier: 2
+  maxHeatDamageMultiplier: 2.5
   heatRampUpTime: 3
   heatCooldownTime: 1.5
   recoilVerticalMin: 1

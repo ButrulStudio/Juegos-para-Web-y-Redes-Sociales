@@ -17,15 +17,15 @@ MonoBehaviour:
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: UZI
   damage: 20
-  range: 100
-  fireRate: 0.2
+  range: 80
+  fireRate: 0.05
   price: 0
-  ammoPrice: 50
-  magCapacity: 8
-  maxAmmo: 32
-  reloadTime: 2
+  ammoPrice: 0
+  magCapacity: 24
+  maxAmmo: 96
+  reloadTime: 1.6
   isUpgraded: 0
-  upgradeCost: 100
+  upgradeCost: 4000
   weaponModelPrefab: {fileID: 6879005826116357193, guid: 973fe3e62d33b5f4b8d5033fdef76ebd, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
   crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}

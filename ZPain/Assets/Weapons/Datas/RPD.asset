@@ -16,16 +16,16 @@ MonoBehaviour:
   crosshairSize: {x: 50, y: 50}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: RPD
-  damage: 20
+  damage: 40
   range: 100
   fireRate: 0.2
   price: 0
-  ammoPrice: 50
-  magCapacity: 8
-  maxAmmo: 32
-  reloadTime: 2
+  ammoPrice: 0
+  magCapacity: 120
+  maxAmmo: 460
+  reloadTime: 5
   isUpgraded: 0
-  upgradeCost: 100
+  upgradeCost: 0
   weaponModelPrefab: {fileID: 6520648788345324660, guid: 8d2932c7c2460e842aa2be47bb3b6f1b, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
   crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}

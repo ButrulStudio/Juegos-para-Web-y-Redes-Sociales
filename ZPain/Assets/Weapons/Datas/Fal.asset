@@ -16,16 +16,16 @@ MonoBehaviour:
   crosshairSize: {x: 50, y: 50}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: FAL
-  damage: 20
+  damage: 50
   range: 100
-  fireRate: 0.2
+  fireRate: 0.5
   price: 0
-  ammoPrice: 50
-  magCapacity: 8
-  maxAmmo: 32
-  reloadTime: 2
+  ammoPrice: 0
+  magCapacity: 20
+  maxAmmo: 60
+  reloadTime: 2.5
   isUpgraded: 0
-  upgradeCost: 100
+  upgradeCost: 4000
   weaponModelPrefab: {fileID: 4885547653825972024, guid: 63c845751c36b8b44972bf4dbd04bb45, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
   crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}
@@ -37,6 +37,10 @@ MonoBehaviour:
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1
+  vampireAmmoRestore: 3
+  maxHeatDamageMultiplier: 2
+  heatRampUpTime: 3
+  heatCooldownTime: 1.5
   recoilVerticalMin: 1
   recoilVerticalMax: 2
   recoilHorizontalMin: -0.5

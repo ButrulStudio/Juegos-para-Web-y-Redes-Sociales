@@ -20,8 +20,8 @@ MonoBehaviour:
   range: 100
   fireRate: 1.6
   price: 2500
-  ammoPrice: 2000
-  magCapacity: 6
+  ammoPrice: 1250
+  magCapacity: 4
   maxAmmo: 24
   reloadTime: 2.5
   isUpgraded: 0
@@ -37,6 +37,10 @@ MonoBehaviour:
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1
+  vampireAmmoRestore: 3
+  maxHeatDamageMultiplier: 2
+  heatRampUpTime: 3
+  heatCooldownTime: 1.5
   recoilVerticalMin: 1
   recoilVerticalMax: 2
   recoilHorizontalMin: -0.5

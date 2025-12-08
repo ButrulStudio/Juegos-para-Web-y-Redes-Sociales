@@ -16,16 +16,16 @@ MonoBehaviour:
   crosshairSize: {x: 50, y: 50}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: Escopeta 2
-  damage: 20
-  range: 100
-  fireRate: 0.2
+  damage: 25
+  range: 25
+  fireRate: 0.6
   price: 0
-  ammoPrice: 50
+  ammoPrice: 0
   magCapacity: 8
   maxAmmo: 32
   reloadTime: 2
   isUpgraded: 0
-  upgradeCost: 100
+  upgradeCost: 4000
   weaponModelPrefab: {fileID: 8244271214771974029, guid: b7796fd44bb03a64c9cde4c8175d352e, type: 3}
   bulletHolePrefab: {fileID: 2212925028312433708, guid: edc92b779abc45d478d8dfeda3fc979a, type: 3}
   crosshairIcon: {fileID: 21300000, guid: e4842210676e7164185db86d59caee4e, type: 3}
@@ -37,6 +37,10 @@ MonoBehaviour:
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1
+  vampireAmmoRestore: 3
+  maxHeatDamageMultiplier: 2
+  heatRampUpTime: 3
+  heatCooldownTime: 1.5
   recoilVerticalMin: 1
   recoilVerticalMax: 2
   recoilHorizontalMin: -0.5

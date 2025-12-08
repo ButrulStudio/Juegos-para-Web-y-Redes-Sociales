@@ -16,13 +16,13 @@ MonoBehaviour:
   crosshairSize: {x: 50, y: 50}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: M14
-  damage: 20
+  damage: 30
   range: 100
-  fireRate: 0.2
-  price: 0
-  ammoPrice: 50
-  magCapacity: 8
-  maxAmmo: 32
+  fireRate: 0.7
+  price: 750
+  ammoPrice: 500
+  magCapacity: 12
+  maxAmmo: 48
   reloadTime: 2
   isUpgraded: 0
   upgradeCost: 100
@@ -37,6 +37,10 @@ MonoBehaviour:
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1
+  vampireAmmoRestore: 3
+  maxHeatDamageMultiplier: 2
+  heatRampUpTime: 3
+  heatCooldownTime: 1.5
   recoilVerticalMin: 1
   recoilVerticalMax: 2
   recoilHorizontalMin: -0.5

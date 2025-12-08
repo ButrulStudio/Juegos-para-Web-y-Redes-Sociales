@@ -21,8 +21,8 @@ MonoBehaviour:
   fireRate: 0.1
   price: 0
   ammoPrice: 100
-  magCapacity: 150
-  maxAmmo: 60
+  magCapacity: 8
+  maxAmmo: 32
   reloadTime: 1.5
   isUpgraded: 0
   upgradeCost: 0
