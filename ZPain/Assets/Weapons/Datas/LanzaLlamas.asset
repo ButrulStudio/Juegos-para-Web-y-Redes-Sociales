@@ -28,7 +28,7 @@ MonoBehaviour:
   upgradeCost: 100
   weaponModelPrefab: {fileID: 7346113742249740739, guid: d50ec7c952f7968428c274da675ced7f, type: 3}
   bulletHolePrefab: {fileID: 0}
-  crosshairIcon: {fileID: 21300000, guid: c1503a56258b70947befccadad6322a2, type: 3}
+  crosshairIcon: {fileID: 21300000, guid: daebf22d8fb81cd4d989bac14e7fdfd4, type: 3}
   canAim: 0
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MTAR
   m_EditorClassIdentifier: 
   weaponType: 7
-  crosshairSize: {x: 50, y: 50}
+  crosshairSize: {x: 11, y: 7}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: MTAR
   damage: 50
@@ -24,15 +24,15 @@ MonoBehaviour:
   magCapacity: 100
   maxAmmo: 400
   reloadTime: 5
-  isUpgraded: 1
+  isUpgraded: 0
   upgradeCost: 4000
   weaponModelPrefab: {fileID: 8606067927134420824, guid: 843071a44c0c95d499df00d68d88cb38, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
-  crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}
+  crosshairIcon: {fileID: 21300000, guid: cf3cbfd695b22e54c95ac32e89291544, type: 3}
   canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
-  aimPosition: {x: 0, y: 0, z: 0}
+  aimPosition: {x: -0.019, y: 0.06, z: 0.4}
   aimRotation: {x: 0, y: 0, z: 0}
   pelletCount: 4
   spreadAngle: 10

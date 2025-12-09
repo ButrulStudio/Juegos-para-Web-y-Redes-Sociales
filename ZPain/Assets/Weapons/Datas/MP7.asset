@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MP7
   m_EditorClassIdentifier: 
   weaponType: 6
-  crosshairSize: {x: 50, y: 50}
+  crosshairSize: {x: 11, y: 7}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: mp7
   damage: 25
@@ -24,16 +24,16 @@ MonoBehaviour:
   magCapacity: 30
   maxAmmo: 120
   reloadTime: 2
-  isUpgraded: 0
+  isUpgraded: 1
   upgradeCost: 4000
   weaponModelPrefab: {fileID: 8597322114058471871, guid: dedfd110e665b974c94885dd9a1374a9, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
-  crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}
+  crosshairIcon: {fileID: 21300000, guid: 97561c1fcb1907d4784df9f754856e6c, type: 3}
   canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
-  aimPosition: {x: 0, y: 0, z: 0}
-  aimRotation: {x: 0, y: 0, z: 0}
+  aimPosition: {x: 0.15, y: 0, z: 0.1}
+  aimRotation: {x: -5, y: 0, z: 0}
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1

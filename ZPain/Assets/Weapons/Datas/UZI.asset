@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: UZI
   m_EditorClassIdentifier: 
   weaponType: 6
-  crosshairSize: {x: 50, y: 50}
+  crosshairSize: {x: 11, y: 7}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: UZI
   damage: 20
@@ -28,11 +28,11 @@ MonoBehaviour:
   upgradeCost: 4000
   weaponModelPrefab: {fileID: 6879005826116357193, guid: 973fe3e62d33b5f4b8d5033fdef76ebd, type: 3}
   bulletHolePrefab: {fileID: 4578777934618744482, guid: 8eae95e3ff228ad4ab52dfa6f489b4dc, type: 3}
-  crosshairIcon: {fileID: 21300000, guid: fce735af80570374cb6db555ab900dfa, type: 3}
+  crosshairIcon: {fileID: 21300000, guid: 97561c1fcb1907d4784df9f754856e6c, type: 3}
   canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
-  aimPosition: {x: 0, y: 0, z: 0}
+  aimPosition: {x: -0.08, y: 0.1, z: 0}
   aimRotation: {x: 0, y: 0, z: 0}
   pelletCount: 4
   spreadAngle: 10

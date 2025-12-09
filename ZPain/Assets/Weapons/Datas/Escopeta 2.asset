@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Escopeta 2
   m_EditorClassIdentifier: 
   weaponType: 3
-  crosshairSize: {x: 50, y: 50}
+  crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: Escopeta 2
   damage: 25
@@ -32,8 +32,8 @@ MonoBehaviour:
   canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
-  aimPosition: {x: 0, y: 0, z: 0}
-  aimRotation: {x: 0, y: 0, z: 0}
+  aimPosition: {x: -0.03, y: -0.04, z: 0}
+  aimRotation: {x: -5, y: 0, z: 0}
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1

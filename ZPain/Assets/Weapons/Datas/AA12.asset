@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: AA12
   m_EditorClassIdentifier: 
   weaponType: 3
-  crosshairSize: {x: 50, y: 50}
+  crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: AA12
   damage: 40
@@ -24,7 +24,7 @@ MonoBehaviour:
   magCapacity: 12
   maxAmmo: 48
   reloadTime: 3
-  isUpgraded: 0
+  isUpgraded: 1
   upgradeCost: 100
   weaponModelPrefab: {fileID: 1926885309523884527, guid: 128aeed609b0821488834bbd64221eef, type: 3}
   bulletHolePrefab: {fileID: 2212925028312433708, guid: edc92b779abc45d478d8dfeda3fc979a, type: 3}
@@ -32,8 +32,8 @@ MonoBehaviour:
   canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
-  aimPosition: {x: 0, y: 0, z: 0}
-  aimRotation: {x: 0, y: 0, z: 0}
+  aimPosition: {x: 0.135, y: -0.02, z: 0}
+  aimRotation: {x: 10, y: 0, z: 0}
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1

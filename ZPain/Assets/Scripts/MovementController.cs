@@ -8,6 +8,9 @@ public class MovementController : MonoBehaviour
     [Tooltip("Arrastra aquí la Main Camera (hija del jugador)")]
     [SerializeField] private Transform playerCameraRoot;
 
+    [Header("Controles Móviles")] // --- NUEVO: Asigna aquí tu JoystickBG
+    public VirtualJoystick mobileJoystick;
+
     [Header("Movimiento Base")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float jumpHeight = 1.5f;
@@ -23,14 +26,14 @@ public class MovementController : MonoBehaviour
     [Header("Configuración Física Agachado")]
     [Tooltip("Altura total del collider de pie")]
     [SerializeField] private float standingHeight = 2.0f;
-    [Tooltip("Centro Y del collider de pie (Tú dijiste que 0)")]
-    [SerializeField] private float standingCenterY = 0f; // <--- NUEVO: Configurable
+    [Tooltip("Centro Y del collider de pie")]
+    [SerializeField] private float standingCenterY = 0f;
 
     [Space(10)]
     [Tooltip("Altura total del collider agachado")]
     [SerializeField] private float crouchHeight = 1.0f;
-    [Tooltip("Centro Y del collider agachado (Prueba con 0 o -0.5 según tu pivote)")]
-    [SerializeField] private float crouchCenterY = 0f;   // <--- NUEVO: Configurable
+    [Tooltip("Centro Y del collider agachado")]
+    [SerializeField] private float crouchCenterY = 0f;
 
     [Space(10)]
     [SerializeField] private float crouchSpeed = 2.5f;
@@ -55,6 +58,9 @@ public class MovementController : MonoBehaviour
     private float currentSpeed;
     private float defaultSpeed;
     public float speedMultiplier = 1f;
+
+    // --- VARIABLE NUEVA PARA AGACHARSE EN MÓVIL ---
+    private bool isMobileCrouching = false;
 
     void Start()
     {
@@ -89,17 +95,25 @@ public class MovementController : MonoBehaviour
             velocity.y = -2f;
         }
 
-        // 2. Inputs
+        // 2. Inputs (Teclado)
         float moveX = Input.GetAxis("Horizontal");
         float moveZ = Input.GetAxis("Vertical");
 
+        // --- LÓGICA MÓVIL (JOYSTICK) ---
+        // Si hay un joystick asignado y se está moviendo, sobrescribimos el teclado
+        if (mobileJoystick != null && mobileJoystick.InputVector != Vector3.zero)
+        {
+            moveX = mobileJoystick.InputVector.x;
+            moveZ = mobileJoystick.InputVector.z;
+        }
+        // -------------------------------
+
         // 3. Estados
-        bool isCrouchingInput = Input.GetKey(crouchKey);
+        // Modificado para incluir el toggle móvil (Teclado O Móvil)
+        bool isCrouchingInput = Input.GetKey(crouchKey) || isMobileCrouching;
         bool isSprintingInput = Input.GetKey(sprintKey) && !isCrouchingInput;
 
         // --- LÓGICA FÍSICA (INTERPOLACIÓN DE ALTURA Y CENTRO) ---
-        // Ahora usamos tus variables configurables standingCenterY y crouchCenterY
-
         float targetHeight = isCrouchingInput ? crouchHeight : standingHeight;
         float targetCenterY = isCrouchingInput ? crouchCenterY : standingCenterY;
 
@@ -136,7 +150,7 @@ public class MovementController : MonoBehaviour
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
         controller.Move(move * finalSpeed * Time.deltaTime);
 
-        // 6. Gravedad
+        // 6. Gravedad (Salto con Espacio)
         if (Input.GetButtonDown("Jump") && isGrounded && !isCrouchingInput)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
@@ -167,6 +181,24 @@ public class MovementController : MonoBehaviour
             }
             nextStepTime = Time.time + interval;
         }
+    }
+
+    // --- MÉTODOS PÚBLICOS PARA LOS BOTONES DEL MÓVIL ---
+
+    // Asigna esto al botón de SALTAR (OnClick)
+    public void MobileJump()
+    {
+        // Solo salta si toca el suelo y NO está agachado
+        if (isGrounded && !isMobileCrouching && !Input.GetKey(crouchKey))
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+    }
+
+    // Asigna esto al botón de AGACHARSE (OnClick)
+    public void MobileToggleCrouch()
+    {
+        isMobileCrouching = !isMobileCrouching;
     }
 
     // --- PowerUps ---

@@ -24,7 +24,7 @@ MonoBehaviour:
   magCapacity: 25
   maxAmmo: 100
   reloadTime: 2.5
-  isUpgraded: 0
+  isUpgraded: 1
   upgradeCost: 4000
   weaponModelPrefab: {fileID: 6342753099440135924, guid: 715928dcfc66b0541978ed00039a4815, type: 3}
   bulletHolePrefab: {fileID: 2212925028312433708, guid: edc92b779abc45d478d8dfeda3fc979a, type: 3}
@@ -32,8 +32,8 @@ MonoBehaviour:
   canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
-  aimPosition: {x: -0.11, y: -0.05, z: 0}
-  aimRotation: {x: -3.7, y: 0, z: 0}
+  aimPosition: {x: 0.07, y: -0.05, z: 0}
+  aimRotation: {x: -3, y: 0, z: 0}
   pelletCount: 5
   spreadAngle: 10
   penetrationCount: 1

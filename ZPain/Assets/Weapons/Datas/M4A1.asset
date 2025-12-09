@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: M4A1
   m_EditorClassIdentifier: 
   weaponType: 2
-  crosshairSize: {x: 50, y: 50}
+  crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: M4A1
   damage: 45
@@ -32,7 +32,7 @@ MonoBehaviour:
   canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
-  aimPosition: {x: 0, y: 0, z: 0}
+  aimPosition: {x: -0.023, y: -0.02, z: 0}
   aimRotation: {x: 0, y: 0, z: 0}
   pelletCount: 4
   spreadAngle: 10

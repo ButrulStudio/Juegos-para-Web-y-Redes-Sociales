@@ -32,7 +32,7 @@ MonoBehaviour:
   canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
-  aimPosition: {x: -0.22, y: 0.2, z: 0}
+  aimPosition: {x: -0.04, y: 0.08, z: 0}
   aimRotation: {x: 0, y: 0, z: 0}
   pelletCount: 5
   spreadAngle: 10
