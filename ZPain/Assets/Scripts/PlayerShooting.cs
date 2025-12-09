@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine.EventSystems; // Necesario para detectar UI
+using UnityEngine.EventSystems;
 
 public class PlayerShooting : MonoBehaviour
 {
@@ -83,7 +83,6 @@ public class PlayerShooting : MonoBehaviour
     private float nextFireTime = 0f;
     private bool isBursting = false;
 
-    // Variable para la ametralladora ligera
     private float lmgCurrentHeatTime = 0f;
 
     private Vector3 weaponInitialLocalPos;
@@ -92,7 +91,6 @@ public class PlayerShooting : MonoBehaviour
     private int totalAmmo;
     private bool isReloading = false;
 
-    // Caché de munición
     private Dictionary<WeaponType, int> ammoInMagCache = new Dictionary<WeaponType, int>();
     private Dictionary<WeaponType, int> totalAmmoCache = new Dictionary<WeaponType, int>();
 
@@ -156,7 +154,6 @@ public class PlayerShooting : MonoBehaviour
         if (ultimateUIParent != null) ultimateUIParent.SetActive(false);
         if (collectibleCountText != null) collectibleCountText.gameObject.SetActive(false);
 
-        // --- DESACTIVAR AUTOFIRE EN PC ---
         if (!Application.isMobilePlatform && !Application.isEditor)
         {
             useAutoFire = false;
@@ -211,7 +208,6 @@ public class PlayerShooting : MonoBehaviour
             HandleWeaponSwitching();
         }
 
-        // Llamada a la función que antes daba error
         HandleLMGHeat();
 
         if (isReloading || isMeleeAttacking) return;
@@ -220,7 +216,6 @@ public class PlayerShooting : MonoBehaviour
         HandleReloadInput();
         HandleAiming();
 
-        // Interpolación del arma
         if (weaponHolder != null && currentWeapon != null)
         {
             Vector3 targetPosition = weaponInitialLocalPos;
@@ -236,16 +231,12 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // --- MÉTODOS DE CÁLCULO DE DAÑO Y CALOR (LOS QUE FALTABAN) ---
-
     void HandleLMGHeat()
     {
         if (currentWeapon == null) return;
 
-        // Solo procesamos si es una LMG mejorada
         if (currentWeapon.weaponType == WeaponType.LMG && currentWeapon.isUpgraded)
         {
-            // Se calienta si pulsamos ratón O botón móvil O autofire está activo disparando
             bool isFiring = Input.GetMouseButton(0) || isMobileFiring || (useAutoFire && IsAimingAtEnemy());
 
             if (isFiring && currentAmmoInMag > 0 && !isReloading && !isUltimateActive)
@@ -256,12 +247,10 @@ public class PlayerShooting : MonoBehaviour
             }
             else
             {
-                // Enfriamiento
                 lmgCurrentHeatTime -= Time.deltaTime * (currentWeapon.heatRampUpTime / currentWeapon.heatCooldownTime);
                 if (lmgCurrentHeatTime < 0) lmgCurrentHeatTime = 0;
             }
 
-            // Cambiar color del texto de munición según el calor
             if (ammoText != null)
             {
                 float heatFactor = lmgCurrentHeatTime / currentWeapon.heatRampUpTime;
@@ -281,7 +270,6 @@ public class PlayerShooting : MonoBehaviour
 
         float baseDmg = currentWeapon.damage;
 
-        // Si es LMG mejorada, aplicamos multiplicador por calor
         if (currentWeapon.weaponType == WeaponType.LMG && currentWeapon.isUpgraded)
         {
             float heatProgress = lmgCurrentHeatTime / currentWeapon.heatRampUpTime;
@@ -306,16 +294,12 @@ public class PlayerShooting : MonoBehaviour
         return false;
     }
 
-    // --- LÓGICA DE DISPARO (Corregido orden de variables) ---
-
     void HandleShooting()
     {
         if (currentWeapon == null) return;
 
         // 1. Detección de UI
         bool isPointerOverUI = false;
-
-        // Solo verificamos UI si el cursor está libre (Móvil o Editor)
         if (Cursor.lockState == CursorLockMode.None)
         {
             if (EventSystem.current != null)
@@ -333,9 +317,9 @@ public class PlayerShooting : MonoBehaviour
             enemyInSight = IsAimingAtEnemy();
         }
 
-        // 3. Inputs (CORREGIDO EL ORDEN AQUÍ)
+        // 3. Inputs
         bool mouseInput = Input.GetMouseButton(0) && !isPointerOverUI;
-        bool mouseInputDown = Input.GetMouseButtonDown(0) && !isPointerOverUI; // <--- Declarada antes de usarla
+        bool mouseInputDown = Input.GetMouseButtonDown(0) && !isPointerOverUI;
 
         bool fireInputHeld = mouseInput || isMobileFiring || enemyInSight;
         bool fireInputDownCombined = mouseInputDown;
@@ -345,14 +329,30 @@ public class PlayerShooting : MonoBehaviour
             case WeaponType.Pistol:
             case WeaponType.Shotgun:
             case WeaponType.Sniper:
-                // Para semi-auto: clic manual o autofire
-                if ((mouseInputDown || (enemyInSight && useAutoFire)) && Time.time >= nextFireTime && !isBursting)
+                // --- CORRECCIÓN AQUÍ ---
+                // Separamos la lógica para asegurar que el Sniper mejorado NO use BurstFire
+                if ((fireInputDownCombined || (enemyInSight && useAutoFire)) && Time.time >= nextFireTime && !isBursting)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    if (currentWeapon.isUpgraded) StartCoroutine(BurstFire());
-                    else if (currentWeapon.weaponType == WeaponType.Shotgun) StartCoroutine(ShootShotgunCoroutine());
-                    else if (currentWeapon.weaponType == WeaponType.Sniper) StartCoroutine(ShootSniperCoroutine());
-                    else Shoot();
+
+                    if (currentWeapon.weaponType == WeaponType.Shotgun)
+                    {
+                        StartCoroutine(ShootShotgunCoroutine());
+                    }
+                    else if (currentWeapon.weaponType == WeaponType.Sniper)
+                    {
+                        StartCoroutine(ShootSniperCoroutine());
+                    }
+                    else if (currentWeapon.isUpgraded && currentWeapon.weaponType == WeaponType.Pistol)
+                    {
+                        // Solo la pistola usa BurstFire al mejorarse
+                        StartCoroutine(BurstFire());
+                    }
+                    else
+                    {
+                        // Disparo normal (Pistola sin mejorar)
+                        Shoot();
+                    }
                 }
                 break;
 
@@ -382,9 +382,11 @@ public class PlayerShooting : MonoBehaviour
             if (currentWeapon.weaponType == WeaponType.Pistol || currentWeapon.weaponType == WeaponType.Shotgun || currentWeapon.weaponType == WeaponType.Sniper)
             {
                 nextFireTime = Time.time + currentWeapon.fireRate;
+
+                // --- CORRECCIÓN TAMBIÉN AQUÍ ---
                 if (currentWeapon.weaponType == WeaponType.Shotgun) StartCoroutine(ShootShotgunCoroutine());
                 else if (currentWeapon.weaponType == WeaponType.Sniper) StartCoroutine(ShootSniperCoroutine());
-                else if (currentWeapon.isUpgraded) StartCoroutine(BurstFire());
+                else if (currentWeapon.isUpgraded && currentWeapon.weaponType == WeaponType.Pistol) StartCoroutine(BurstFire());
                 else Shoot();
             }
         }
@@ -396,13 +398,12 @@ public class PlayerShooting : MonoBehaviour
             StartCoroutine(ReloadCoroutine());
     }
 
-    // --- FUNCIONES DE DISPARO INTERNAS ---
+    // --- LÓGICA DE DISPARO INTERNA ---
     void Shoot()
     {
         if (currentAmmoInMag <= 0) { HandleEmptyClip(); return; }
         FireBaseLogic();
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        // Aquí usamos la función GetCurrentWeaponDamage que antes faltaba
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range)) HandleHit(hit, GetCurrentWeaponDamage());
         ApplyRecoil();
     }
@@ -703,7 +704,7 @@ public class PlayerShooting : MonoBehaviour
         UpdateCrosshair();
     }
 
-    // --- MÉTODOS DE APOYO (Inventario, Cuchillo, Ult) ---
+    // --- MÉTODOS DE APOYO (Inventario y Cuchillo) ---
 
     void HandleMeleeInput()
     {
