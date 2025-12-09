@@ -15,6 +15,10 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private Transform weaponHolder;
     [SerializeField] private CameraController cameraController;
 
+    [Header("Visuales de Mejora")]
+    [Tooltip("Arrastra aquí el Material que se aplicará a las armas cuando estén mejoradas.")]
+    public Material upgradedWeaponMaterial;
+
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI ammoText;
     [SerializeField] private Image crosshairImage;
@@ -31,18 +35,15 @@ public class PlayerShooting : MonoBehaviour
     public bool useAutoFire = true;
     public LayerMask obstacleLayers;
 
-    // --- VARIABLES MÓVILES ---
     private bool isMobileFiring = false;
     private bool isMobileAiming = false;
 
-    [Header("--- SISTEMA DE ULTIMATE (LANZALLAMAS) ---")]
+    [Header("--- SISTEMA DE ULTIMATE ---")]
     [SerializeField] private WeaponData ultimateWeaponData;
     [SerializeField] private Image ultimateIconFill;
     [SerializeField] private GameObject ultimateReadyVisual;
     [SerializeField] private KeyCode ultimateKey = KeyCode.X;
     [SerializeField] private float ultimateDuration = 20f;
-
-    [Header("Ultimate UI & Unlock")]
     [SerializeField] private GameObject ultimateUIParent;
     [SerializeField] private TextMeshProUGUI ultimateKillCountText;
     [SerializeField] private int totalCollectiblesRequired = 5;
@@ -52,7 +53,6 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private float collectibleDisplayTime = 3f;
     private Coroutine displayCollectibleCoroutine;
 
-    // Estado interno del ultimate
     private bool isUltimateUnlocked = false;
     private int collectiblesFoundCount = 0;
     private int currentKillsCount = 0;
@@ -79,12 +79,12 @@ public class PlayerShooting : MonoBehaviour
 
     [Header("Estado del Arma Actual")]
     public WeaponData currentWeapon;
-    private GameObject currentWeaponModel;
+    private GameObject currentWeaponModel; // El modelo visual instanciado
+    private ParticleSystem flamethrowerParticles; // Referencia a las partículas del lanzallamas
+
     private float nextFireTime = 0f;
     private bool isBursting = false;
-
     private float lmgCurrentHeatTime = 0f;
-
     private Vector3 weaponInitialLocalPos;
     private Vector3 weaponCurrentOffset;
     private int currentAmmoInMag;
@@ -97,7 +97,7 @@ public class PlayerShooting : MonoBehaviour
     [HideInInspector] public float reloadTimeMultiplier = 1f;
     [HideInInspector] public float damageMultiplier = 1f;
 
-    [Header("Efectos Visuales")]
+    [Header("Efectos")]
     private Light muzzleLight;
     [SerializeField] private float flashDuration = 0.05f;
     [SerializeField] private GameObject bloodParticlePrefab;
@@ -154,7 +154,9 @@ public class PlayerShooting : MonoBehaviour
         if (ultimateUIParent != null) ultimateUIParent.SetActive(false);
         if (collectibleCountText != null) collectibleCountText.gameObject.SetActive(false);
 
-        if (!Application.isMobilePlatform && !Application.isEditor)
+        // El GameManager se encarga de useAutoFire en el OnValidate/Start, 
+        // pero por seguridad si no hay GameManager:
+        if (!Application.isMobilePlatform && !Application.isEditor && GameManager.Instance == null)
         {
             useAutoFire = false;
         }
@@ -210,12 +212,17 @@ public class PlayerShooting : MonoBehaviour
 
         HandleLMGHeat();
 
+        // --- CONTROL DE PARTÍCULAS LANZALLAMAS ---
+        HandleFlamethrowerEffects();
+        // -----------------------------------------
+
         if (isReloading || isMeleeAttacking) return;
 
         HandleShooting();
         HandleReloadInput();
         HandleAiming();
 
+        // Interpolación arma
         if (weaponHolder != null && currentWeapon != null)
         {
             Vector3 targetPosition = weaponInitialLocalPos;
@@ -231,19 +238,118 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
+    // --- LÓGICA DE VISUALES (LANZALLAMAS Y MATERIAL) ---
+
+    void HandleFlamethrowerEffects()
+    {
+        // Solo si es lanzallamas y tenemos las partículas
+        if (currentWeapon != null && currentWeapon.weaponType == WeaponType.Flamethrower && flamethrowerParticles != null)
+        {
+            // Detectar Inputs (Ignorando cadencia de fuego para visuales fluidas)
+            bool isPointerOverUI = false;
+            if (Cursor.lockState == CursorLockMode.None && EventSystem.current != null)
+            {
+                if (EventSystem.current.IsPointerOverGameObject()) isPointerOverUI = true;
+                if (Input.touchCount > 0 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)) isPointerOverUI = true;
+            }
+
+            // ¿Está apretando el gatillo? (Ratón O Móvil O AutoFire)
+            bool fireInputHeld = (Input.GetMouseButton(0) && !isPointerOverUI) || isMobileFiring || (useAutoFire && IsAimingAtEnemy());
+
+            // Si dispara y tiene munición y no recarga -> Play
+            if (fireInputHeld && !isReloading && currentAmmoInMag > 0)
+            {
+                if (!flamethrowerParticles.isPlaying) flamethrowerParticles.Play();
+            }
+            else
+            {
+                if (flamethrowerParticles.isPlaying) flamethrowerParticles.Stop();
+            }
+        }
+    }
+
+    // --- MÉTODOS PÚBLICOS PARA REFRESCO ---
+    public void RefreshCurrentWeapon()
+    {
+        if (currentWeapon != null)
+        {
+            RefreshWeaponVisuals(currentWeapon);
+        }
+    }
+
+    private void RefreshWeaponVisuals(WeaponData weaponData)
+    {
+        if (currentWeaponModel != null) Destroy(currentWeaponModel);
+        currentWeapon = weaponData;
+        shotTicker = 0;
+        lmgCurrentHeatTime = 0;
+        flamethrowerParticles = null; // Limpiar referencia anterior
+        StopAiming();
+
+        if (currentWeapon == null)
+        {
+            if (crosshairImage != null) crosshairImage.enabled = false;
+            if (ammoText != null) ammoText.text = "";
+            return;
+        }
+
+        if (currentWeapon.weaponModelPrefab != null && weaponHolder != null)
+        {
+            currentWeaponModel = Instantiate(currentWeapon.weaponModelPrefab, weaponHolder);
+
+            // 1. Configurar Muzzle Flash (Luz)
+            Light newMuzzleLight = currentWeaponModel.GetComponentInChildren<Light>();
+            muzzleLight = newMuzzleLight;
+
+            // 2. Configurar Lanzallamas (Partículas)
+            if (currentWeapon.weaponType == WeaponType.Flamethrower)
+            {
+                flamethrowerParticles = currentWeaponModel.GetComponentInChildren<ParticleSystem>();
+                if (flamethrowerParticles != null)
+                {
+                    flamethrowerParticles.Stop(); // Asegurar apagado inicial
+                }
+            }
+
+            // 3. Aplicar Material de Mejora (Pack-a-Punch)
+            if (currentWeapon.isUpgraded && upgradedWeaponMaterial != null)
+            {
+                Renderer[] renderers = currentWeaponModel.GetComponentsInChildren<Renderer>(true);
+                foreach (Renderer r in renderers)
+                {
+                    if (r is MeshRenderer || r is SkinnedMeshRenderer)
+                    {
+                        Material[] newMats = new Material[r.materials.Length];
+                        for (int i = 0; i < newMats.Length; i++) newMats[i] = upgradedWeaponMaterial;
+                        r.materials = newMats;
+                    }
+                }
+            }
+
+            currentWeaponModel.transform.localPosition = Vector3.zero;
+            currentWeaponModel.transform.localRotation = Quaternion.identity;
+            currentWeaponModel.transform.localScale = Vector3.one;
+        }
+
+        LoadAmmoStateForWeapon(currentWeapon);
+        isReloading = false;
+        UpdateAmmoUI();
+        UpdateCrosshair();
+    }
+
+    // --- LÓGICA DE DISPARO ---
+
     void HandleLMGHeat()
     {
         if (currentWeapon == null) return;
-
-        if (currentWeapon.weaponType == WeaponType.LMG && currentWeapon.isUpgraded)
+        if (currentWeapon.weaponType == WeaponType.RPD && currentWeapon.isUpgraded)
         {
             bool isFiring = Input.GetMouseButton(0) || isMobileFiring || (useAutoFire && IsAimingAtEnemy());
 
             if (isFiring && currentAmmoInMag > 0 && !isReloading && !isUltimateActive)
             {
                 lmgCurrentHeatTime += Time.deltaTime;
-                if (lmgCurrentHeatTime > currentWeapon.heatRampUpTime)
-                    lmgCurrentHeatTime = currentWeapon.heatRampUpTime;
+                if (lmgCurrentHeatTime > currentWeapon.heatRampUpTime) lmgCurrentHeatTime = currentWeapon.heatRampUpTime;
             }
             else
             {
@@ -258,25 +364,19 @@ public class PlayerShooting : MonoBehaviour
                 else if (!isUltimateActive) ammoText.color = defaultAmmoColor;
             }
         }
-        else
-        {
-            lmgCurrentHeatTime = 0;
-        }
+        else { lmgCurrentHeatTime = 0; }
     }
 
     float GetCurrentWeaponDamage()
     {
         if (currentWeapon == null) return 0f;
-
         float baseDmg = currentWeapon.damage;
-
-        if (currentWeapon.weaponType == WeaponType.LMG && currentWeapon.isUpgraded)
+        if (currentWeapon.weaponType == WeaponType.RPD && currentWeapon.isUpgraded)
         {
             float heatProgress = lmgCurrentHeatTime / currentWeapon.heatRampUpTime;
             float heatMultiplier = Mathf.Lerp(1.0f, currentWeapon.maxHeatDamageMultiplier, heatProgress);
             baseDmg *= heatMultiplier;
         }
-
         return baseDmg * damageMultiplier;
     }
 
@@ -284,7 +384,6 @@ public class PlayerShooting : MonoBehaviour
     {
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         RaycastHit hit;
-
         if (Physics.Raycast(ray, out hit, currentWeapon.range))
         {
             if (hit.collider.CompareTag("Zombie")) return true;
@@ -298,107 +397,116 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentWeapon == null) return;
 
-        // 1. Detección de UI
         bool isPointerOverUI = false;
         if (Cursor.lockState == CursorLockMode.None)
         {
             if (EventSystem.current != null)
             {
                 if (EventSystem.current.IsPointerOverGameObject()) isPointerOverUI = true;
-                if (Input.touchCount > 0 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
-                    isPointerOverUI = true;
+                if (Input.touchCount > 0 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)) isPointerOverUI = true;
             }
         }
 
-        // 2. Auto-Fire
         bool enemyInSight = false;
-        if (useAutoFire && !isPointerOverUI && !isReloading)
-        {
-            enemyInSight = IsAimingAtEnemy();
-        }
+        if (useAutoFire && !isPointerOverUI && !isReloading) { enemyInSight = IsAimingAtEnemy(); }
 
-        // 3. Inputs
         bool mouseInput = Input.GetMouseButton(0) && !isPointerOverUI;
         bool mouseInputDown = Input.GetMouseButtonDown(0) && !isPointerOverUI;
 
         bool fireInputHeld = mouseInput || isMobileFiring || enemyInSight;
         bool fireInputDownCombined = mouseInputDown;
 
+        // --- SWITCH CON LOS NUEVOS NOMBRES ---
         switch (currentWeapon.weaponType)
         {
-            case WeaponType.Pistol:
-            case WeaponType.Shotgun:
-            case WeaponType.Sniper:
-                // --- CORRECCIÓN AQUÍ ---
-                // Separamos la lógica para asegurar que el Sniper mejorado NO use BurstFire
-                if ((fireInputDownCombined || (enemyInSight && useAutoFire)) && Time.time >= nextFireTime && !isBursting)
-                {
-                    nextFireTime = Time.time + currentWeapon.fireRate;
+            // SEMI-AUTOMÁTICAS
+            case WeaponType.Glock:
+            case WeaponType.Remington:
+            case WeaponType.HuntingShotgun:
+            case WeaponType.L11:
+            case WeaponType.SVU:
+            case WeaponType.Fal:
+            case WeaponType.M14:
 
-                    if (currentWeapon.weaponType == WeaponType.Shotgun)
+                // Excepción: Glock y Fal se vuelven Auto al mejorar
+                bool becomesAuto = currentWeapon.isUpgraded && (currentWeapon.weaponType == WeaponType.Glock || currentWeapon.weaponType == WeaponType.Fal);
+
+                if (becomesAuto)
+                {
+                    if (fireInputHeld && Time.time >= nextFireTime)
                     {
-                        StartCoroutine(ShootShotgunCoroutine());
-                    }
-                    else if (currentWeapon.weaponType == WeaponType.Sniper)
-                    {
-                        StartCoroutine(ShootSniperCoroutine());
-                    }
-                    else if (currentWeapon.isUpgraded && currentWeapon.weaponType == WeaponType.Pistol)
-                    {
-                        // Solo la pistola usa BurstFire al mejorarse
-                        StartCoroutine(BurstFire());
-                    }
-                    else
-                    {
-                        // Disparo normal (Pistola sin mejorar)
+                        nextFireTime = Time.time + currentWeapon.fireRate;
                         Shoot();
+                    }
+                }
+                else // Comportamiento Semi-Auto normal
+                {
+                    if ((fireInputDownCombined || (enemyInSight && useAutoFire)) && Time.time >= nextFireTime && !isBursting)
+                    {
+                        nextFireTime = Time.time + currentWeapon.fireRate;
+
+                        if (currentWeapon.weaponType == WeaponType.Remington || currentWeapon.weaponType == WeaponType.HuntingShotgun)
+                            StartCoroutine(ShootShotgunCoroutine());
+                        else if (currentWeapon.weaponType == WeaponType.L11 || currentWeapon.weaponType == WeaponType.SVU)
+                            StartCoroutine(ShootSniperCoroutine());
+                        else
+                            Shoot();
                     }
                 }
                 break;
 
-            case WeaponType.Rifle:
-            case WeaponType.SMG:
-            case WeaponType.LMG:
+            // FULL AUTOMÁTICAS
+            case WeaponType.AK47:
+            case WeaponType.M4A1:
+            case WeaponType.MTAR:
+            case WeaponType.UZI:
+            case WeaponType.Mp7:
+            case WeaponType.RPD:
+            case WeaponType.AA12:
             case WeaponType.Flamethrower:
                 if (fireInputHeld && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
                     if (currentWeapon.weaponType == WeaponType.Flamethrower) ShootFlamethrower();
+                    else if (currentWeapon.weaponType == WeaponType.AA12) StartCoroutine(ShootShotgunCoroutine());
                     else ShootRifle();
                 }
                 break;
         }
     }
 
-    // --- MÉTODOS PÚBLICOS UI MÓVIL ---
+    // --- MÉTODOS PÚBLICOS MÓVILES ---
     public void SetMobileFiring(bool isFiring) { isMobileFiring = isFiring; }
     public void MobileToggleAim() { isMobileAiming = !isMobileAiming; }
-
     public void MobileFireOnce()
     {
         if (currentWeapon == null) return;
         if (Time.time >= nextFireTime && !isBursting && !isReloading)
         {
-            if (currentWeapon.weaponType == WeaponType.Pistol || currentWeapon.weaponType == WeaponType.Shotgun || currentWeapon.weaponType == WeaponType.Sniper)
+            bool isSemi = (currentWeapon.weaponType == WeaponType.Glock && !currentWeapon.isUpgraded) ||
+                          (currentWeapon.weaponType == WeaponType.Fal && !currentWeapon.isUpgraded) ||
+                          currentWeapon.weaponType == WeaponType.Remington ||
+                          currentWeapon.weaponType == WeaponType.HuntingShotgun ||
+                          currentWeapon.weaponType == WeaponType.L11 ||
+                          currentWeapon.weaponType == WeaponType.SVU ||
+                          currentWeapon.weaponType == WeaponType.M14;
+
+            if (isSemi)
             {
                 nextFireTime = Time.time + currentWeapon.fireRate;
-
-                // --- CORRECCIÓN TAMBIÉN AQUÍ ---
-                if (currentWeapon.weaponType == WeaponType.Shotgun) StartCoroutine(ShootShotgunCoroutine());
-                else if (currentWeapon.weaponType == WeaponType.Sniper) StartCoroutine(ShootSniperCoroutine());
-                else if (currentWeapon.isUpgraded && currentWeapon.weaponType == WeaponType.Pistol) StartCoroutine(BurstFire());
+                if (currentWeapon.weaponType == WeaponType.Remington || currentWeapon.weaponType == WeaponType.HuntingShotgun) StartCoroutine(ShootShotgunCoroutine());
+                else if (currentWeapon.weaponType == WeaponType.L11 || currentWeapon.weaponType == WeaponType.SVU) StartCoroutine(ShootSniperCoroutine());
                 else Shoot();
             }
         }
     }
-
     public void MobileReload()
     {
         if (!isReloading && currentAmmoInMag < currentWeapon.magCapacity && totalAmmo > 0)
             StartCoroutine(ReloadCoroutine());
     }
 
-    // --- LÓGICA DE DISPARO INTERNA ---
+    // --- ACCIONES DE DISPARO ---
     void Shoot()
     {
         if (currentAmmoInMag <= 0) { HandleEmptyClip(); return; }
@@ -408,23 +516,7 @@ public class PlayerShooting : MonoBehaviour
         ApplyRecoil();
     }
 
-    IEnumerator BurstFire()
-    {
-        if (isBursting) yield break;
-        isBursting = true;
-        int burstCount = 3;
-        for (int i = 0; i < burstCount; i++)
-        {
-            if (currentAmmoInMag <= 0) { HandleEmptyClip(); break; }
-            FireBaseLogic();
-            Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-            if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range)) HandleHit(hit, GetCurrentWeaponDamage());
-            ApplyRecoil();
-            yield return new WaitForSeconds(currentWeapon.fireRate);
-        }
-        yield return new WaitForSeconds(0.1f);
-        isBursting = false;
-    }
+    IEnumerator BurstFire() { if (isBursting) yield break; isBursting = true; int burstCount = 3; for (int i = 0; i < burstCount; i++) { if (currentAmmoInMag <= 0) { HandleEmptyClip(); break; } FireBaseLogic(); Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward); if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range)) HandleHit(hit, GetCurrentWeaponDamage()); ApplyRecoil(); yield return new WaitForSeconds(currentWeapon.fireRate); } yield return new WaitForSeconds(0.1f); isBursting = false; }
 
     void ShootRifle()
     {
@@ -485,7 +577,8 @@ public class PlayerShooting : MonoBehaviour
     void ShootFlamethrower()
     {
         PlaySound(currentWeapon.shootSound);
-        StartCoroutine(MuzzleFlashRoutine());
+        // StartCoroutine(MuzzleFlashRoutine()); // COMENTADO para evitar parpadeo de luz, usamos partículas
+
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         RaycastHit[] hits = Physics.SphereCastAll(ray.origin, currentWeapon.flameRadius, ray.direction, currentWeapon.range, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
         HashSet<ZombieController> burnedZombies = new HashSet<ZombieController>();
@@ -512,10 +605,20 @@ public class PlayerShooting : MonoBehaviour
 
             if (hitbox != null) zombieHealth.TakeDamage(damage, hitbox.hitboxType); else zombieHealth.TakeDamage(damage);
 
+            // --- EFECTOS ESPECIALES ---
+            if (currentWeapon.causesSlow) zombieHealth.ApplySlow(currentWeapon.slowAmount, currentWeapon.slowDuration);
+            if (currentWeapon.causesKnockback)
+            {
+                Vector3 pushDirection = (zombieHealth.transform.position - transform.position).normalized;
+                pushDirection.y = 0;
+                zombieHealth.ApplyKnockback(pushDirection, currentWeapon.knockbackForce);
+            }
+
             if (zombieHealth.GetHP() <= 0)
             {
                 ShowFloatingScore(hit.point, pointsPerKillDisplay);
-                if (currentWeapon.weaponType == WeaponType.SMG && currentWeapon.isUpgraded)
+                // Efecto Vampiro
+                if ((currentWeapon.weaponType == WeaponType.UZI || currentWeapon.weaponType == WeaponType.Mp7) && currentWeapon.isUpgraded)
                 {
                     if (currentAmmoInMag < currentWeapon.magCapacity)
                     {
@@ -546,7 +649,7 @@ public class PlayerShooting : MonoBehaviour
         PlaySound(currentWeapon.shootSound);
         currentAmmoInMag--;
         UpdateAmmoUI();
-        StartCoroutine(MuzzleFlashRoutine());
+        if (currentWeapon.weaponType != WeaponType.Flamethrower) StartCoroutine(MuzzleFlashRoutine());
     }
 
     void HandleEmptyClip()
@@ -597,7 +700,9 @@ public class PlayerShooting : MonoBehaviour
             else
             {
                 ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
-                if (currentWeapon.weaponType != WeaponType.LMG || !currentWeapon.isUpgraded) ammoText.color = (currentAmmoInMag == 0 && totalAmmo == 0) ? Color.red : defaultAmmoColor;
+                if (currentWeapon.weaponType == WeaponType.RPD && currentWeapon.isUpgraded) { }
+                else if (currentAmmoInMag == 0 && totalAmmo == 0) ammoText.color = Color.red;
+                else ammoText.color = defaultAmmoColor;
             }
         }
         else { ammoText.text = ""; ammoText.color = defaultAmmoColor; }
@@ -645,13 +750,21 @@ public class PlayerShooting : MonoBehaviour
         int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
         float waitTime = Mathf.Max(0, reloadTime - animTime * 2f);
 
-        if (currentWeapon.weaponType == WeaponType.Shotgun && ammoToLoad > 0)
+        if (currentWeapon.weaponType == WeaponType.Remington || currentWeapon.weaponType == WeaponType.HuntingShotgun || currentWeapon.weaponType == WeaponType.AA12)
         {
-            float timePerBullet = (waitTime > 0 && ammoToLoad > 0) ? waitTime / ammoToLoad : 0;
-            for (int i = 0; i < ammoToLoad; i++)
+            if (currentWeapon.weaponType == WeaponType.AA12)
             {
-                if (timePerBullet > 0) yield return new WaitForSeconds(timePerBullet);
-                currentAmmoInMag++; totalAmmo--; UpdateAmmoUI();
+                if (waitTime > 0) yield return new WaitForSeconds(waitTime);
+                currentAmmoInMag += ammoToLoad; totalAmmo -= ammoToLoad;
+            }
+            else
+            {
+                float timePerBullet = (waitTime > 0 && ammoToLoad > 0) ? waitTime / ammoToLoad : 0;
+                for (int i = 0; i < ammoToLoad; i++)
+                {
+                    if (timePerBullet > 0) yield return new WaitForSeconds(timePerBullet);
+                    currentAmmoInMag++; totalAmmo--; UpdateAmmoUI();
+                }
             }
         }
         else
@@ -662,7 +775,7 @@ public class PlayerShooting : MonoBehaviour
 
         t = 0;
         while (t < 1f) { t += Time.deltaTime * reloadAnimSpeed; weaponHolder.localRotation = Quaternion.Lerp(Quaternion.Euler(reloadRotation), Quaternion.Euler(weaponInitialLocalRot), t); yield return null; }
-        isReloading = false; if (currentWeapon.weaponType != WeaponType.Shotgun) UpdateAmmoUI();
+        isReloading = false; UpdateAmmoUI();
     }
 
     void HandleAiming()
@@ -704,7 +817,7 @@ public class PlayerShooting : MonoBehaviour
         UpdateCrosshair();
     }
 
-    // --- MÉTODOS DE APOYO (Inventario y Cuchillo) ---
+    // --- MÉTODOS DE APOYO Y UTILIDADES ---
 
     void HandleMeleeInput()
     {
@@ -829,9 +942,30 @@ public class PlayerShooting : MonoBehaviour
         if (ultimateKillCountText != null) ultimateKillCountText.text = ultimateIsReady ? $"LISTO" : $"{currentKillsCount}/{requiredKills}";
     }
 
-    public void UpdateCollectibleDisplay() { if (collectibleCountText == null) return; collectibleCountText.text = $"{collectiblesFoundCount} / {totalCollectiblesRequired}"; if (displayCollectibleCoroutine != null) StopCoroutine(displayCollectibleCoroutine); displayCollectibleCoroutine = StartCoroutine(DisplayCollectibleRoutine()); }
-    private IEnumerator DisplayCollectibleRoutine() { if (collectibleCountText != null) collectibleCountText.gameObject.SetActive(true); yield return new WaitForSeconds(collectibleDisplayTime); if (collectibleCountText != null) collectibleCountText.gameObject.SetActive(false); displayCollectibleCoroutine = null; }
-    private IEnumerator DisplayUnlockMessageRoutine() { string key = ultimateKey.ToString(); unlockMessageText.text = $"¡Has desbloqueado el arma especial! Pulsa [{key}] para utilizarla"; unlockMessageText.gameObject.SetActive(true); yield return new WaitForSeconds(messageDisplayDuration); unlockMessageText.gameObject.SetActive(false); }
+    public void UpdateCollectibleDisplay()
+    {
+        if (collectibleCountText == null) return;
+        collectibleCountText.text = $"{collectiblesFoundCount} / {totalCollectiblesRequired}";
+        if (displayCollectibleCoroutine != null) StopCoroutine(displayCollectibleCoroutine);
+        displayCollectibleCoroutine = StartCoroutine(DisplayCollectibleRoutine());
+    }
+
+    private IEnumerator DisplayCollectibleRoutine()
+    {
+        if (collectibleCountText != null) collectibleCountText.gameObject.SetActive(true);
+        yield return new WaitForSeconds(collectibleDisplayTime);
+        if (collectibleCountText != null) collectibleCountText.gameObject.SetActive(false);
+        displayCollectibleCoroutine = null;
+    }
+
+    private IEnumerator DisplayUnlockMessageRoutine()
+    {
+        string key = ultimateKey.ToString();
+        unlockMessageText.text = $"¡Has desbloqueado el arma especial! Pulsa [{key}] para utilizarla";
+        unlockMessageText.gameObject.SetActive(true);
+        yield return new WaitForSeconds(messageDisplayDuration);
+        unlockMessageText.gameObject.SetActive(false);
+    }
 
     public bool DropCurrentWeapon(out WeaponData dataToDrop, out GameObject modelToDrop)
     {
@@ -852,38 +986,125 @@ public class PlayerShooting : MonoBehaviour
         isWeaponDropped = false;
     }
 
-    public void EquipWeapon(WeaponData newWeapon)
+    public int GetWeaponTypeInSlot(int slotIndex)
     {
-        if (newWeapon == null) return;
+        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return -1;
+        if (weaponSlots[slotIndex] != null) return (int)weaponSlots[slotIndex].weaponType;
+        return -1;
+    }
+
+    public int GetCurrentSlotIndex()
+    {
+        return currentSlotIndex;
+    }
+
+    public void ForceWeaponToSlot(int slotIndex, WeaponData weapon)
+    {
+        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
+        weaponSlots[slotIndex] = weapon;
+        if (slotIndex == currentSlotIndex) RefreshWeaponVisuals(weaponSlots[slotIndex]);
+    }
+
+    public void SelectSlot(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
         SaveCurrentAmmoState();
-        if (weaponSlots[0] == null) { weaponSlots[0] = newWeapon; currentSlotIndex = 0; }
-        else if (weaponSlots[1] == null) { weaponSlots[1] = newWeapon; currentSlotIndex = 1; }
-        else { weaponSlots[currentSlotIndex] = newWeapon; }
+        currentSlotIndex = slotIndex;
         RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
     }
 
-    private void RefreshWeaponVisuals(WeaponData weaponData)
+    public void ClearInventory()
     {
+        weaponSlots[0] = null;
+        weaponSlots[1] = null;
         if (currentWeaponModel != null) Destroy(currentWeaponModel);
-        currentWeapon = weaponData; shotTicker = 0; lmgCurrentHeatTime = 0; StopAiming();
-        if (currentWeapon == null) { if (crosshairImage != null) crosshairImage.enabled = false; if (ammoText != null) ammoText.text = ""; return; }
-        if (currentWeapon.weaponModelPrefab != null && weaponHolder != null)
-        {
-            currentWeaponModel = Instantiate(currentWeapon.weaponModelPrefab, weaponHolder);
-            currentWeaponModel.transform.localPosition = Vector3.zero; currentWeaponModel.transform.localRotation = Quaternion.identity; currentWeaponModel.transform.localScale = Vector3.one;
-            Light newMuzzleLight = currentWeaponModel.GetComponentInChildren<Light>(); muzzleLight = newMuzzleLight;
-        }
-        LoadAmmoStateForWeapon(currentWeapon); isReloading = false; UpdateAmmoUI(); UpdateCrosshair();
+        currentWeapon = null;
     }
 
-    public int GetWeaponTypeInSlot(int slotIndex) { if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return -1; if (weaponSlots[slotIndex] != null) return (int)weaponSlots[slotIndex].weaponType; return -1; }
-    public int GetCurrentSlotIndex() { return currentSlotIndex; }
-    public void ForceWeaponToSlot(int slotIndex, WeaponData weapon) { if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return; weaponSlots[slotIndex] = weapon; if (slotIndex == currentSlotIndex) RefreshWeaponVisuals(weaponSlots[slotIndex]); }
-    public void SelectSlot(int slotIndex) { if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return; SaveCurrentAmmoState(); currentSlotIndex = slotIndex; RefreshWeaponVisuals(weaponSlots[currentSlotIndex]); }
-    public void ClearInventory() { weaponSlots[0] = null; weaponSlots[1] = null; if (currentWeaponModel != null) Destroy(currentWeaponModel); currentWeapon = null; }
-    private void SaveCurrentAmmoState() { if (currentWeapon != null && !isUltimateActive) { ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag; totalAmmoCache[currentWeapon.weaponType] = totalAmmo; } }
-    private void LoadAmmoStateForWeapon(WeaponData weapon) { if (ammoInMagCache.ContainsKey(weapon.weaponType)) { currentAmmoInMag = ammoInMagCache[weapon.weaponType]; totalAmmo = totalAmmoCache[weapon.weaponType]; } else { currentAmmoInMag = weapon.magCapacity; totalAmmo = weapon.maxAmmo - currentWeapon.magCapacity; ammoInMagCache[weapon.weaponType] = currentAmmoInMag; totalAmmoCache[weapon.weaponType] = totalAmmo; } }
-    public void ForceCurrentWeaponAmmoToFull() { if (currentWeapon == null) return; currentAmmoInMag = currentWeapon.magCapacity; totalAmmo = currentWeapon.maxAmmo - currentWeapon.magCapacity; SaveCurrentAmmoState(); UpdateAmmoUI(); }
-    public bool IsAmmoFull(WeaponData weaponData) { if (weaponData == null) return true; int currentMag = 0; int currentTotal = 0; if (currentWeapon != null && weaponData.weaponType == currentWeapon.weaponType) { currentMag = currentAmmoInMag; currentTotal = totalAmmo; } else if (ammoInMagCache.ContainsKey(weaponData.weaponType)) { currentMag = ammoInMagCache[weaponData.weaponType]; currentTotal = totalAmmoCache[weaponData.weaponType]; } else return false; int maxMag = weaponData.magCapacity; int maxTotal = weaponData.maxAmmo - weaponData.magCapacity; return currentMag >= maxMag && currentTotal >= maxTotal; }
-    public WeaponType GetEquippedWeaponType() { if (currentWeapon != null) return currentWeapon.weaponType; return (WeaponType)(-1); }
+    private void SaveCurrentAmmoState()
+    {
+        if (currentWeapon != null && !isUltimateActive)
+        {
+            ammoInMagCache[currentWeapon.weaponType] = currentAmmoInMag;
+            totalAmmoCache[currentWeapon.weaponType] = totalAmmo;
+        }
+    }
+
+    private void LoadAmmoStateForWeapon(WeaponData weapon)
+    {
+        if (ammoInMagCache.ContainsKey(weapon.weaponType))
+        {
+            currentAmmoInMag = ammoInMagCache[weapon.weaponType];
+            totalAmmo = totalAmmoCache[weapon.weaponType];
+        }
+        else
+        {
+            currentAmmoInMag = weapon.magCapacity;
+            totalAmmo = weapon.maxAmmo - currentWeapon.magCapacity;
+            ammoInMagCache[weapon.weaponType] = currentAmmoInMag;
+            totalAmmoCache[weapon.weaponType] = totalAmmo;
+        }
+    }
+
+    public void ForceCurrentWeaponAmmoToFull()
+    {
+        if (currentWeapon == null) return;
+        currentAmmoInMag = currentWeapon.magCapacity;
+        totalAmmo = currentWeapon.maxAmmo - currentWeapon.magCapacity;
+        SaveCurrentAmmoState();
+        UpdateAmmoUI();
+    }
+
+    public bool IsAmmoFull(WeaponData weaponData)
+    {
+        if (weaponData == null) return true;
+        int currentMag = 0;
+        int currentTotal = 0;
+
+        if (currentWeapon != null && weaponData.weaponType == currentWeapon.weaponType)
+        {
+            currentMag = currentAmmoInMag;
+            currentTotal = totalAmmo;
+        }
+        else if (ammoInMagCache.ContainsKey(weaponData.weaponType))
+        {
+            currentMag = ammoInMagCache[weaponData.weaponType];
+            currentTotal = totalAmmoCache[weaponData.weaponType];
+        }
+        else return false;
+
+        int maxMag = weaponData.magCapacity;
+        int maxTotal = weaponData.maxAmmo - weaponData.magCapacity;
+        return currentMag >= maxMag && currentTotal >= maxTotal;
+    }
+
+    public WeaponType GetEquippedWeaponType()
+    {
+        if (currentWeapon != null) return currentWeapon.weaponType;
+        return (WeaponType)(-1);
+    }
+
+    public void EquipWeapon(WeaponData newWeapon)
+    {
+        if (newWeapon == null) return;
+
+        SaveCurrentAmmoState();
+
+        if (weaponSlots[0] == null)
+        {
+            weaponSlots[0] = newWeapon;
+            currentSlotIndex = 0;
+        }
+        else if (weaponSlots[1] == null)
+        {
+            weaponSlots[1] = newWeapon;
+            currentSlotIndex = 1;
+        }
+        else
+        {
+            weaponSlots[currentSlotIndex] = newWeapon;
+        }
+
+        RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
+    }
 }

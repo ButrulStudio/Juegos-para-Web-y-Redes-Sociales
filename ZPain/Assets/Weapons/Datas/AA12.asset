@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a8d08586d887ca40939c1b07c163a91, type: 3}
   m_Name: AA12
   m_EditorClassIdentifier: 
-  weaponType: 3
+  weaponType: 4
+  canBeUpgraded: 1
   crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: AA12
@@ -22,9 +23,9 @@ MonoBehaviour:
   price: 0
   ammoPrice: 0
   magCapacity: 12
-  maxAmmo: 48
+  maxAmmo: 64
   reloadTime: 3
-  isUpgraded: 1
+  isUpgraded: 0
   upgradeCost: 100
   weaponModelPrefab: {fileID: 1926885309523884527, guid: 128aeed609b0821488834bbd64221eef, type: 3}
   bulletHolePrefab: {fileID: 2212925028312433708, guid: edc92b779abc45d478d8dfeda3fc979a, type: 3}
@@ -34,7 +35,7 @@ MonoBehaviour:
   sniperScopeSprite: {fileID: 0}
   aimPosition: {x: 0.135, y: -0.02, z: 0}
   aimRotation: {x: 10, y: 0, z: 0}
-  pelletCount: 4
+  pelletCount: 8
   spreadAngle: 10
   penetrationCount: 1
   vampireAmmoRestore: 3
@@ -55,3 +56,8 @@ MonoBehaviour:
   pumpActionSound: {fileID: 0}
   flameRadius: 0.5
   requiredKillsForUlt: 20
+  causesSlow: 0
+  slowAmount: 0.5
+  slowDuration: 2
+  causesKnockback: 0
+  knockbackForce: 2

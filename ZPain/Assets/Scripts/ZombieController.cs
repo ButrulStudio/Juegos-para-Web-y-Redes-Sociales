@@ -1,8 +1,7 @@
 ﻿using UnityEngine;
-using UnityEngine.AI; // IMPORTANTE: Necesario para usar NavMeshAgent
+using UnityEngine.AI;
 using System.Collections;
 
-// Esto asegura que si pones el script, Unity te añade el NavMeshAgent automáticamente
 [RequireComponent(typeof(NavMeshAgent))]
 public class ZombieController : MonoBehaviour
 {
@@ -23,10 +22,10 @@ public class ZombieController : MonoBehaviour
     [SerializeField] private float crippledSpeed = 1.5f;
 
     // --- COMPONENTES ---
-    private NavMeshAgent agent; // Sustituye al CharacterController
+    private NavMeshAgent agent;
     private Transform player;
     private Animator animator;
-    private CapsuleCollider physicalCollider; // Para recibir balas
+    private CapsuleCollider physicalCollider;
 
     // --- ESTADO ---
     private float currentHp;
@@ -38,6 +37,10 @@ public class ZombieController : MonoBehaviour
     // --- MANAGERS ---
     private WaveManager waveManager;
     private ScoreManager scoreManager;
+
+    // --- VARIABLES PARA EFECTOS (NUEVO) ---
+    private float originalSpeed;
+    private Coroutine slowCoroutine;
 
     void Start()
     {
@@ -61,20 +64,21 @@ public class ZombieController : MonoBehaviour
         waveManager = FindAnyObjectByType<WaveManager>();
         scoreManager = FindAnyObjectByType<ScoreManager>();
 
-        // 4. Configurar el Agente con los datos del ScriptableObject
+        // 4. Configurar el Agente
         if (zombieData != null)
         {
             agent.speed = zombieData.speed;
             currentHp = zombieData.maxHp;
-
-            // Configuración clave para que pare justo delante del jugador
             agent.stoppingDistance = zombieData.attackRange - 0.2f;
         }
+
+        // Guardamos la velocidad original para poder restaurarla tras efectos de hielo
+        if (agent != null) originalSpeed = agent.speed;
 
         StartCoroutine(AmbientSoundRoutine());
     }
 
-    // Método llamado por el Spawner para configurar stats
+    // --- MÉTODOS DE CONFIGURACIÓN (Llamados por Spawner) ---
     public void ApplyZombieData(ZombieData data)
     {
         zombieData = data;
@@ -82,6 +86,7 @@ public class ZombieController : MonoBehaviour
         if (agent != null)
         {
             agent.speed = data.speed;
+            originalSpeed = data.speed; // Actualizamos la original también
             agent.stoppingDistance = data.attackRange - 0.2f;
         }
     }
@@ -91,19 +96,74 @@ public class ZombieController : MonoBehaviour
         currentHp += extraHealth;
     }
 
+    // --- MÉTODOS DE EFECTOS ESPECIALES (NUEVOS) ---
+
+    // 1. RALENTIZAR (HIELO)
+    public void ApplySlow(float percentage, float duration)
+    {
+        if (isDead) return;
+
+        // Si ya está ralentizado, reiniciamos el contador
+        if (slowCoroutine != null) StopCoroutine(slowCoroutine);
+
+        slowCoroutine = StartCoroutine(SlowRoutine(percentage, duration));
+    }
+
+    private IEnumerator SlowRoutine(float percentage, float duration)
+    {
+        // Aplicar lentitud
+        agent.speed = originalSpeed * percentage;
+
+        yield return new WaitForSeconds(duration);
+
+        // Restaurar velocidad (teniendo en cuenta si está lisiado)
+        if (!isCrippled)
+        {
+            agent.speed = originalSpeed;
+        }
+        else
+        {
+            agent.speed = crippledSpeed;
+        }
+        slowCoroutine = null;
+    }
+
+    // 2. EMPUJE (KNOCKBACK)
+    public void ApplyKnockback(Vector3 direction, float force)
+    {
+        if (isDead || agent == null) return;
+
+        // Calculamos posición destino
+        Vector3 targetPos = transform.position + (direction * force);
+
+        // Movemos el agente en el NavMesh
+        agent.Warp(targetPos);
+
+        // Breve aturdimiento
+        if (!isAttacking)
+        {
+            agent.velocity = Vector3.zero;
+            agent.isStopped = true;
+            Invoke("ResumeAgent", 0.5f);
+        }
+    }
+
+    private void ResumeAgent()
+    {
+        if (!isDead && agent != null) agent.isStopped = false;
+    }
+
+    // --- BUCLE PRINCIPAL ---
     void Update()
     {
-        // Si está muerto, atacando o no hay jugador, no calculamos movimiento
         if (isDead || player == null) return;
 
-        // Si está atacando, aseguramos que el agente esté quieto y salimos
         if (isAttacking)
         {
             if (!agent.isStopped) agent.isStopped = true;
             return;
         }
 
-        // Calculamos distancia real física
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
         if (distanceToPlayer <= zombieData.attackRange)
@@ -118,37 +178,27 @@ public class ZombieController : MonoBehaviour
 
     private void ChasePlayer()
     {
-        // Reactivamos el agente si estaba parado
         if (agent.isStopped) agent.isStopped = false;
-
-        // --- LA LÍNEA MÁGICA: El NavMesh calcula todo ---
         agent.SetDestination(player.position);
 
-        // Sincronizar animación con la velocidad real del agente
-        // velocity.magnitude nos dice si realmente se está moviendo (por si se atasca)
         bool isMoving = agent.velocity.magnitude > 0.1f;
         animator.SetBool("isWalking", isMoving);
     }
 
     private void StopAndAttack()
     {
-        // 1. Frenar en seco
         agent.isStopped = true;
         agent.velocity = Vector3.zero;
         animator.SetBool("isWalking", false);
 
-        // 2. Rotación Manual: 
-        // El NavMesh no rota bien cuando está parado (isStopped), así que lo rotamos nosotros
-        // para que mire al jugador mientras le pega.
         Vector3 directionToPlayer = (player.position - transform.position).normalized;
-        directionToPlayer.y = 0; // Ignorar altura para no inclinar al zombie
+        directionToPlayer.y = 0;
         if (directionToPlayer != Vector3.zero)
         {
             Quaternion lookRotation = Quaternion.LookRotation(directionToPlayer);
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 5f);
         }
 
-        // 3. Comprobar Cooldown y Atacar
         if (Time.time - lastAttackTime >= zombieData.attackCooldown)
         {
             StartCoroutine(AttackRoutine());
@@ -157,25 +207,21 @@ public class ZombieController : MonoBehaviour
 
     private IEnumerator AttackRoutine()
     {
-        isAttacking = true; // Bloquea el movimiento en Update
+        isAttacking = true;
         lastAttackTime = Time.time;
 
         animator.SetTrigger("Attack");
 
-        // Sonido de ataque
         if (audioSource != null && attackSounds != null && attackSounds.Length > 0)
         {
             audioSource.PlayOneShot(attackSounds[Random.Range(0, attackSounds.Length)]);
         }
 
-        // Esperar al momento del impacto (ajusta este 0.9f a tu animación exacta)
         yield return new WaitForSeconds(0.9f);
 
-        // Verificar si el jugador sigue cerca y vivo
         if (player != null)
         {
             float distance = Vector3.Distance(transform.position, player.position);
-            // Damos un pequeño margen extra (0.5f) por si el jugador se movió un poco hacia atrás
             if (distance <= zombieData.attackRange + 0.5f)
             {
                 PlayerHealth ph = player.GetComponent<PlayerHealth>();
@@ -183,14 +229,11 @@ public class ZombieController : MonoBehaviour
             }
         }
 
-        // Esperar a que termine la animación
-        // Asumiendo que la animación dura unos 2.3 segundos en total
-        float animationDuration = 2.3f;
-        yield return new WaitForSeconds(animationDuration - 0.9f);
-
-        isAttacking = false; // Desbloquea el Update para que vuelva a perseguir
+        yield return new WaitForSeconds(1.4f); // Ajustar según duración de animación
+        isAttacking = false;
     }
 
+    // --- SISTEMA DE DAÑO ---
     public void TakeDamage(float amount, EHitboxType partHit)
     {
         if (isDead) return;
@@ -200,15 +243,15 @@ public class ZombieController : MonoBehaviour
         switch (partHit)
         {
             case EHitboxType.Head:
-                finalDamage *= 2.0f; // Doble daño
+                finalDamage *= 2.0f;
                 break;
 
             case EHitboxType.Legs:
-                // Lógica de lisiado usando NavMeshAgent
                 if (!isCrippled)
                 {
                     isCrippled = true;
-                    agent.speed = crippledSpeed; // <-- Modificamos la velocidad del NavMesh
+                    agent.speed = crippledSpeed;
+                    originalSpeed = crippledSpeed; // Actualizamos la base para que el slow funcione bien
                 }
                 break;
         }
@@ -221,7 +264,6 @@ public class ZombieController : MonoBehaviour
         }
     }
 
-    // Sobrecarga por si se llama sin hitbox específica
     public void TakeDamage(float amount)
     {
         TakeDamage(amount, EHitboxType.Body);
@@ -245,26 +287,11 @@ public class ZombieController : MonoBehaviour
         if (scoreManager != null) scoreManager.ZombieKilled();
         if (waveManager != null) waveManager.ZombieDied();
 
-        
+        // Notificar al PlayerShooting para cargar el Ultimate
         PlayerShooting ps = null;
-        if (player != null)
-        {
-            ps = player.GetComponent<PlayerShooting>();
-        }
-
-        if (ps == null)
-        {
-            ps = FindAnyObjectByType<PlayerShooting>();
-        }
-
-        if (ps != null)
-        {
-            ps.RegisterZombieKill();
-        }
-        else
-        {
-            Debug.LogError("[ERROR CRÍTICO] El Zombi murió pero NO ENCONTRÓ el script 'PlayerShooting' en la escena.");
-        }
+        if (player != null) ps = player.GetComponent<PlayerShooting>();
+        if (ps == null) ps = FindAnyObjectByType<PlayerShooting>();
+        if (ps != null) ps.RegisterZombieKill();
 
         Destroy(gameObject, 2.8f);
     }

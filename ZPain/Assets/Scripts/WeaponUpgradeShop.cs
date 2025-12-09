@@ -6,43 +6,7 @@ public class WeaponUpgradeShop : MonoBehaviour
     [Header("Detección e interacción")]
     public float interactionDistance = 3f;
     public KeyCode interactionKey = KeyCode.E;
-
-    [Header("UI del mensaje")]
     public TextMeshProUGUI interactionText;
-
-    [Header("Valores de mejora (Mecánicas Base)")]
-    [SerializeField] private int shotgunUpgradePellets = 8;
-    [SerializeField] private float rifleUpgradeFireRate = 0.08f;
-    [SerializeField] private float pistolBurstFireRate = 0.1f;
-    [SerializeField] private int sniperUpgradePenetration = 3;
-   
-    [Header("Valores de mejora (Nuevas Clases)")]
-    [Tooltip("Balas que recupera el SMG por muerte al mejorarse")]
-    [SerializeField] private int smgUpgradeVampireAmmo = 3;
-    [Tooltip("Multiplicador de daño máximo para la LMG al calentarse")]
-    [SerializeField] private float lmgUpgradeMaxHeatMult = 2.5f;
-
-    [Header("Valores de mejora (Munición: Cargador / Total)")]
-    [SerializeField] private int pistolUpgradedMag = 20;
-    [SerializeField] private int pistolUpgradedMaxAmmo = 120;
-
-    [SerializeField] private int rifleUpgradedMag = 45;
-    [SerializeField] private int rifleUpgradedMaxAmmo = 270;
-
-    [SerializeField] private int shotgunUpgradedMag = 12;
-    [SerializeField] private int shotgunUpgradedMaxAmmo = 64;
-
-    [SerializeField] private int sniperUpgradedMag = 10;
-    [SerializeField] private int sniperUpgradedMaxAmmo = 50;
-
-    // --- NUEVO: Munición para SMG y LMG ---
-    [Header("Munición Mejorada (Nuevas Clases)")]
-    [SerializeField] private int smgUpgradedMag = 50;
-    [SerializeField] private int smgUpgradedMaxAmmo = 300;
-
-    [SerializeField] private int lmgUpgradedMag = 100;
-    [SerializeField] private int lmgUpgradedMaxAmmo = 400;
-    // --------------------------------------
 
     private Camera playerCamera;
     private PlayerShooting playerShooting;
@@ -52,9 +16,7 @@ public class WeaponUpgradeShop : MonoBehaviour
     {
         playerCamera = Camera.main;
         playerShooting = FindAnyObjectByType<PlayerShooting>();
-
-        if (interactionText != null)
-            interactionText.gameObject.SetActive(false);
+        if (interactionText != null) interactionText.gameObject.SetActive(false);
     }
 
     void Update()
@@ -73,11 +35,7 @@ public class WeaponUpgradeShop : MonoBehaviour
             {
                 playerLooking = true;
                 ShowInteractionMessage();
-
-                if (Input.GetKeyDown(interactionKey))
-                {
-                    TryUpgrade();
-                }
+                if (Input.GetKeyDown(interactionKey)) TryUpgrade();
                 return;
             }
         }
@@ -85,17 +43,23 @@ public class WeaponUpgradeShop : MonoBehaviour
         if (playerLooking)
         {
             playerLooking = false;
-            if (interactionText != null)
-                interactionText.gameObject.SetActive(false);
+            if (interactionText != null) interactionText.gameObject.SetActive(false);
         }
     }
 
     void ShowInteractionMessage()
     {
-        if (interactionText == null || playerShooting == null || playerShooting.currentWeapon == null)
-            return;
+        if (interactionText == null || playerShooting == null || playerShooting.currentWeapon == null) return;
 
         WeaponData weapon = playerShooting.currentWeapon;
+
+        // Si el arma no se puede mejorar (Lanzallamas), ocultamos el texto
+        if (!weapon.canBeUpgraded)
+        {
+            interactionText.gameObject.SetActive(false);
+            return;
+        }
+
         interactionText.gameObject.SetActive(true);
 
         if (weapon.isUpgraded)
@@ -112,11 +76,8 @@ public class WeaponUpgradeShop : MonoBehaviour
     {
         WeaponData weapon = playerShooting.currentWeapon;
 
-        if (weapon.isUpgraded)
-        {
-            interactionText.text = $"Ya tienes mejorada la {weapon.weaponName}";
-            return;
-        }
+        if (!weapon.canBeUpgraded) return;
+        if (weapon.isUpgraded) return;
 
         if (!ScoreManager.Instance.TrySpendPoints(weapon.upgradeCost))
         {
@@ -124,59 +85,119 @@ public class WeaponUpgradeShop : MonoBehaviour
             return;
         }
 
-        // Aplicar lógica según el tipo de arma
+        // --- APLICAR MEJORA ESPECÍFICA POR ARMA ---
+        weapon.isUpgraded = true;
+
         switch (weapon.weaponType)
         {
-            case WeaponType.Pistol:
-                weapon.isUpgraded = true;
-                weapon.fireRate = pistolBurstFireRate;
-                weapon.magCapacity = pistolUpgradedMag;
-                weapon.maxAmmo = pistolUpgradedMaxAmmo;
+            // --- PISTOLAS ---
+            case WeaponType.Glock:
+                // Se convierte en Glock-18 (Automática y cargador ampliado)
+                weapon.magCapacity = 33;
+                weapon.maxAmmo = 200;
+                weapon.fireRate = 0.09f;
                 break;
 
-            case WeaponType.Rifle:
-                weapon.isUpgraded = true;
-                weapon.fireRate = rifleUpgradeFireRate;
-                weapon.magCapacity = rifleUpgradedMag;
-                weapon.maxAmmo = rifleUpgradedMaxAmmo;
+            // --- ESCOPETAS ---
+            case WeaponType.Remington:
+                // Mejora táctica: Recarga rápida y más perdigones
+                weapon.magCapacity = 12;
+                weapon.maxAmmo = 64;
+                weapon.reloadTime = 0.5f;
+                weapon.pelletCount = 10;
                 break;
 
-            case WeaponType.Shotgun:
-                weapon.isUpgraded = true;
-                weapon.pelletCount = shotgunUpgradePellets;
-                weapon.magCapacity = shotgunUpgradedMag;
-                weapon.maxAmmo = shotgunUpgradedMaxAmmo;
+            case WeaponType.HuntingShotgun:
+                // "Super Shotgun": 4 cartuchos y daño masivo + empuje
+                weapon.magCapacity = 4;
+                weapon.maxAmmo = 40;
+                weapon.damage = 80;
+                weapon.causesKnockback = true;
+                weapon.knockbackForce = 5f;
                 break;
 
-            case WeaponType.Sniper:
-                weapon.isUpgraded = true;
-                weapon.penetrationCount = sniperUpgradePenetration;
-                weapon.magCapacity = sniperUpgradedMag;
-                weapon.maxAmmo = sniperUpgradedMaxAmmo;
+            case WeaponType.AA12:
+                // Tambor grande y fuego automático
+                weapon.magCapacity = 20;
+                weapon.maxAmmo = 120;
+                weapon.fireRate = 0.15f;
                 break;
 
-            case WeaponType.SMG:
-                weapon.isUpgraded = true;
-                weapon.vampireAmmoRestore = smgUpgradeVampireAmmo;
-                weapon.magCapacity = smgUpgradedMag;
-                weapon.maxAmmo = smgUpgradedMaxAmmo;
-                Debug.Log("SMG Mejorada: Vampirismo activado.");
+            // --- RIFLES ---
+            case WeaponType.AK47:
+                weapon.magCapacity = 60;
+                weapon.maxAmmo = 360;
+                weapon.damage = 70;
+                weapon.fireRate = 0.1f;
                 break;
 
-            case WeaponType.LMG:
-                weapon.isUpgraded = true;
-                // Activamos el daño por calor
-                weapon.maxHeatDamageMultiplier = lmgUpgradeMaxHeatMult;
-                weapon.magCapacity = lmgUpgradedMag;
-                weapon.maxAmmo = lmgUpgradedMaxAmmo;
-                Debug.Log("LMG Mejorada: Daño progresivo activado.");
+            case WeaponType.M4A1:
+                weapon.magCapacity = 60;
+                weapon.maxAmmo = 360;
+                weapon.fireRate = 0.07f; // Cadencia extrema
+                weapon.recoilVerticalMax = 0.5f; // Sin retroceso
                 break;
-                // ----------------------------------------------
+
+            case WeaponType.MTAR:
+                weapon.magCapacity = 120;
+                weapon.maxAmmo = 480;
+                weapon.reloadTime = 2.0f;
+                weapon.damage = 55;
+                break;
+
+            case WeaponType.Fal:
+                // Se vuelve automática
+                weapon.magCapacity = 30;
+                weapon.maxAmmo = 240;
+                weapon.fireRate = 0.1f;
+                break;
+
+            case WeaponType.M14:
+                weapon.magCapacity = 25;
+                weapon.maxAmmo = 150;
+                weapon.damage = 150;
+                break;
+
+            // --- SMGS ---
+            case WeaponType.UZI:
+                weapon.magCapacity = 64;
+                weapon.maxAmmo = 320;
+                weapon.vampireAmmoRestore = 3;
+                break;
+
+            case WeaponType.Mp7:
+                weapon.magCapacity = 80;
+                weapon.maxAmmo = 400;
+                weapon.reloadTime = 0.8f;
+                weapon.vampireAmmoRestore = 5;
+                break;
+
+            // --- LMG ---
+            case WeaponType.RPD:
+                weapon.magCapacity = 150;
+                weapon.maxAmmo = 600;
+                weapon.maxHeatDamageMultiplier = 3.0f; // x3 daño al calentar
+                break;
+
+            // --- SNIPERS ---
+            case WeaponType.L11:
+                weapon.magCapacity = 10;
+                weapon.maxAmmo = 50;
+                weapon.damage = 2000;
+                weapon.penetrationCount = 10;
+                break;
+
+            case WeaponType.SVU:
+                weapon.magCapacity = 20;
+                weapon.maxAmmo = 100;
+                weapon.fireRate = 0.2f;
+                weapon.penetrationCount = 3;
+                break;
         }
 
-        // Rellenar la munición cuando se mejoran las armas
         playerShooting.ForceCurrentWeaponAmmoToFull();
+        playerShooting.RefreshCurrentWeapon();
 
-        interactionText.text = $"{weapon.weaponName} mejorada correctamente!";
+        interactionText.text = $"¡{weapon.weaponName} mejorada!";
     }
 }

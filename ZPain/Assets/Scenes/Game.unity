@@ -1204,6 +1204,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 924b271810d4fdd4dbbf453dc26e24ca, type: 3}
       insertIndex: -1
       addedObject: {fileID: 508694670}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 924b271810d4fdd4dbbf453dc26e24ca, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 508694677}
     - targetCorrespondingSourceObject: {fileID: -7987224288202356970, guid: 924b271810d4fdd4dbbf453dc26e24ca, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2104869797}
@@ -14213,6 +14216,9 @@ MonoBehaviour:
   interactionText: {fileID: 1266063090}
   spinDuration: 4
   rotationSpeed: -800
+  audioSource: {fileID: 0}
+  spinSound: {fileID: 0}
+  weaponReadySound: {fileID: 0}
 --- !u!64 &508694671
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -14240,6 +14246,103 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 924b271810d4fdd4dbbf453dc26e24ca, type: 3}
   m_PrefabInstance: {fileID: 49259791}
   m_PrefabAsset: {fileID: 0}
+--- !u!82 &508694677
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 508694669}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!4 &514240715 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4321837042303858553, guid: f8d52cb8e7a3334498c18510c9209e0c, type: 3}
@@ -42419,7 +42522,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   simulateMobileInEditor: 1
-  startingWeaponAsset: {fileID: 11400000, guid: 8a08febee773fbf439c314d105b5a1fb, type: 2}
+  startingWeaponAsset: {fileID: 11400000, guid: 6b24712bf09a51f40826b6e79f00b6d1, type: 2}
   mobilePauseButtonHUD: {fileID: 3362048608129399327}
   gameOverPanel: {fileID: 41855792}
   pausePanel: {fileID: 1907354074}
@@ -49749,24 +49852,6 @@ MonoBehaviour:
   interactionDistance: 3
   interactionKey: 101
   interactionText: {fileID: 718913011}
-  shotgunUpgradePellets: 8
-  rifleUpgradeFireRate: 0.08
-  pistolBurstFireRate: 0.1
-  sniperUpgradePenetration: 3
-  smgUpgradeVampireAmmo: 3
-  lmgUpgradeMaxHeatMult: 2.5
-  pistolUpgradedMag: 20
-  pistolUpgradedMaxAmmo: 120
-  rifleUpgradedMag: 45
-  rifleUpgradedMaxAmmo: 270
-  shotgunUpgradedMag: 12
-  shotgunUpgradedMaxAmmo: 64
-  sniperUpgradedMag: 10
-  sniperUpgradedMaxAmmo: 50
-  smgUpgradedMag: 50
-  smgUpgradedMaxAmmo: 300
-  lmgUpgradedMag: 100
-  lmgUpgradedMaxAmmo: 400
 --- !u!65 &1703894340
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -52192,24 +52277,6 @@ MonoBehaviour:
   interactionDistance: 3
   interactionKey: 102
   interactionText: {fileID: 718913011}
-  shotgunUpgradePellets: 8
-  rifleUpgradeFireRate: 0.08
-  pistolBurstFireRate: 0.1
-  sniperUpgradePenetration: 3
-  smgUpgradeVampireAmmo: 3
-  lmgUpgradeMaxHeatMult: 2.5
-  pistolUpgradedMag: 20
-  pistolUpgradedMaxAmmo: 120
-  rifleUpgradedMag: 45
-  rifleUpgradedMaxAmmo: 270
-  shotgunUpgradedMag: 12
-  shotgunUpgradedMaxAmmo: 64
-  sniperUpgradedMag: 10
-  sniperUpgradedMaxAmmo: 50
-  smgUpgradedMag: 50
-  smgUpgradedMaxAmmo: 300
-  lmgUpgradedMag: 100
-  lmgUpgradedMaxAmmo: 400
 --- !u!1 &1826139284
 GameObject:
   m_ObjectHideFlags: 0
@@ -52659,6 +52726,7 @@ MonoBehaviour:
   playerCamera: {fileID: 330585545}
   weaponHolder: {fileID: 1377504225}
   cameraController: {fileID: 1726440932}
+  upgradedWeaponMaterial: {fileID: 0}
   ammoText: {fileID: 1666018140}
   crosshairImage: {fileID: 986990805}
   pointsPerHit: 10

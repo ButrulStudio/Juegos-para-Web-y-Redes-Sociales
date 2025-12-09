@@ -1,15 +1,39 @@
+// DEFINICIÓN DE TODAS TUS ARMAS ESPECÍFICAS
 using UnityEngine;
 
 public enum WeaponType
 {
+    // Melee
     Knife,
-    Pistol,
-    Rifle,
-    Shotgun,
-    Sniper,
-    Flamethrower, 
-    SMG,          
-    LMG           
+
+    // Pistolas
+    Glock,
+
+    // Escopetas
+    Remington,      // Corredera
+    HuntingShotgun, // Caza (Doble cañón)
+    AA12,           // Automática
+
+    // Rifles Asalto / Batalla
+    AK47,
+    M4A1,
+    MTAR,
+    Fal,
+    M14,
+
+    // Subfusiles (SMG)
+    UZI,
+    Mp7,
+
+    // Ametralladoras (LMG)
+    RPD,
+
+    // Francotiradores
+    L11,    // Cerrojo
+    SVU,    // Semi-auto
+
+    // Especiales
+    Flamethrower
 }
 
 [CreateAssetMenu(fileName = "NewWeapon", menuName = "Weapons/Weapon Data")]
@@ -17,9 +41,11 @@ public class WeaponData : ScriptableObject
 {
     public WeaponType weaponType;
 
+    [Header("Configuración de Mejora")]
+    public bool canBeUpgraded = true; // DESMARCAR PARA EL LANZALLAMAS
+
     [Tooltip("El tamaño (Ancho, Alto) de la mira 'desde la cadera'")]
     public Vector2 crosshairSize = new Vector2(50, 50);
-
     [Tooltip("El tamaño (Ancho, Alto) de la mira al apuntar (ADS)")]
     public Vector2 aimedCrosshairSize = new Vector2(100, 100);
 
@@ -63,18 +89,12 @@ public class WeaponData : ScriptableObject
     public int penetrationCount = 1;
 
     [Header("Parámetros de Subfusil (SMG)")]
-    [Tooltip("Cantidad de balas que se recuperan al matar a un enemigo (Vampirismo)")]
     public int vampireAmmoRestore = 3;
 
     [Header("Parámetros de LMG (Ametralladora)")]
-    [Tooltip("Multiplicador de daño máximo cuando el arma está 'caliente' (Ej: 2.0 = Doble daño)")]
     public float maxHeatDamageMultiplier = 2.0f;
-    [Tooltip("Tiempo (en segundos) disparando seguido para alcanzar el daño máximo")]
     public float heatRampUpTime = 3.0f;
-    [Tooltip("Tiempo (en segundos) que tarda el arma en enfriarse si dejas de disparar")]
     public float heatCooldownTime = 1.5f;
-
-    // ------------------------------------
 
     [Header("Recoil / Kickback")]
     public float recoilVerticalMin = 1f;
@@ -96,6 +116,16 @@ public class WeaponData : ScriptableObject
 
     [Header("Parámetros de Lanzallamas")]
     public float flameRadius = 0.5f;
-    [Tooltip("Balas consumidas por frame/tick (ajustar según lógica)")]
     public int requiredKillsForUlt = 20;
+
+    [Header("--- EFECTOS ESPECIALES ---")]
+    [Tooltip("Si es true, el arma ralentiza al zombi")]
+    public bool causesSlow = false;
+    public float slowAmount = 0.5f;
+    public float slowDuration = 2.0f;
+
+    [Space(10)]
+    [Tooltip("Si es true, empuja al zombi hacia atrás")]
+    public bool causesKnockback = false;
+    public float knockbackForce = 2.0f;
 }
