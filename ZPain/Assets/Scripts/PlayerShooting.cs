@@ -33,23 +33,36 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private KeyCode ultimateKey = KeyCode.X;
     [SerializeField] private float ultimateDuration = 20f;
 
+    [Header("Ultimate UI & Unlock")]
+    [SerializeField] private GameObject ultimateUIParent;
+    [SerializeField] private TextMeshProUGUI ultimateKillCountText;
+    [SerializeField] private int totalCollectiblesRequired = 5;
+
+    [Header("Coleccionables UI (Contador Temporal)")]
+    [SerializeField] private TextMeshProUGUI collectibleCountText;
+    [SerializeField] private float collectibleDisplayTime = 3f;
+    private Coroutine displayCollectibleCoroutine;
+
+    // Estado interno del ultimate (Solo sesión actual)
+    private bool isUltimateUnlocked = false;
+    private int collectiblesFoundCount = 0;
+    private int currentKillsCount = 0;
+    private bool ultimateIsReady = false;
+    private bool isUltimateActive = false;
+    private int preUltSlotIndex = 0;
+
     [Header("--- ATAQUE CUCHILLO (QUICK MELEE) ---")]
     [SerializeField] private KeyCode meleeKey = KeyCode.C;
-    [SerializeField] private GameObject knifeGameObject; 
+    [SerializeField] private GameObject knifeGameObject;
     [SerializeField] private float meleeDuration = 0.6f;
     [SerializeField] private float damageDelay = 0.2f;
     [SerializeField] private float knifeDamage = 50f;
     [SerializeField] private float knifeRange = 2.5f;
     [SerializeField] private AudioClip knifeSwingSound;
-    [SerializeField] private string meleeAnimationName = "Attack"; 
+    [SerializeField] private string meleeAnimationName = "Attack";
 
-    private Animator knifeAnimator; 
-    private Vector3 originalWeaponLocalPosition; 
+    private Animator knifeAnimator;
     private bool isMeleeAttacking = false;
-
-    private int currentKillsCount = 0;
-    private bool isUltimateActive = false;
-    private int preUltSlotIndex = 0;
 
     [Header("Sistema de Inventario (2 Slots)")]
     private WeaponData[] weaponSlots = new WeaponData[2];
@@ -70,6 +83,7 @@ public class PlayerShooting : MonoBehaviour
     private int totalAmmo;
     private bool isReloading = false;
 
+    // Diccionarios para guardar la munición en memoria RAM (mientras juegas)
     private Dictionary<WeaponType, int> ammoInMagCache = new Dictionary<WeaponType, int>();
     private Dictionary<WeaponType, int> totalAmmoCache = new Dictionary<WeaponType, int>();
 
@@ -108,26 +122,13 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private Vector3 switchRotation = new Vector3(-35f, 0f, 0f);
 
     [SerializeField] private AudioSource audioSource;
-    
-    [Header("Weapon Drop/Pickup (NUEVO)")]
-    public bool isWeaponDropped = false; 
 
-    [Header("Sistema de Coleccionables (NUEVO)")]
-    [SerializeField] private int totalCollectiblesRequired = 5;
-    private int currentCollectiblesFound = 0;
-    private bool hasFlamethrowerUltimate = false; 
-
-    [Header("--- Lógica de Desbloqueo Ultimate ---")]
-    [Tooltip("El GameObject padre que contiene el icono y la barra de carga.")]
-    [SerializeField] private GameObject ultimateUIParent; 
-    [SerializeField] private int killsToUnlockUltimate = 5; 
-    private int killsSinceStart = 0;
-    private bool ultimateIsUnlocked = false;
+    [Header("Weapon Drop/Pickup")]
+    public bool isWeaponDropped = false;
 
     [Header("UI Notificación")]
-    [SerializeField] private TextMeshProUGUI unlockMessageText; 
-    [SerializeField] private float messageDisplayDuration = 5f; 
-
+    [SerializeField] private TextMeshProUGUI unlockMessageText;
+    [SerializeField] private float messageDisplayDuration = 5f;
 
     void Awake()
     {
@@ -156,26 +157,22 @@ public class PlayerShooting : MonoBehaviour
         UpdateCrosshair();
         if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
         if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
+
+        if (ultimateUIParent != null) ultimateUIParent.SetActive(false);
+        if (collectibleCountText != null) collectibleCountText.gameObject.SetActive(false);
+
         CheckForDirectStart();
 
         if (knifeGameObject != null)
         {
             knifeAnimator = knifeGameObject.GetComponent<Animator>();
-            if (knifeAnimator == null) 
+            if (knifeAnimator == null)
             {
                 knifeAnimator = knifeGameObject.GetComponentInChildren<Animator>();
             }
-            knifeGameObject.SetActive(false); 
+            knifeGameObject.SetActive(false);
         }
 
-        currentCollectiblesFound = 0;
-        currentKillsCount = 0;
-
-        if (ultimateUIParent != null)
-        {
-            ultimateUIParent.SetActive(false);
-        }
-        
         if (unlockMessageText != null)
         {
             unlockMessageText.gameObject.SetActive(false);
@@ -184,16 +181,9 @@ public class PlayerShooting : MonoBehaviour
 
     private void CheckForDirectStart()
     {
-        if (SaveLoadManager.Instance == null) return;
-        if (SaveLoadManager.ShouldLoadGame) return;
-
-        if (currentWeapon == null)
+        if (currentWeapon == null && GameManager.Instance != null && GameManager.Instance.startingWeaponAsset != null)
         {
-            WeaponData starterWeapon = SaveLoadManager.Instance.GetStartingWeapon();
-            if (starterWeapon != null)
-            {
-                InitializeNewGame(starterWeapon);
-            }
+            InitializeNewGame(GameManager.Instance.startingWeaponAsset);
         }
     }
 
@@ -217,8 +207,8 @@ public class PlayerShooting : MonoBehaviour
         if (GameManager.IsPaused || GameManager.GameIsOver) return;
 
         HandleUltimateLogic();
-        
-        if (isWeaponDropped) return; 
+
+        if (isWeaponDropped) return;
 
         if (!isUltimateActive && !isMeleeAttacking)
         {
@@ -306,22 +296,23 @@ public class PlayerShooting : MonoBehaviour
 
         if (currentWeapon.weaponType == WeaponType.LMG && currentWeapon.isUpgraded)
         {
-            float heatProgress = lmgCurrentHeatTime / currentWeapon.heatRampUpTime; 
+            float heatProgress = lmgCurrentHeatTime / currentWeapon.heatRampUpTime;
             float heatMultiplier = Mathf.Lerp(1.0f, currentWeapon.maxHeatDamageMultiplier, heatProgress);
             baseDmg *= heatMultiplier;
         }
 
-        return baseDmg * damageMultiplier; 
+        return baseDmg * damageMultiplier;
     }
 
     void HandleUltimateLogic()
     {
-        if (!hasFlamethrowerUltimate)
+        if (!isUltimateUnlocked)
         {
-            if (ultimateIconFill != null) ultimateIconFill.fillAmount = 0f;
-            if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
+            if (ultimateUIParent != null && ultimateUIParent.activeSelf) ultimateUIParent.SetActive(false);
             return;
         }
+
+        if (ultimateUIParent != null && !ultimateUIParent.activeSelf) ultimateUIParent.SetActive(true);
 
         if (isUltimateActive) return;
         if (ultimateWeaponData == null) return;
@@ -336,6 +327,7 @@ public class PlayerShooting : MonoBehaviour
 
         if (currentKillsCount >= ultimateWeaponData.requiredKillsForUlt)
         {
+            ultimateIsReady = true;
             if (ultimateReadyVisual != null && !ultimateReadyVisual.activeSelf)
                 ultimateReadyVisual.SetActive(true);
 
@@ -346,6 +338,7 @@ public class PlayerShooting : MonoBehaviour
         }
         else
         {
+            ultimateIsReady = false;
             if (ultimateReadyVisual != null && ultimateReadyVisual.activeSelf)
                 ultimateReadyVisual.SetActive(false);
         }
@@ -415,32 +408,10 @@ public class PlayerShooting : MonoBehaviour
         isMeleeAttacking = false;
     }
 
-    private bool TryPlayKnifeAnimation()
-    {
-        if (knifeGameObject == null) return false;
-
-        knifeGameObject.SetActive(true); 
-        
-        if (knifeAnimator == null)
-        {
-            knifeAnimator = knifeGameObject.GetComponent<Animator>();
-        }
-
-        if (knifeAnimator != null)
-        {
-            knifeAnimator.SetTrigger(meleeAnimationName);
-            return true;
-        }
-        else
-        {
-            Debug.LogError("ERROR: 'knifeAnimator' es null. Asegúrate que el objeto del cuchillo tiene un componente Animator.");
-            return false;
-        }
-    }
-
     public void RegisterZombieKill()
     {
         if (isUltimateActive) return;
+        if (!isUltimateUnlocked) return;
 
         if (ultimateWeaponData != null)
         {
@@ -448,21 +419,13 @@ public class PlayerShooting : MonoBehaviour
                 currentKillsCount++;
         }
 
-        if (!ultimateIsUnlocked)
-        {
-            killsSinceStart++;
-
-            if (killsSinceStart >= killsToUnlockUltimate)
-            {
-                ultimateIsUnlocked = true;
-                ActivateUltimateRoutine();
-            }
-        }
+        UpdateUltimateUI();
     }
 
     IEnumerator ActivateUltimateRoutine()
     {
         isUltimateActive = true;
+        ultimateIsReady = false;
         if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
 
         preUltSlotIndex = currentSlotIndex;
@@ -471,6 +434,9 @@ public class PlayerShooting : MonoBehaviour
         currentAmmoInMag = 9999;
         totalAmmo = 9999;
         UpdateAmmoUI();
+
+        currentKillsCount = 0;
+        UpdateUltimateUI();
 
         float timer = ultimateDuration;
         while (timer > 0)
@@ -481,28 +447,41 @@ public class PlayerShooting : MonoBehaviour
         }
 
         isUltimateActive = false;
-        currentKillsCount = 0; 
         if (ultimateIconFill != null) ultimateIconFill.fillAmount = 0f;
 
         SelectSlot(preUltSlotIndex);
+        UpdateUltimateUI();
     }
 
-    private void UnlockUltimateCharge()
+    public void RegisterCollectibleFound()
     {
-        hasFlamethrowerUltimate = true;
+        if (isUltimateUnlocked) return;
+
+        collectiblesFoundCount++;
+        Debug.Log($"Paloma encontrada: {collectiblesFoundCount} / {totalCollectiblesRequired}");
+
+        UpdateCollectibleDisplay();
+
+        if (collectiblesFoundCount >= totalCollectiblesRequired && !isUltimateUnlocked)
+        {
+            UnlockUltimatePermanently();
+        }
+    }
+
+    private void UnlockUltimatePermanently()
+    {
+        isUltimateUnlocked = true;
         Debug.Log("¡Recompensa desbloqueada! Lanzallamas (Ultimate) disponible.");
+
+        if (ultimateUIParent != null) ultimateUIParent.SetActive(true);
 
         if (ultimateWeaponData != null)
         {
-            currentKillsCount = ultimateWeaponData.requiredKillsForUlt; 
+            currentKillsCount = ultimateWeaponData.requiredKillsForUlt;
         }
 
-        if (ultimateUIParent != null)
-        {
-            ultimateUIParent.SetActive(true);
-        }
-        
-        // Muestra el mensaje solo UNA VEZ, al desbloquearse.
+        UpdateUltimateUI();
+
         if (unlockMessageText != null)
         {
             StopCoroutine("DisplayUnlockMessageRoutine");
@@ -510,15 +489,68 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
+    private void UpdateUltimateUI()
+    {
+        if (ultimateWeaponData == null) return;
+
+        if (!isUltimateUnlocked)
+        {
+            if (ultimateUIParent != null) ultimateUIParent.SetActive(false);
+            return;
+        }
+
+        if (ultimateUIParent != null && !ultimateUIParent.activeSelf)
+        {
+            ultimateUIParent.SetActive(true);
+        }
+
+        int requiredKills = ultimateWeaponData.requiredKillsForUlt;
+        float fillAmount = requiredKills > 0 ? (float)currentKillsCount / requiredKills : 1f;
+
+        if (ultimateIconFill != null)
+        {
+            ultimateIconFill.fillAmount = fillAmount;
+        }
+
+        ultimateIsReady = currentKillsCount >= requiredKills;
+
+        if (ultimateReadyVisual != null)
+        {
+            ultimateReadyVisual.SetActive(ultimateIsReady);
+        }
+
+        if (ultimateKillCountText != null)
+        {
+            ultimateKillCountText.text = ultimateIsReady ? $"LISTO" : $"{currentKillsCount}/{requiredKills}";
+        }
+    }
+
+    public void UpdateCollectibleDisplay()
+    {
+        if (collectibleCountText == null) return;
+        collectibleCountText.text = $"{collectiblesFoundCount} / {totalCollectiblesRequired}";
+
+        if (displayCollectibleCoroutine != null)
+        {
+            StopCoroutine(displayCollectibleCoroutine);
+        }
+        displayCollectibleCoroutine = StartCoroutine(DisplayCollectibleRoutine());
+    }
+
+    private IEnumerator DisplayCollectibleRoutine()
+    {
+        if (collectibleCountText != null) collectibleCountText.gameObject.SetActive(true);
+        yield return new WaitForSeconds(collectibleDisplayTime);
+        if (collectibleCountText != null) collectibleCountText.gameObject.SetActive(false);
+        displayCollectibleCoroutine = null;
+    }
+
     private IEnumerator DisplayUnlockMessageRoutine()
     {
-        string key = ultimateKey.ToString(); 
-        
+        string key = ultimateKey.ToString();
         unlockMessageText.text = $"¡Has desbloqueado el arma especial! Pulsa [{key}] para utilizarla";
         unlockMessageText.gameObject.SetActive(true);
-        
         yield return new WaitForSeconds(messageDisplayDuration);
-        
         unlockMessageText.gameObject.SetActive(false);
     }
 
@@ -546,7 +578,7 @@ public class PlayerShooting : MonoBehaviour
         StopAllCoroutines();
         isReloading = false;
         isBursting = false;
-        lmgCurrentHeatTime = 0; 
+        lmgCurrentHeatTime = 0;
         StopAiming();
         SaveCurrentAmmoState();
 
@@ -623,7 +655,7 @@ public class PlayerShooting : MonoBehaviour
 
         currentWeapon = weaponData;
         shotTicker = 0;
-        lmgCurrentHeatTime = 0; 
+        lmgCurrentHeatTime = 0;
         StopAiming();
 
         if (currentWeapon == null)
@@ -665,12 +697,12 @@ public class PlayerShooting : MonoBehaviour
                 break;
 
             case WeaponType.Rifle:
-            case WeaponType.SMG: 
-            case WeaponType.LMG: 
+            case WeaponType.SMG:
+            case WeaponType.LMG:
                 if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
-                    ShootRifle(); 
+                    ShootRifle();
                 }
                 break;
 
@@ -704,7 +736,7 @@ public class PlayerShooting : MonoBehaviour
         FireBaseLogic();
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-            HandleHit(hit, GetCurrentWeaponDamage()); 
+            HandleHit(hit, GetCurrentWeaponDamage());
         ApplyRecoil();
     }
 
@@ -733,7 +765,7 @@ public class PlayerShooting : MonoBehaviour
         FireBaseLogic();
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
-            HandleHit(hit, GetCurrentWeaponDamage()); 
+            HandleHit(hit, GetCurrentWeaponDamage());
         ApplyRecoil();
     }
 
@@ -848,9 +880,9 @@ public class PlayerShooting : MonoBehaviour
         Palomas collectible = hit.collider.GetComponent<Palomas>();
         if (collectible != null)
         {
-            collectible.TakeDamage(damage * damageMultiplier); 
+            collectible.TakeDamage(damage * damageMultiplier);
             SpawnImpactEffects(hit);
-            return; 
+            return;
         }
 
         ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
@@ -887,8 +919,8 @@ public class PlayerShooting : MonoBehaviour
                     if (currentAmmoInMag < currentWeapon.magCapacity)
                     {
                         currentAmmoInMag += currentWeapon.vampireAmmoRestore;
-                        if (currentAmmoInMag > currentAmmoInMag)
-                            currentAmmoInMag = currentAmmoInMag;
+                        if (currentAmmoInMag > currentWeapon.magCapacity)
+                            currentAmmoInMag = currentWeapon.magCapacity;
 
                         UpdateAmmoUI();
                     }
@@ -1007,12 +1039,12 @@ public class PlayerShooting : MonoBehaviour
         }
         else { ammoText.text = ""; ammoText.color = defaultAmmoColor; }
     }
-    
+
     private void ClearCrosshair()
     {
         if (crosshairImage != null) crosshairImage.enabled = false;
     }
-    
+
     public void SetCrosshair(Vector2 size, Vector2 aimedSize)
     {
         if (crosshairRectTransform == null) return;
@@ -1180,7 +1212,7 @@ public class PlayerShooting : MonoBehaviour
         }
         UpdateCrosshair();
     }
-    
+
     public bool DropCurrentWeapon(out WeaponData dataToDrop, out GameObject modelToDrop)
     {
         dataToDrop = null;
@@ -1194,14 +1226,14 @@ public class PlayerShooting : MonoBehaviour
 
         dataToDrop = currentWeapon;
         modelToDrop = currentWeaponModel;
-        
+
         currentWeapon = null;
         currentWeaponModel = null;
-        
+
         if (modelToDrop != null)
         {
-            modelToDrop.transform.SetParent(null); 
-            modelToDrop.SetActive(false);         
+            modelToDrop.transform.SetParent(null);
+            modelToDrop.SetActive(false);
         }
 
         UpdateAmmoUI();
@@ -1216,11 +1248,11 @@ public class PlayerShooting : MonoBehaviour
         if (newWeaponData == null) return;
 
         EquipWeapon(newWeaponData);
-        ForceCurrentWeaponAmmoToFull(); 
+        ForceCurrentWeaponAmmoToFull();
 
-        currentWeaponModel = model; 
+        currentWeaponModel = model;
         currentWeaponModel.transform.SetParent(weaponHolder);
-        
+
         currentWeaponModel.transform.localPosition = Vector3.zero;
         currentWeaponModel.transform.localRotation = Quaternion.identity;
         currentWeaponModel.SetActive(true);
@@ -1228,19 +1260,6 @@ public class PlayerShooting : MonoBehaviour
         isWeaponDropped = false;
 
         Debug.Log($"¡{newWeaponData.weaponName} mejorada recogida!");
-    }
-    
-    public void RegisterCollectibleFound()
-    {
-        if (hasFlamethrowerUltimate) return;
-
-        currentCollectiblesFound++;
-        Debug.Log($"Paloma encontrada: {currentCollectiblesFound} / {totalCollectiblesRequired}");
-
-        if (currentCollectiblesFound >= totalCollectiblesRequired && !hasFlamethrowerUltimate)
-        {
-            UnlockUltimateCharge();
-        }
     }
 
     public int GetWeaponTypeInSlot(int slotIndex)
@@ -1303,28 +1322,8 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    public List<WeaponAmmoData> GetAmmoData()
-    {
-        SaveCurrentAmmoState();
-        List<WeaponAmmoData> dataList = new List<WeaponAmmoData>();
-        foreach (var key in ammoInMagCache.Keys)
-        {
-            dataList.Add(new WeaponAmmoData { weaponType = key, currentMagAmmo = ammoInMagCache[key], currentTotalAmmo = totalAmmoCache[key] });
-        }
-        return dataList;
-    }
-
-    public void LoadAmmoData(List<WeaponAmmoData> dataList)
-    {
-        ammoInMagCache.Clear();
-        totalAmmoCache.Clear();
-        if (dataList == null) return;
-        foreach (var data in dataList)
-        {
-            ammoInMagCache[data.weaponType] = data.currentMagAmmo;
-            totalAmmoCache[data.weaponType] = data.currentTotalAmmo;
-        }
-    }
+    // --- SECCIÓN ELIMINADA: MÉTODOS DE GUARDADO (WeaponAmmoData) ---
+    // He eliminado GetAmmoData y LoadAmmoData porque dependían de la clase borrada.
 
     public void ForceCurrentWeaponAmmoToFull()
     {
@@ -1362,25 +1361,5 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentWeapon != null) return currentWeapon.weaponType;
         return (WeaponType)(-1);
-    }
-
-    void OnDrawGizmos()
-    {
-        if (playerCamera == null || currentWeapon == null) return;
-
-        Gizmos.color = Color.red;
-
-        Vector3 startPosition = playerCamera.transform.position;
-        Vector3 direction = playerCamera.transform.forward;
-        Vector3 endPosition = startPosition + (direction * currentWeapon.range);
-
-        Gizmos.DrawLine(startPosition, endPosition);
-
-        if (currentWeapon.weaponType == WeaponType.Flamethrower)
-        {
-            Gizmos.color = new Color(1, 0.5f, 0, 0.5f);
-            Gizmos.DrawWireSphere(startPosition, currentWeapon.flameRadius);
-            Gizmos.DrawWireSphere(endPosition, currentWeapon.flameRadius);
-        }
     }
 }

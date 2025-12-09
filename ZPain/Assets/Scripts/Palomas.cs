@@ -28,10 +28,9 @@ public class Palomas : MonoBehaviour
 
     private void DestroyTarget()
     {
-        PlayerShooting playerShooting = FindObjectOfType<PlayerShooting>();
-        if (playerShooting != null)
+        if (PlayerShooting.Instance != null)
         {
-            playerShooting.RegisterCollectibleFound();
+            PlayerShooting.Instance.RegisterCollectibleFound();
         }
 
         if (audioSource != null && destroySound != null)

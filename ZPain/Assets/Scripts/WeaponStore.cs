@@ -5,20 +5,20 @@ using System.Collections.Generic;
 public class WeaponStore : MonoBehaviour
 {
     [Header("Configuración del arma en la tienda")]
-    public WeaponData weaponData; // ScriptableObject del arma que se vende
+    public WeaponData weaponData;
 
     [Header("Detección e interacción")]
     public float interactionDistance = 3f;
     public KeyCode interactionKey = KeyCode.E;
 
     [Header("UI del mensaje (opcional)")]
-    public TextMeshProUGUI interactionText; // Texto en pantalla que mostrará el mensaje
+    public TextMeshProUGUI interactionText;
 
     private Camera playerCamera;
     private PlayerShooting playerShooting;
     private bool playerLooking = false;
 
-    // Armas que el jugador ya compró (guardadas estáticamente)
+    // Se mantiene estático para la sesión de juego actual
     private static Dictionary<WeaponType, WeaponData> ownedWeaponInstances = new Dictionary<WeaponType, WeaponData>();
 
     void Start()
@@ -88,8 +88,6 @@ public class WeaponStore : MonoBehaviour
         interactionText.text = "Pulsa [" + interactionKey + "] para comprar munición de " + weaponData.weaponName + " por " + weaponData.ammoPrice + " puntos";
     }
 
-
-
     void TryPurchaseOrEquip()
     {
         if (playerShooting == null) return;
@@ -121,7 +119,7 @@ public class WeaponStore : MonoBehaviour
         if (isEquipped && isAmmoFull)
         {
             Debug.Log("Munición ya al máximo. No se puede comprar.");
-            ShowInteractionMessage(); // Actualiza el mensaje a "MUNICIÓN LLENA"
+            ShowInteractionMessage();
             return;
         }
 
@@ -132,15 +130,13 @@ public class WeaponStore : MonoBehaviour
             return;
         }
 
-        // Si la acción fue exitosa (pagaste)
         WeaponData instanceToEquip = ownedWeaponInstances[weaponData.weaponType];
         playerShooting.EquipWeapon(instanceToEquip);
         playerShooting.ForceCurrentWeaponAmmoToFull();
 
         Debug.Log("Has pagado la munición y equipado " + instanceToEquip.weaponName + ".");
-        ShowInteractionMessage(); // Actualizar el mensaje de nuevo
+        ShowInteractionMessage();
     }
-
 
     public static void ResetOwnedWeapons()
     {
@@ -163,26 +159,13 @@ public class WeaponStore : MonoBehaviour
         return ownedWeaponInstances.Values;
     }
 
-    public static void LoadOwnedWeapons(List<WeaponData> loadedInstances)
-    {
-        ResetOwnedWeapons();
-        foreach (var instance in loadedInstances)
-        {
-            if (!ownedWeaponInstances.ContainsKey(instance.weaponType))
-            {
-                ownedWeaponInstances.Add(instance.weaponType, instance);
-            }
-        }
-        Debug.Log("Armas cargadas en la tienda estática.");
-    }
-
     public static void RegisterStartingWeapon(WeaponData weaponInstance)
     {
         if (weaponInstance == null) return;
 
         if (ownedWeaponInstances.Count == 0)
         {
-            ownedWeaponInstances.Clear(); // Doble seguro
+            ownedWeaponInstances.Clear();
         }
 
         if (!ownedWeaponInstances.ContainsKey(weaponInstance.weaponType))
