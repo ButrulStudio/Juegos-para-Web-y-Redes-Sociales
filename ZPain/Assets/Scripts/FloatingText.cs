@@ -11,7 +11,6 @@ public class FloatingText : MonoBehaviour
     private Color textColor;
     private Camera mainCam;
 
-    // Vector de movimiento que calcularemos aleatoriamente
     private Vector3 randomDirection;
 
     void Awake()
@@ -23,17 +22,11 @@ public class FloatingText : MonoBehaviour
 
     void Start()
     {
-        // CALCULAMOS LA ALEATORIEDAD AQUÍ
-        // X: Entre -0.8 y 0.8 (Izquierda/Derecha aleatoria)
-        // Y: 1 (Siempre hacia arriba)
-        // Z: 0 (No queremos que se acerque o aleje en profundidad)
         float randomX = Random.Range(-0.8f, 0.8f);
-        randomDirection = new Vector3(randomX, 1f, 0f).normalized; // Normalizamos para que la velocidad sea constante
+        randomDirection = new Vector3(randomX, 1f, 0f).normalized; 
 
-        // Orientación inicial
         if (mainCam != null) transform.rotation = mainCam.transform.rotation;
 
-        // Destrucción automática
         Destroy(gameObject, destroyTime);
     }
 
@@ -44,10 +37,9 @@ public class FloatingText : MonoBehaviour
 
     void Update()
     {
-        // 1. Mover en la dirección aleatoria calculada
+
         transform.position += randomDirection * moveSpeed * Time.deltaTime;
 
-        // 2. Desvanecer
         if (textMesh != null)
         {
             float alphaChange = Time.deltaTime / destroyTime;
@@ -55,7 +47,6 @@ public class FloatingText : MonoBehaviour
             textMesh.color = textColor;
         }
 
-        // 3. Orientación (Billboard)
         if (mainCam != null) transform.rotation = mainCam.transform.rotation;
     }
 }

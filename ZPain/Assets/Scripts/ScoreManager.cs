@@ -10,7 +10,6 @@ public class ScoreManager : MonoBehaviour
 
     private int currentScore = 0;
 
-    // Inicializa 'Instance' al cargar la escena
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -42,7 +41,6 @@ public class ScoreManager : MonoBehaviour
         return currentScore;
     }
 
-    // Método para gastar puntos (usado por PowerUps)
     public bool TrySpendPoints(int amount)
     {
         if (currentScore >= amount)
@@ -65,8 +63,6 @@ public class ScoreManager : MonoBehaviour
             Debug.LogError("El TextMeshProUGUI (scoreText) no está asignado en el Inspector del ScoreManager.");
         }
     }
-
-    // Establece la puntuación al cargar una partida guardada.
 
     public void SetScore(int newScore)
     {

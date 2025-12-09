@@ -41,7 +41,6 @@ public class MainMenu : MonoBehaviour
 
     public void StartGameButton()
     {
-        // Ya no comprobamos SaveLoadManager. Simplemente cargamos el juego.
         StartCoroutine(LoadGameScene());
     }
 

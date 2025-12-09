@@ -38,7 +38,7 @@ public class ZombieController : MonoBehaviour
     private WaveManager waveManager;
     private ScoreManager scoreManager;
 
-    // --- VARIABLES PARA EFECTOS (NUEVO) ---
+    // --- VARIABLES PARA EFECTOS ---
     private float originalSpeed;
     private Coroutine slowCoroutine;
 
@@ -78,7 +78,7 @@ public class ZombieController : MonoBehaviour
         StartCoroutine(AmbientSoundRoutine());
     }
 
-    // --- MÉTODOS DE CONFIGURACIÓN (Llamados por Spawner) ---
+    // --- MÉTODOS DE CONFIGURACIÓN ---
     public void ApplyZombieData(ZombieData data)
     {
         zombieData = data;
@@ -86,7 +86,7 @@ public class ZombieController : MonoBehaviour
         if (agent != null)
         {
             agent.speed = data.speed;
-            originalSpeed = data.speed; // Actualizamos la original también
+            originalSpeed = data.speed; 
             agent.stoppingDistance = data.attackRange - 0.2f;
         }
     }
@@ -96,7 +96,7 @@ public class ZombieController : MonoBehaviour
         currentHp += extraHealth;
     }
 
-    // --- MÉTODOS DE EFECTOS ESPECIALES (NUEVOS) ---
+    // --- MÉTODOS DE EFECTOS ESPECIALES ---
 
     // 1. RALENTIZAR (HIELO)
     public void ApplySlow(float percentage, float duration)
@@ -116,7 +116,7 @@ public class ZombieController : MonoBehaviour
 
         yield return new WaitForSeconds(duration);
 
-        // Restaurar velocidad (teniendo en cuenta si está lisiado)
+        // Restaurar velocidad 
         if (!isCrippled)
         {
             agent.speed = originalSpeed;
@@ -229,7 +229,7 @@ public class ZombieController : MonoBehaviour
             }
         }
 
-        yield return new WaitForSeconds(1.4f); // Ajustar según duración de animación
+        yield return new WaitForSeconds(1.4f); 
         isAttacking = false;
     }
 
@@ -251,7 +251,7 @@ public class ZombieController : MonoBehaviour
                 {
                     isCrippled = true;
                     agent.speed = crippledSpeed;
-                    originalSpeed = crippledSpeed; // Actualizamos la base para que el slow funcione bien
+                    originalSpeed = crippledSpeed; 
                 }
                 break;
         }
@@ -287,7 +287,6 @@ public class ZombieController : MonoBehaviour
         if (scoreManager != null) scoreManager.ZombieKilled();
         if (waveManager != null) waveManager.ZombieDied();
 
-        // Notificar al PlayerShooting para cargar el Ultimate
         PlayerShooting ps = null;
         if (player != null) ps = player.GetComponent<PlayerShooting>();
         if (ps == null) ps = FindAnyObjectByType<PlayerShooting>();

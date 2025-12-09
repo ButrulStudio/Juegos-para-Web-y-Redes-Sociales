@@ -14,9 +14,9 @@ public class PointDoor : MonoBehaviour
     [Tooltip("Curva de animación para la subida (opcional).")]
     [SerializeField] private AnimationCurve liftCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
-    [Header("Sincronización")] // NUEVO ENCABEZADO
+    [Header("Sincronización")] 
     [Tooltip("Otra puerta PointDoor que debe desaparecer simultáneamente (opcional).")]
-    // **NUEVA VARIABLE PÚBLICA**
+
     public PointDoor syncedDoor;
 
     [Header("Interacción")]
@@ -29,19 +29,17 @@ public class PointDoor : MonoBehaviour
     private Renderer doorRenderer;
     private Camera playerCamera;
     private bool isPlayerLooking = false;
-    // Variable para evitar aperturas múltiples
+
     private bool isOpened = false;
 
     void Start()
     {
-        // 1. Obtener referencias
+
         playerCamera = Camera.main;
         doorRenderer = GetComponent<Renderer>();
 
-        // 2. Inicializar UI
         if (hudText != null)
         {
-            // La puerta debe asignar su propio HUDText al objeto UI global
             hudText.gameObject.SetActive(false);
         }
 
@@ -53,13 +51,10 @@ public class PointDoor : MonoBehaviour
 
     void Update()
     {
-        // 1. Añadimos la condición de que si ya se abrió, no haga nada
         if (isOpened) return;
 
         CheckForInteraction();
     }
-
-    // El resto de CheckForInteraction() y Show/HideInteractionMessage() permanece igual...
 
     private void CheckForInteraction()
     {
@@ -68,10 +63,8 @@ public class PointDoor : MonoBehaviour
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         RaycastHit hit;
 
-        // 1. Lanzamos el Raycast
         if (Physics.Raycast(ray, out hit, interactionDistance))
         {
-            // 2. Comprobamos si el rayo golpea ESTE objeto
             if (hit.collider.gameObject == gameObject)
             {
                 if (!isPlayerLooking)
@@ -81,7 +74,6 @@ public class PointDoor : MonoBehaviour
 
                 ShowInteractionMessage();
 
-                // 3. Intentar interactuar
                 if (Input.GetKeyDown(interactionKey))
                 {
                     TryOpenDoor();
@@ -90,7 +82,6 @@ public class PointDoor : MonoBehaviour
             }
         }
 
-        // Si el rayo no golpea la puerta, ocultar el mensaje
         if (isPlayerLooking)
         {
             isPlayerLooking = false;
@@ -107,12 +98,10 @@ public class PointDoor : MonoBehaviour
 
         if (currentPoints >= cost)
         {
-            // Suficientes puntos
             hudText.text = $"Pulsa [{interactionKey}] para abrir: <color=yellow>{cost} pts</color>";
         }
         else
         {
-            // Puntos insuficientes
             hudText.text = $"Pulsa [{interactionKey}] para abrir: <color=red>{cost} pts</color>";
         }
     }
@@ -128,54 +117,38 @@ public class PointDoor : MonoBehaviour
     private void TryOpenDoor()
     {
         if (ScoreManager.Instance == null || isOpened) return;
-
-        // Intentamos gastar los puntos usando el método existente de ScoreManager
         if (ScoreManager.Instance.TrySpendPoints(cost))
         {
-            // Pago exitoso, iniciar animación
-
-            // **SINCRONIZACIÓN: Abrir la puerta principal**
             OpenDoorInternal();
-
-            // **SINCRONIZACIÓN: Abrir la puerta secundaria si está asignada**
             if (syncedDoor != null)
             {
-                // Asegurarse de que la otra puerta no intente pagar de nuevo.
-                // Usamos el mismo método interno, sin coste.
                 syncedDoor.OpenDoorInternal();
             }
         }
         else
         {
-            // Pago fallido
             Debug.Log($"No tienes suficientes puntos para abrir la puerta ({cost} pts).");
         }
     }
-
-    // **NUEVO MÉTODO PÚBLICO** para ser llamado por la puerta sincronizada.
-    // Lo hacemos público para que la otra instancia de PointDoor pueda llamarlo,
-    // pero TryOpenDoor se asegura de que solo se pague una vez.
     public void OpenDoorInternal()
     {
-        if (isOpened) return; // Doble chequeo
+        if (isOpened) return; 
 
-        isOpened = true; // Marcar como abierta
+        isOpened = true; 
 
-        // Iniciar animación
         StartCoroutine(DisappearAnimation());
     }
 
     private IEnumerator DisappearAnimation()
     {
-        // Desactivar el collider para que el jugador pueda pasar inmediatamente
+
         Collider doorCollider = GetComponent<Collider>();
         if (doorCollider != null) doorCollider.enabled = false;
 
-        // Ocultar el mensaje de UI
         HideInteractionMessage();
 
         Vector3 startPosition = transform.position;
-        Vector3 endPosition = startPosition + Vector3.up * liftDistance; // Mover hacia arriba
+        Vector3 endPosition = startPosition + Vector3.up * liftDistance; 
 
         float timer = 0f;
 
@@ -183,21 +156,15 @@ public class PointDoor : MonoBehaviour
         {
             timer += Time.deltaTime;
             float progress = timer / disappearDuration;
-            float curveValue = liftCurve.Evaluate(progress); // Usar la curva de animación
+            float curveValue = liftCurve.Evaluate(progress); 
 
-            // Interpolación de posición (mover hacia arriba)
             transform.position = Vector3.Lerp(startPosition, endPosition, curveValue);
-
-            // Interpolación de transparencia del material (opcional, para que se desvanezca)
-            // (Si usas un shader transparente, puedes añadir aquí el desvanecimiento)
 
             yield return null;
         }
 
-        // Asegurar que la puerta subió completamente
         transform.position = endPosition;
 
-        // Finalmente, destruir el objeto
         Destroy(gameObject);
     }
 }

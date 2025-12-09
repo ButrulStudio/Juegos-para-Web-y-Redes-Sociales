@@ -176,7 +176,7 @@ public class WeaponUpgradeShop : MonoBehaviour
             case WeaponType.RPD:
                 weapon.magCapacity = 150;
                 weapon.maxAmmo = 600;
-                weapon.maxHeatDamageMultiplier = 3.0f; // x3 daño al calentar
+                weapon.maxHeatDamageMultiplier = 3.0f; 
                 break;
 
             // --- SNIPERS ---

@@ -8,7 +8,7 @@ public class MovementController : MonoBehaviour
     [Tooltip("Arrastra aquí la Main Camera (hija del jugador)")]
     [SerializeField] private Transform playerCameraRoot;
 
-    [Header("Controles Móviles")] // --- NUEVO: Asigna aquí tu JoystickBG
+    [Header("Controles Móviles")] 
     public VirtualJoystick mobileJoystick;
 
     [Header("Movimiento Base")]
@@ -59,7 +59,6 @@ public class MovementController : MonoBehaviour
     private float defaultSpeed;
     public float speedMultiplier = 1f;
 
-    // --- VARIABLE NUEVA PARA AGACHARSE EN MÓVIL ---
     private bool isMobileCrouching = false;
 
     void Start()
@@ -68,7 +67,6 @@ public class MovementController : MonoBehaviour
         defaultSpeed = moveSpeed;
         currentSpeed = moveSpeed;
 
-        // Inicializamos con los valores de "De Pie"
         controller.height = standingHeight;
         controller.center = new Vector3(0, standingCenterY, 0);
 
@@ -88,39 +86,31 @@ public class MovementController : MonoBehaviour
     {
         if (GameManager.IsPaused || GameManager.GameIsOver) return;
 
-        // 1. Ground Check
         isGrounded = controller.isGrounded;
         if (isGrounded && velocity.y < 0)
         {
             velocity.y = -2f;
         }
 
-        // 2. Inputs (Teclado)
         float moveX = Input.GetAxis("Horizontal");
         float moveZ = Input.GetAxis("Vertical");
 
-        // --- LÓGICA MÓVIL (JOYSTICK) ---
-        // Si hay un joystick asignado y se está moviendo, sobrescribimos el teclado
         if (mobileJoystick != null && mobileJoystick.InputVector != Vector3.zero)
         {
             moveX = mobileJoystick.InputVector.x;
             moveZ = mobileJoystick.InputVector.z;
         }
-        // -------------------------------
 
-        // 3. Estados
-        // Modificado para incluir el toggle móvil (Teclado O Móvil)
         bool isCrouchingInput = Input.GetKey(crouchKey) || isMobileCrouching;
         bool isSprintingInput = Input.GetKey(sprintKey) && !isCrouchingInput;
 
-        // --- LÓGICA FÍSICA (INTERPOLACIÓN DE ALTURA Y CENTRO) ---
+
         float targetHeight = isCrouchingInput ? crouchHeight : standingHeight;
         float targetCenterY = isCrouchingInput ? crouchCenterY : standingCenterY;
 
         float currentHeight = controller.height;
         float currentCenterY = controller.center.y;
 
-        // Si hay diferencia, interpolamos suavemente
         if (Mathf.Abs(currentHeight - targetHeight) > 0.01f || Mathf.Abs(currentCenterY - targetCenterY) > 0.01f)
         {
             float newHeight = Mathf.Lerp(currentHeight, targetHeight, crouchTransitionSpeed * Time.deltaTime);
@@ -130,7 +120,6 @@ public class MovementController : MonoBehaviour
             controller.center = new Vector3(0, newCenterY, 0);
         }
 
-        // --- CÁMARA ---
         if (playerCameraRoot != null)
         {
             float targetCamY = isCrouchingInput ? cameraCrouchY : cameraStandY;
@@ -139,18 +128,15 @@ public class MovementController : MonoBehaviour
             playerCameraRoot.localPosition = camPos;
         }
 
-        // 4. Velocidad
         float finalSpeed = currentSpeed;
         if (isCrouchingInput) finalSpeed = crouchSpeed;
         else if (isSprintingInput) finalSpeed = currentSpeed * sprintMultiplier;
 
         finalSpeed *= speedMultiplier;
 
-        // 5. Mover
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
         controller.Move(move * finalSpeed * Time.deltaTime);
 
-        // 6. Gravedad (Salto con Espacio)
         if (Input.GetButtonDown("Jump") && isGrounded && !isCrouchingInput)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
@@ -159,7 +145,6 @@ public class MovementController : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
 
-        // 7. Sonidos
         HandleFootsteps(move.magnitude > 0.1f, isCrouchingInput, isSprintingInput);
     }
 
@@ -183,25 +168,20 @@ public class MovementController : MonoBehaviour
         }
     }
 
-    // --- MÉTODOS PÚBLICOS PARA LOS BOTONES DEL MÓVIL ---
-
-    // Asigna esto al botón de SALTAR (OnClick)
     public void MobileJump()
     {
-        // Solo salta si toca el suelo y NO está agachado
+
         if (isGrounded && !isMobileCrouching && !Input.GetKey(crouchKey))
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
     }
 
-    // Asigna esto al botón de AGACHARSE (OnClick)
     public void MobileToggleCrouch()
     {
         isMobileCrouching = !isMobileCrouching;
     }
 
-    // --- PowerUps ---
     public void SetPermanentSpeedMultiplier(float multiplier) => speedMultiplier = multiplier;
     public float GetBaseSpeed() => defaultSpeed;
     public float GetVelocity() => currentSpeed;

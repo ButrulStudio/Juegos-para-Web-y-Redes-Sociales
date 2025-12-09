@@ -157,7 +157,6 @@ public class PlayerShooting : MonoBehaviour
         if (ultimateUIParent != null) ultimateUIParent.SetActive(false);
         if (collectibleCountText != null) collectibleCountText.gameObject.SetActive(false);
 
-        // Si no hay GameManager (caso raro) y no es móvil, desactivar autofire
         if (!Application.isMobilePlatform && !Application.isEditor && GameManager.Instance == null)
         {
             useAutoFire = false;
@@ -191,7 +190,7 @@ public class PlayerShooting : MonoBehaviour
 
         if (weaponToEquip != null)
         {
-            // Instanciar para crear una copia limpia
+
             WeaponData newInstance = Instantiate(weaponToEquip);
             newInstance.name = weaponToEquip.name;
             EquipWeapon(newInstance);
@@ -223,7 +222,7 @@ public class PlayerShooting : MonoBehaviour
         HandleReloadInput();
         HandleAiming();
 
-        // Interpolación del movimiento del arma (Sway)
+        // Interpolación del movimiento del arma 
         if (weaponHolder != null && currentWeapon != null)
         {
             Vector3 targetPosition = weaponInitialLocalPos;
@@ -259,7 +258,7 @@ public class PlayerShooting : MonoBehaviour
 
     public void RefillAmmoForType(WeaponType typeToRefill)
     {
-        // 1. Si es el arma actual
+        // Si es el arma actual
         if (currentWeapon != null && currentWeapon.weaponType == typeToRefill)
         {
             currentAmmoInMag = currentWeapon.magCapacity;
@@ -269,7 +268,7 @@ public class PlayerShooting : MonoBehaviour
             return;
         }
 
-        // 2. Si está en el otro slot (guardada)
+        // 2. Si está en el otro slot 
         foreach (WeaponData weapon in weaponSlots)
         {
             if (weapon != null && weapon.weaponType == typeToRefill)
@@ -382,7 +381,7 @@ public class PlayerShooting : MonoBehaviour
                 if (flamethrowerParticles != null) flamethrowerParticles.Stop();
             }
 
-            // Material de Mejora (Pack-a-Punch)
+            // Material de Mejora 
             if (currentWeapon.isUpgraded && upgradedWeaponMaterial != null)
             {
                 Renderer[] renderers = currentWeaponModel.GetComponentsInChildren<Renderer>(true);
@@ -419,7 +418,7 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentWeapon != null && currentWeapon.weaponType == WeaponType.Flamethrower && flamethrowerParticles != null)
         {
-            // Detección de UI (Igual que tenías)
+            // Detección de UI 
             bool isPointerOverUI = false;
             if (Cursor.lockState == CursorLockMode.None && EventSystem.current != null)
             {
@@ -430,7 +429,7 @@ public class PlayerShooting : MonoBehaviour
 
             bool fireInputHeld = (Input.GetMouseButton(0) && !isPointerOverUI) || isMobileFiring || (useAutoFire && IsAimingAtEnemy());
 
-            // --- LÓGICA DE DISPARO (ACTIVA) ---
+            // --- LÓGICA DE DISPARO  ---
             if (fireInputHeld && !isReloading && currentAmmoInMag > 0)
             {
                 // 1. PARTÍCULAS
@@ -439,16 +438,14 @@ public class PlayerShooting : MonoBehaviour
                     flamethrowerParticles.Play();
                 }
 
-                // 2. SONIDO (¡NUEVO!)
-                // Si el audio NO está sonando, o está sonando otra cosa (ej: recarga), lo forzamos
                 if (audioSource != null && (!audioSource.isPlaying || audioSource.clip != currentWeapon.shootSound))
                 {
                     audioSource.clip = currentWeapon.shootSound;
-                    audioSource.loop = true; // Activamos el bucle
-                    audioSource.Play();      // Le damos al Play
+                    audioSource.loop = true; 
+                    audioSource.Play();      
                 }
             }
-            // --- LÓGICA DE PARADA (INACTIVA) ---
+            // --- LÓGICA DE PARADA  ---
             else
             {
                 // 1. PARTÍCULAS
@@ -457,13 +454,11 @@ public class PlayerShooting : MonoBehaviour
                     flamethrowerParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
                 }
 
-                // 2. SONIDO (¡NUEVO!)
-                // Si el audio está sonando y ES el del lanzallamas, lo cortamos
                 if (audioSource != null && audioSource.isPlaying && audioSource.clip == currentWeapon.shootSound)
                 {
-                    audioSource.Stop();       // <--- ESTO ES EL CORTE EN SECO
-                    audioSource.loop = false; // Desactivamos loop por seguridad para otras armas
-                    audioSource.clip = null;  // Limpiamos el clip
+                    audioSource.Stop();       
+                    audioSource.loop = false; 
+                    audioSource.clip = null;  
                 }
             }
         }
@@ -1070,8 +1065,6 @@ public class PlayerShooting : MonoBehaviour
     {
         isReloading = true;
 
-        // Reproducimos el sonido general (ej: el ruido de la ropa al levantar el arma)
-        // Si es una escopeta de cartuchos, evita poner aquí el sonido completo de recarga, usa uno sutil.
         PlaySound(currentWeapon.reloadSound);
 
         lmgCurrentHeatTime = 0;
@@ -1097,29 +1090,21 @@ public class PlayerShooting : MonoBehaviour
         // --- LÓGICA ESPECÍFICA DE ESCOPETAS DE TUBO ---
         if (currentWeapon.weaponType == WeaponType.Remington || currentWeapon.weaponType == WeaponType.HuntingShotgun)
         {
-            // Calculamos cuánto tarda en meter CADA cartucho individualmente
-            // Si el tiempo de recarga es 4s y metes 4 balas = 1s por bala.
-            // Si metes 2 balas = 1s por bala (total 2s).
-            // Para que sea constante, definimos un tiempo base por cartucho si ammoToLoad > 0
 
             float timePerBullet = 0f;
 
             if (ammoToLoad > 0)
             {
-                // Opción A: Dividir el tiempo total (ReloadTime) entre la capacidad del cargador
-                // Esto hace que cada bala tarde siempre lo mismo, recargues 1 o 6.
                 timePerBullet = currentWeapon.reloadTime / currentWeapon.magCapacity;
             }
 
             for (int i = 0; i < ammoToLoad; i++)
             {
-                // REPRODUCIR SONIDO DE CARTUCHO (CLIC)
                 if (currentWeapon.shellInsertSound != null)
                 {
                     PlaySound(currentWeapon.shellInsertSound);
                 }
 
-                // Esperar el tiempo que tarda la animación de meter esa bala
                 if (timePerBullet > 0) yield return new WaitForSeconds(timePerBullet);
 
                 currentAmmoInMag++;
@@ -1127,10 +1112,10 @@ public class PlayerShooting : MonoBehaviour
                 UpdateAmmoUI();
             }
         }
-        // --- LÓGICA PARA EL RESTO DE ARMAS (Cargador completo) ---
+        // --- LÓGICA PARA EL RESTO DE ARMAS  ---
         else
         {
-            // Esperamos el tiempo de recarga completo (ej. cambiar cargador de AK47)
+            // Esperamos el tiempo de recarga completo
             if (waitTime > 0) yield return new WaitForSeconds(waitTime);
 
             currentAmmoInMag += ammoToLoad;

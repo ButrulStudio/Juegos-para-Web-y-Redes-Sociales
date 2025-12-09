@@ -21,11 +21,9 @@ public class OptionsMenu : MonoBehaviour
 
     void Start()
     {
-        // 1. Cargar los valores guardados al iniciar esta escena.
+
         LoadSettings();
 
-        // 2. Suscribir los métodos a los eventos 'onValueChanged' de los sliders.
-        //    Esto hace que al mover un slider, se llame a la función correspondiente en tiempo real.
         sensitivitySlider.onValueChanged.AddListener(SetSensitivity);
         musicSlider.onValueChanged.AddListener(SetMusicVolume);
         sfxSlider.onValueChanged.AddListener(SetSFXVolume);

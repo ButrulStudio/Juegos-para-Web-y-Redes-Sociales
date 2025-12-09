@@ -11,7 +11,7 @@ public class GameManager : MonoBehaviour
 
     [Header("--- DEBUG (SOLO EDITOR) ---")]
     [Tooltip("Actívalo para probar controles táctiles. Desactívalo para jugar con ratón.")]
-    public bool simulateMobileInEditor = true; // <--- ¡ESTE ES TU INTERRUPTOR!
+    public bool simulateMobileInEditor = true; 
 
     [Header("Configuración Inicial")]
     public WeaponData startingWeaponAsset;
@@ -36,7 +36,6 @@ public class GameManager : MonoBehaviour
     public static bool IsPaused { get; private set; } = false;
     public static bool GameIsOver { get; private set; } = false;
 
-    // Referencia privada al jugador para cambiar el AutoFire
     private PlayerShooting playerShooting;
 
     void Awake()
@@ -46,13 +45,11 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        // Buscamos al jugador
         playerShooting = FindObjectOfType<PlayerShooting>();
 
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         if (pausePanel != null) pausePanel.SetActive(false);
 
-        // Inicializamos el modo correcto según la plataforma o el debug
         UpdateGameMode();
 
         Time.timeScale = 1;
@@ -72,26 +69,21 @@ public class GameManager : MonoBehaviour
             playerShooting.InitializeNewGame(startingWeaponAsset);
         }
     }
-
-    // --- MAGIA DE DEBUG ---
-    // Esta función se ejecuta automáticamente cuando cambias algo en el Inspector
     void OnValidate()
     {
-        // Solo actualizamos si el juego está corriendo para evitar errores de null
+
         if (Application.isPlaying)
         {
             UpdateGameMode();
         }
     }
 
-    // Función central que decide cómo se juega
     private void UpdateGameMode()
     {
         bool isMobileMode = false;
 
-        // 1. Determinar si estamos en modo móvil
 #if UNITY_EDITOR
-        // En el editor, obedecemos a tu casilla
+
         isMobileMode = simulateMobileInEditor;
 #elif UNITY_ANDROID || UNITY_IOS
             // En móvil real, siempre es true
@@ -101,13 +93,11 @@ public class GameManager : MonoBehaviour
             isMobileMode = false;
 #endif
 
-        // 2. Aplicar al HUD
         if (mobilePauseButtonHUD != null)
         {
             mobilePauseButtonHUD.SetActive(isMobileMode);
         }
 
-        // 3. Aplicar al Cursor
         if (isMobileMode)
         {
             Cursor.visible = true;
@@ -115,7 +105,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // Si estamos pausados, no bloqueamos, si estamos jugando, sí.
+
             if (!IsPaused)
             {
                 Cursor.visible = false;
@@ -123,20 +113,18 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // 4. Aplicar al AutoFire del Jugador
         if (playerShooting == null) playerShooting = FindObjectOfType<PlayerShooting>();
 
         if (playerShooting != null)
         {
-            // Si es móvil -> AutoFire Activado. Si es PC -> Desactivado.
             playerShooting.useAutoFire = isMobileMode;
         }
     }
-    // ---------------------
+
 
     private void Update()
     {
-        // Tecla rápida para alternar modos sin ir al inspector (F5)
+
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.F5))
         {
@@ -152,20 +140,18 @@ public class GameManager : MonoBehaviour
 
     public void TogglePause() { if (!isTogglingPause) StartCoroutine(TogglePauseCoroutine()); }
 
-    // IMPORTANTE: Asegúrate de que TogglePauseCoroutine restablezca el modo correcto al reanudar
     public IEnumerator TogglePauseCoroutine()
     {
         isTogglingPause = true;
-        if (pausePanel.activeSelf) // REANUDAR
+        if (pausePanel.activeSelf) 
         {
             animator.SetBool("Mobile", false); Time.timeScale = 1; IsPaused = false;
             yield return new WaitForSecondsRealtime(0.3f);
             pausePanel.SetActive(false);
 
-            // Al volver de pausa, reaplicamos el modo actual (para bloquear cursor si es PC)
             UpdateGameMode();
         }
-        else // PAUSAR
+        else 
         {
             if (sensitivitySlider_Pause != null) LoadCurrentSettingsToSliders();
             if (mobilePauseButtonHUD != null) mobilePauseButtonHUD.SetActive(false);

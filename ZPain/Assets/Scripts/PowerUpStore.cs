@@ -25,7 +25,6 @@ public class PowerUpStore : MonoBehaviour
     private PlayerHealth playerHealth;
     private bool isPlayerLooking = false;
 
-    // HashSet estático para almacenar los PowerUps comprados EN LA SESIÓN ACTUAL
     private static HashSet<PowerUpType> ownedPowerUps = new HashSet<PowerUpType>();
 
     private void Start()

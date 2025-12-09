@@ -86,15 +86,15 @@ public class WeaponData : ScriptableObject
     public Vector3 aimRotation;
 
     [Header("Mecánicas: Escopeta")]
-    public int pelletCount = 1; // 1 para rifles/pistolas, 8+ para escopetas
+    public int pelletCount = 1;
     [Range(0f, 45f)]
-    public float spreadAngle = 0f; // 0 para rifles, 5-10 para escopetas
+    public float spreadAngle = 0f; 
 
     [Header("Mecánicas: Sniper")]
-    public int penetrationCount = 1; // Cuántos zombis atraviesa
+    public int penetrationCount = 1; 
 
     [Header("Mecánicas: SMG (Vampiro)")]
-    public int vampireAmmoRestore = 0; // Balas recuperadas al matar
+    public int vampireAmmoRestore = 0; 
 
     [Header("Mecánicas: LMG (Calor)")]
     public float maxHeatDamageMultiplier = 1.0f;
@@ -108,7 +108,7 @@ public class WeaponData : ScriptableObject
     [Header("--- EFECTOS DE IMPACTO ---")]
     [Tooltip("Si es true, congela/ralentiza al zombi")]
     public bool causesSlow = false;
-    public float slowAmount = 0.5f; // 0.5 = 50% velocidad
+    public float slowAmount = 0.5f; 
     public float slowDuration = 2.0f;
 
     [Space(5)]
@@ -126,7 +126,7 @@ public class WeaponData : ScriptableObject
 
     [Header("Audio: Básico")]
     public AudioClip shootSound;
-    public AudioClip reloadSound;     // Sonido general (ropa/movimiento)
+    public AudioClip reloadSound;     
     public AudioClip emptyClipSound;
 
     [Header("Audio: Específico")]

@@ -8,7 +8,6 @@ public class PowerUpManager : MonoBehaviour
     [SerializeField] private PlayerShooting playerShooting;
 
     [Header("UI Managers")]
-    // Referencias a los scripts que controlan la interfaz de usuario
     private PowerUpUIDisplay uiDisplay; 
     private PowerUpUIAnimator uiAnimator;
 
@@ -17,14 +16,12 @@ public class PowerUpManager : MonoBehaviour
 
     void Start()
     {
-        // Obtener referencias a otros componentes en el mismo GameObject
         playerHealth = GetComponent<PlayerHealth>();
         playerMovement = GetComponent<MovementController>();
 
         uiDisplay = FindObjectOfType<PowerUpUIDisplay>();
         uiAnimator = FindObjectOfType<PowerUpUIAnimator>();
 
-        // Mensajes de advertencia si las referencias de UI no están asignadas
         if (uiDisplay == null) Debug.LogWarning("PowerUpManager: PowerUpUIDisplay no asignado en el Inspector.");
         if (uiAnimator == null) Debug.LogWarning("PowerUpManager: PowerUpUIAnimator no asignado en el Inspector.");
         if (playerShooting == null) Debug.LogError("PowerUpManager no encontró el script PlayerShooting.");
@@ -44,7 +41,7 @@ public class PowerUpManager : MonoBehaviour
         switch (powerUp.powerUpType)
         {
             case PowerUpType.Armadura:
-                ApplyArmorRestore(powerUp); // Solo animación central + efecto instantáneo
+                ApplyArmorRestore(powerUp); 
                 break;
             case PowerUpType.Velocidad:
                 ApplySpeedBoost(powerUp);
