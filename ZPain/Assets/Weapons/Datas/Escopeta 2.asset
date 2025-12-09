@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: Escopeta 2
   m_EditorClassIdentifier: 
   weaponType: 2
+  weaponName: Escopeta 2
   canBeUpgraded: 1
   crosshairSize: {x: 13, y: 9}
   aimedCrosshairSize: {x: 100, y: 100}
-  weaponName: Escopeta 2
+  crosshairIcon: {fileID: 21300000, guid: e4842210676e7164185db86d59caee4e, type: 3}
   damage: 25
   range: 25
   fireRate: 0.6
@@ -29,7 +30,6 @@ MonoBehaviour:
   upgradeCost: 4000
   weaponModelPrefab: {fileID: 8244271214771974029, guid: b7796fd44bb03a64c9cde4c8175d352e, type: 3}
   bulletHolePrefab: {fileID: 2212925028312433708, guid: edc92b779abc45d478d8dfeda3fc979a, type: 3}
-  crosshairIcon: {fileID: 21300000, guid: e4842210676e7164185db86d59caee4e, type: 3}
   canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
@@ -42,18 +42,6 @@ MonoBehaviour:
   maxHeatDamageMultiplier: 2
   heatRampUpTime: 3
   heatCooldownTime: 1.5
-  recoilVerticalMin: 1
-  recoilVerticalMax: 2
-  recoilHorizontalMin: -0.5
-  recoilHorizontalMax: 0.5
-  weaponKickbackDistance: 0.05
-  weaponKickbackReturnSpeed: 8
-  shootSound: {fileID: 8300000, guid: baf357e27bc63d34d87be9436fa36623, type: 3}
-  reloadSound: {fileID: 8300000, guid: f8ec388bc70746d4cb1a21b1240f886c, type: 3}
-  emptyClipSound: {fileID: 8300000, guid: c108c6e93fff29f47a2a779d1644af0f, type: 3}
-  actionSoundDelay: 0.4
-  boltActionSound: {fileID: 0}
-  pumpActionSound: {fileID: 8300000, guid: 4da5c6ba88c61434d99517c5d16f10f7, type: 3}
   flameRadius: 0.5
   requiredKillsForUlt: 20
   causesSlow: 0
@@ -61,3 +49,16 @@ MonoBehaviour:
   slowDuration: 2
   causesKnockback: 0
   knockbackForce: 2
+  recoilVerticalMin: 1
+  recoilVerticalMax: 2
+  recoilHorizontalMin: -0.5
+  recoilHorizontalMax: 0.5
+  weaponKickbackDistance: 0.05
+  weaponKickbackReturnSpeed: 8
+  shootSound: {fileID: 8300000, guid: baf357e27bc63d34d87be9436fa36623, type: 3}
+  reloadSound: {fileID: 0}
+  emptyClipSound: {fileID: 8300000, guid: c108c6e93fff29f47a2a779d1644af0f, type: 3}
+  shellInsertSound: {fileID: 8300000, guid: f8ec388bc70746d4cb1a21b1240f886c, type: 3}
+  boltActionSound: {fileID: 0}
+  pumpActionSound: {fileID: 8300000, guid: 4da5c6ba88c61434d99517c5d16f10f7, type: 3}
+  actionSoundDelay: 0.4

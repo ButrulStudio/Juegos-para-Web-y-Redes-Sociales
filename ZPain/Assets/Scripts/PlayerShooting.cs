@@ -419,6 +419,7 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentWeapon != null && currentWeapon.weaponType == WeaponType.Flamethrower && flamethrowerParticles != null)
         {
+            // Detección de UI (Igual que tenías)
             bool isPointerOverUI = false;
             if (Cursor.lockState == CursorLockMode.None && EventSystem.current != null)
             {
@@ -429,13 +430,41 @@ public class PlayerShooting : MonoBehaviour
 
             bool fireInputHeld = (Input.GetMouseButton(0) && !isPointerOverUI) || isMobileFiring || (useAutoFire && IsAimingAtEnemy());
 
+            // --- LÓGICA DE DISPARO (ACTIVA) ---
             if (fireInputHeld && !isReloading && currentAmmoInMag > 0)
             {
-                if (!flamethrowerParticles.isPlaying) flamethrowerParticles.Play();
+                // 1. PARTÍCULAS
+                if (!flamethrowerParticles.isEmitting)
+                {
+                    flamethrowerParticles.Play();
+                }
+
+                // 2. SONIDO (¡NUEVO!)
+                // Si el audio NO está sonando, o está sonando otra cosa (ej: recarga), lo forzamos
+                if (audioSource != null && (!audioSource.isPlaying || audioSource.clip != currentWeapon.shootSound))
+                {
+                    audioSource.clip = currentWeapon.shootSound;
+                    audioSource.loop = true; // Activamos el bucle
+                    audioSource.Play();      // Le damos al Play
+                }
             }
+            // --- LÓGICA DE PARADA (INACTIVA) ---
             else
             {
-                if (flamethrowerParticles.isPlaying) flamethrowerParticles.Stop();
+                // 1. PARTÍCULAS
+                if (flamethrowerParticles.isEmitting)
+                {
+                    flamethrowerParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                }
+
+                // 2. SONIDO (¡NUEVO!)
+                // Si el audio está sonando y ES el del lanzallamas, lo cortamos
+                if (audioSource != null && audioSource.isPlaying && audioSource.clip == currentWeapon.shootSound)
+                {
+                    audioSource.Stop();       // <--- ESTO ES EL CORTE EN SECO
+                    audioSource.loop = false; // Desactivamos loop por seguridad para otras armas
+                    audioSource.clip = null;  // Limpiamos el clip
+                }
             }
         }
     }
@@ -783,7 +812,6 @@ public class PlayerShooting : MonoBehaviour
 
     void ShootFlamethrower()
     {
-        PlaySound(currentWeapon.shootSound);
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         RaycastHit[] hits = Physics.SphereCastAll(
