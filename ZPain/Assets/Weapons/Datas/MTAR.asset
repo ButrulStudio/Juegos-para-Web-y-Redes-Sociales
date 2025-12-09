@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: MTAR
   m_EditorClassIdentifier: 
   weaponType: 7
+  canBeUpgraded: 1
   crosshairSize: {x: 11, y: 7}
   aimedCrosshairSize: {x: 100, y: 100}
   weaponName: MTAR
@@ -47,11 +48,16 @@ MonoBehaviour:
   recoilHorizontalMax: 0.5
   weaponKickbackDistance: 0.05
   weaponKickbackReturnSpeed: 8
-  shootSound: {fileID: 0}
-  reloadSound: {fileID: 0}
-  emptyClipSound: {fileID: 0}
+  shootSound: {fileID: 8300000, guid: 5c9dfbb04774a164a8fd325fdc7c7fb9, type: 3}
+  reloadSound: {fileID: 8300000, guid: ab050fa63af7f9146a05e3980b54b5b0, type: 3}
+  emptyClipSound: {fileID: 8300000, guid: c108c6e93fff29f47a2a779d1644af0f, type: 3}
   actionSoundDelay: 0.4
   boltActionSound: {fileID: 0}
   pumpActionSound: {fileID: 0}
   flameRadius: 0.5
   requiredKillsForUlt: 20
+  causesSlow: 0
+  slowAmount: 0.5
+  slowDuration: 2
+  causesKnockback: 0
+  knockbackForce: 2

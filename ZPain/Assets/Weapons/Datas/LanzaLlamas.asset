@@ -29,7 +29,7 @@ MonoBehaviour:
   upgradeCost: 100
   weaponModelPrefab: {fileID: 7346113742249740739, guid: d50ec7c952f7968428c274da675ced7f, type: 3}
   bulletHolePrefab: {fileID: 0}
-  crosshairIcon: {fileID: 21300000, guid: daebf22d8fb81cd4d989bac14e7fdfd4, type: 3}
+  crosshairIcon: {fileID: 21300000, guid: 6b99d12b8e177e14a8191e7f1a29f204, type: 3}
   canAim: 0
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
@@ -48,7 +48,7 @@ MonoBehaviour:
   recoilHorizontalMax: 0.5
   weaponKickbackDistance: 0.05
   weaponKickbackReturnSpeed: 8
-  shootSound: {fileID: 0}
+  shootSound: {fileID: 8300000, guid: 97ee9b05461f42f4b9a5bb31700c2c3e, type: 3}
   reloadSound: {fileID: 0}
   emptyClipSound: {fileID: 0}
   actionSoundDelay: 0.4

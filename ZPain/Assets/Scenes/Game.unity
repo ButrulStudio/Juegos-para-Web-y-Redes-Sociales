@@ -1125,11 +1125,11 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 2056575034}
+    m_TransformParent: {fileID: 1623721578}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 924b271810d4fdd4dbbf453dc26e24ca, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.16838445
+      value: 0.16838446
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 924b271810d4fdd4dbbf453dc26e24ca, type: 3}
       propertyPath: m_LocalScale.y
@@ -1137,7 +1137,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 924b271810d4fdd4dbbf453dc26e24ca, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.16838445
+      value: 0.16838446
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 924b271810d4fdd4dbbf453dc26e24ca, type: 3}
       propertyPath: m_LocalPosition.x
@@ -14216,9 +14216,9 @@ MonoBehaviour:
   interactionText: {fileID: 1266063090}
   spinDuration: 4
   rotationSpeed: -800
-  audioSource: {fileID: 0}
-  spinSound: {fileID: 0}
-  weaponReadySound: {fileID: 0}
+  audioSource: {fileID: 508694677}
+  spinSound: {fileID: 8300000, guid: 7a5647b863be7db44a0620b1c5a28b0e, type: 3}
+  weaponReadySound: {fileID: 8300000, guid: 06599190d03e185469060a61ca0024d2, type: 3}
 --- !u!64 &508694671
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -25249,13 +25249,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 808591639}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.068796225, y: 0.6911207, z: 0.71635574, w: 0.06673696}
-  m_LocalPosition: {x: -1.636, y: -0.0014590643, z: 2.119}
+  m_LocalRotation: {x: -0.0068575176, y: 0.69430035, z: 0.71961886, w: 0.0069788136}
+  m_LocalPosition: {x: -1.6291798, y: 0.004000001, z: 2.1086578}
   m_LocalScale: {x: 1.176391, y: 1.1763933, z: 1.176391}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 543450652271008515}
-  m_LocalEulerAnglesHint: {x: -92.051, y: 169.834, z: -0.835022}
+  m_LocalEulerAnglesHint: {x: -92.052, y: 179.714, z: -0.835022}
 --- !u!65 &808591641
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -42522,7 +42522,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   simulateMobileInEditor: 1
-  startingWeaponAsset: {fileID: 11400000, guid: 6b24712bf09a51f40826b6e79f00b6d1, type: 2}
+  startingWeaponAsset: {fileID: 11400000, guid: 4021730b9b12cca428987c3e148bdd05, type: 2}
   mobilePauseButtonHUD: {fileID: 3362048608129399327}
   gameOverPanel: {fileID: 41855792}
   pausePanel: {fileID: 1907354074}
@@ -48536,6 +48536,8 @@ Transform:
   - {fileID: 1321314505}
   - {fileID: 1837902159}
   - {fileID: 1552128654}
+  - {fileID: 1765837564}
+  - {fileID: 508694674}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1624669082
@@ -51132,7 +51134,7 @@ Transform:
   m_Children:
   - {fileID: 1703894338}
   - {fileID: 1825872785}
-  m_Father: {fileID: 2056575034}
+  m_Father: {fileID: 1623721578}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1770300925
 PrefabInstance:
@@ -54299,6 +54301,7 @@ GameObject:
   - component: {fileID: 1971120484}
   - component: {fileID: 1971120486}
   - component: {fileID: 1971120485}
+  - component: {fileID: 1971120487}
   m_Layer: 0
   m_Name: contenedorBasuraGrande010 (4)
   m_TagString: Untagged
@@ -54374,6 +54377,28 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1971120483}
+  m_Mesh: {fileID: 1401837418683694663, guid: 0dd9613bc310a0946b77cf70a62f3fda, type: 3}
+--- !u!64 &1971120487
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1971120483}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
   m_Mesh: {fileID: 1401837418683694663, guid: 0dd9613bc310a0946b77cf70a62f3fda, type: 3}
 --- !u!1 &1974285490
 GameObject:
@@ -55548,7 +55573,6 @@ Transform:
   - {fileID: 1363937975}
   - {fileID: 832597095}
   - {fileID: 2095809135}
-  - {fileID: 508694674}
   - {fileID: 7689914725501274549}
   - {fileID: 1476619126}
   - {fileID: 514240715}
@@ -55564,7 +55588,6 @@ Transform:
   - {fileID: 1471354798}
   - {fileID: 487884649}
   - {fileID: 400095248}
-  - {fileID: 1765837564}
   - {fileID: 1014575316}
   - {fileID: 467832322}
   - {fileID: 1528704871}

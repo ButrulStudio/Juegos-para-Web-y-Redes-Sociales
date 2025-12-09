@@ -19,7 +19,7 @@ MonoBehaviour:
   weaponName: M4A1
   damage: 45
   range: 80
-  fireRate: 0.25
+  fireRate: 0.15
   price: 0
   ammoPrice: 50
   magCapacity: 30
@@ -48,9 +48,9 @@ MonoBehaviour:
   recoilHorizontalMax: 0.5
   weaponKickbackDistance: 0.05
   weaponKickbackReturnSpeed: 8
-  shootSound: {fileID: 0}
-  reloadSound: {fileID: 0}
-  emptyClipSound: {fileID: 0}
+  shootSound: {fileID: 8300000, guid: 2959c6fe5739a8f43a3d842060a1e4f5, type: 3}
+  reloadSound: {fileID: 8300000, guid: eaa2d8060089df7429184918c83c6619, type: 3}
+  emptyClipSound: {fileID: 8300000, guid: c108c6e93fff29f47a2a779d1644af0f, type: 3}
   actionSoundDelay: 0.4
   boltActionSound: {fileID: 0}
   pumpActionSound: {fileID: 0}

@@ -33,8 +33,8 @@ MonoBehaviour:
   canAim: 1
   aimedFOV: 60
   sniperScopeSprite: {fileID: 0}
-  aimPosition: {x: 0, y: 0, z: 0}
-  aimRotation: {x: 0, y: 0, z: 0}
+  aimPosition: {x: 0.17, y: -0.02, z: 0.5}
+  aimRotation: {x: -3, y: 0, z: 0}
   pelletCount: 4
   spreadAngle: 10
   penetrationCount: 1
@@ -48,9 +48,9 @@ MonoBehaviour:
   recoilHorizontalMax: 0.5
   weaponKickbackDistance: 0.05
   weaponKickbackReturnSpeed: 8
-  shootSound: {fileID: 0}
-  reloadSound: {fileID: 0}
-  emptyClipSound: {fileID: 0}
+  shootSound: {fileID: 8300000, guid: 328584b6a6492784680ab47f62604185, type: 3}
+  reloadSound: {fileID: 8300000, guid: 17bab33cb5d27d14db8cdd264b3c29ff, type: 3}
+  emptyClipSound: {fileID: 8300000, guid: c108c6e93fff29f47a2a779d1644af0f, type: 3}
   actionSoundDelay: 0.4
   boltActionSound: {fileID: 0}
   pumpActionSound: {fileID: 0}

@@ -16,7 +16,6 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private CameraController cameraController;
 
     [Header("Visuales de Mejora")]
-    [Tooltip("Arrastra aquí el Material que se aplicará a las armas cuando estén mejoradas.")]
     public Material upgradedWeaponMaterial;
 
     [Header("UI")]
@@ -79,8 +78,8 @@ public class PlayerShooting : MonoBehaviour
 
     [Header("Estado del Arma Actual")]
     public WeaponData currentWeapon;
-    private GameObject currentWeaponModel; // El modelo visual instanciado
-    private ParticleSystem flamethrowerParticles; // Referencia a las partículas del lanzallamas
+    private GameObject currentWeaponModel;
+    private ParticleSystem flamethrowerParticles;
 
     private float nextFireTime = 0f;
     private bool isBursting = false;
@@ -133,7 +132,11 @@ public class PlayerShooting : MonoBehaviour
 
     void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
 
         if (crosshairImage != null) crosshairRectTransform = crosshairImage.GetComponent<RectTransform>();
@@ -154,8 +157,7 @@ public class PlayerShooting : MonoBehaviour
         if (ultimateUIParent != null) ultimateUIParent.SetActive(false);
         if (collectibleCountText != null) collectibleCountText.gameObject.SetActive(false);
 
-        // El GameManager se encarga de useAutoFire en el OnValidate/Start, 
-        // pero por seguridad si no hay GameManager:
+        // Si no hay GameManager (caso raro) y no es móvil, desactivar autofire
         if (!Application.isMobilePlatform && !Application.isEditor && GameManager.Instance == null)
         {
             useAutoFire = false;
@@ -189,7 +191,9 @@ public class PlayerShooting : MonoBehaviour
 
         if (weaponToEquip != null)
         {
+            // Instanciar para crear una copia limpia
             WeaponData newInstance = Instantiate(weaponToEquip);
+            newInstance.name = weaponToEquip.name;
             EquipWeapon(newInstance);
             ForceCurrentWeaponAmmoToFull();
             WeaponStore.RegisterStartingWeapon(newInstance);
@@ -211,10 +215,7 @@ public class PlayerShooting : MonoBehaviour
         }
 
         HandleLMGHeat();
-
-        // --- CONTROL DE PARTÍCULAS LANZALLAMAS ---
         HandleFlamethrowerEffects();
-        // -----------------------------------------
 
         if (isReloading || isMeleeAttacking) return;
 
@@ -222,15 +223,17 @@ public class PlayerShooting : MonoBehaviour
         HandleReloadInput();
         HandleAiming();
 
-        // Interpolación arma
+        // Interpolación del movimiento del arma (Sway)
         if (weaponHolder != null && currentWeapon != null)
         {
             Vector3 targetPosition = weaponInitialLocalPos;
-            if (isAiming && currentWeapon.sniperScopeSprite == null) targetPosition = currentWeapon.aimPosition;
+            if (isAiming && currentWeapon.sniperScopeSprite == null)
+                targetPosition = currentWeapon.aimPosition;
 
             Vector3 smoothPosition = Vector3.Lerp(weaponHolder.localPosition - weaponCurrentOffset, targetPosition, Time.deltaTime * adsSpeed);
             Quaternion targetRotation = Quaternion.Euler(weaponInitialLocalRot);
-            if (isAiming && currentWeapon.sniperScopeSprite == null) targetRotation = Quaternion.Euler(currentWeapon.aimRotation);
+            if (isAiming && currentWeapon.sniperScopeSprite == null)
+                targetRotation = Quaternion.Euler(currentWeapon.aimRotation);
 
             weaponHolder.localRotation = Quaternion.Slerp(weaponHolder.localRotation, targetRotation, Time.deltaTime * adsSpeed);
             weaponCurrentOffset = Vector3.Lerp(weaponCurrentOffset, Vector3.zero, Time.deltaTime * currentWeapon.weaponKickbackReturnSpeed);
@@ -238,37 +241,107 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // --- LÓGICA DE VISUALES (LANZALLAMAS Y MATERIAL) ---
+    // ==================================================================================
+    // SECCIÓN DE INVENTARIO Y GESTIÓN DE ARMAS
+    // ==================================================================================
 
-    void HandleFlamethrowerEffects()
+    public bool HasWeapon(WeaponType typeToCheck)
     {
-        // Solo si es lanzallamas y tenemos las partículas
-        if (currentWeapon != null && currentWeapon.weaponType == WeaponType.Flamethrower && flamethrowerParticles != null)
+        foreach (WeaponData weapon in weaponSlots)
         {
-            // Detectar Inputs (Ignorando cadencia de fuego para visuales fluidas)
-            bool isPointerOverUI = false;
-            if (Cursor.lockState == CursorLockMode.None && EventSystem.current != null)
+            if (weapon != null && weapon.weaponType == typeToCheck)
             {
-                if (EventSystem.current.IsPointerOverGameObject()) isPointerOverUI = true;
-                if (Input.touchCount > 0 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)) isPointerOverUI = true;
+                return true;
             }
+        }
+        return false;
+    }
 
-            // ¿Está apretando el gatillo? (Ratón O Móvil O AutoFire)
-            bool fireInputHeld = (Input.GetMouseButton(0) && !isPointerOverUI) || isMobileFiring || (useAutoFire && IsAimingAtEnemy());
+    public void RefillAmmoForType(WeaponType typeToRefill)
+    {
+        // 1. Si es el arma actual
+        if (currentWeapon != null && currentWeapon.weaponType == typeToRefill)
+        {
+            currentAmmoInMag = currentWeapon.magCapacity;
+            totalAmmo = currentWeapon.maxAmmo - currentWeapon.magCapacity;
+            SaveCurrentAmmoState();
+            UpdateAmmoUI();
+            return;
+        }
 
-            // Si dispara y tiene munición y no recarga -> Play
-            if (fireInputHeld && !isReloading && currentAmmoInMag > 0)
+        // 2. Si está en el otro slot (guardada)
+        foreach (WeaponData weapon in weaponSlots)
+        {
+            if (weapon != null && weapon.weaponType == typeToRefill)
             {
-                if (!flamethrowerParticles.isPlaying) flamethrowerParticles.Play();
-            }
-            else
-            {
-                if (flamethrowerParticles.isPlaying) flamethrowerParticles.Stop();
+                int maxMag = weapon.magCapacity;
+                int maxTotal = weapon.maxAmmo - weapon.magCapacity;
+
+                ammoInMagCache[weapon.weaponType] = maxMag;
+                totalAmmoCache[weapon.weaponType] = maxTotal;
+                return;
             }
         }
     }
 
-    // --- MÉTODOS PÚBLICOS PARA REFRESCO ---
+    public bool IsAmmoFullForType(WeaponData weaponData)
+    {
+        if (weaponData == null) return true;
+
+        // Verificar arma actual
+        if (currentWeapon != null && currentWeapon.weaponType == weaponData.weaponType)
+        {
+            int maxTotal = currentWeapon.maxAmmo - currentWeapon.magCapacity;
+            return currentAmmoInMag >= currentWeapon.magCapacity && totalAmmo >= maxTotal;
+        }
+
+        // Verificar caché
+        if (ammoInMagCache.ContainsKey(weaponData.weaponType))
+        {
+            int cachedMag = ammoInMagCache[weaponData.weaponType];
+            int cachedTotal = totalAmmoCache[weaponData.weaponType];
+
+            foreach (var w in weaponSlots)
+            {
+                if (w != null && w.weaponType == weaponData.weaponType)
+                {
+                    int realMaxTotal = w.maxAmmo - w.magCapacity;
+                    return cachedMag >= w.magCapacity && cachedTotal >= realMaxTotal;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public void EquipWeapon(WeaponData newWeaponAsset)
+    {
+        if (newWeaponAsset == null) return;
+
+        SaveCurrentAmmoState();
+
+        // Instanciamos para asegurar que es un objeto nuevo sin mejoras previas
+        WeaponData newWeaponInstance = Instantiate(newWeaponAsset);
+        newWeaponInstance.name = newWeaponAsset.name;
+
+        if (weaponSlots[0] == null)
+        {
+            weaponSlots[0] = newWeaponInstance;
+            currentSlotIndex = 0;
+        }
+        else if (weaponSlots[1] == null)
+        {
+            weaponSlots[1] = newWeaponInstance;
+            currentSlotIndex = 1;
+        }
+        else
+        {
+            weaponSlots[currentSlotIndex] = newWeaponInstance;
+        }
+
+        RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
+    }
+
     public void RefreshCurrentWeapon()
     {
         if (currentWeapon != null)
@@ -280,10 +353,11 @@ public class PlayerShooting : MonoBehaviour
     private void RefreshWeaponVisuals(WeaponData weaponData)
     {
         if (currentWeaponModel != null) Destroy(currentWeaponModel);
+
         currentWeapon = weaponData;
         shotTicker = 0;
         lmgCurrentHeatTime = 0;
-        flamethrowerParticles = null; // Limpiar referencia anterior
+        flamethrowerParticles = null;
         StopAiming();
 
         if (currentWeapon == null)
@@ -297,21 +371,18 @@ public class PlayerShooting : MonoBehaviour
         {
             currentWeaponModel = Instantiate(currentWeapon.weaponModelPrefab, weaponHolder);
 
-            // 1. Configurar Muzzle Flash (Luz)
+            // Muzzle Flash
             Light newMuzzleLight = currentWeaponModel.GetComponentInChildren<Light>();
             muzzleLight = newMuzzleLight;
 
-            // 2. Configurar Lanzallamas (Partículas)
+            // Partículas Lanzallamas
             if (currentWeapon.weaponType == WeaponType.Flamethrower)
             {
                 flamethrowerParticles = currentWeaponModel.GetComponentInChildren<ParticleSystem>();
-                if (flamethrowerParticles != null)
-                {
-                    flamethrowerParticles.Stop(); // Asegurar apagado inicial
-                }
+                if (flamethrowerParticles != null) flamethrowerParticles.Stop();
             }
 
-            // 3. Aplicar Material de Mejora (Pack-a-Punch)
+            // Material de Mejora (Pack-a-Punch)
             if (currentWeapon.isUpgraded && upgradedWeaponMaterial != null)
             {
                 Renderer[] renderers = currentWeaponModel.GetComponentsInChildren<Renderer>(true);
@@ -320,7 +391,10 @@ public class PlayerShooting : MonoBehaviour
                     if (r is MeshRenderer || r is SkinnedMeshRenderer)
                     {
                         Material[] newMats = new Material[r.materials.Length];
-                        for (int i = 0; i < newMats.Length; i++) newMats[i] = upgradedWeaponMaterial;
+                        for (int i = 0; i < newMats.Length; i++)
+                        {
+                            newMats[i] = upgradedWeaponMaterial;
+                        }
                         r.materials = newMats;
                     }
                 }
@@ -337,11 +411,39 @@ public class PlayerShooting : MonoBehaviour
         UpdateCrosshair();
     }
 
-    // --- LÓGICA DE DISPARO ---
+    // ==================================================================================
+    // SECCIÓN DE LÓGICA DE DISPARO Y EFECTOS
+    // ==================================================================================
+
+    void HandleFlamethrowerEffects()
+    {
+        if (currentWeapon != null && currentWeapon.weaponType == WeaponType.Flamethrower && flamethrowerParticles != null)
+        {
+            bool isPointerOverUI = false;
+            if (Cursor.lockState == CursorLockMode.None && EventSystem.current != null)
+            {
+                if (EventSystem.current.IsPointerOverGameObject()) isPointerOverUI = true;
+                if (Input.touchCount > 0 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
+                    isPointerOverUI = true;
+            }
+
+            bool fireInputHeld = (Input.GetMouseButton(0) && !isPointerOverUI) || isMobileFiring || (useAutoFire && IsAimingAtEnemy());
+
+            if (fireInputHeld && !isReloading && currentAmmoInMag > 0)
+            {
+                if (!flamethrowerParticles.isPlaying) flamethrowerParticles.Play();
+            }
+            else
+            {
+                if (flamethrowerParticles.isPlaying) flamethrowerParticles.Stop();
+            }
+        }
+    }
 
     void HandleLMGHeat()
     {
         if (currentWeapon == null) return;
+
         if (currentWeapon.weaponType == WeaponType.RPD && currentWeapon.isUpgraded)
         {
             bool isFiring = Input.GetMouseButton(0) || isMobileFiring || (useAutoFire && IsAimingAtEnemy());
@@ -349,7 +451,8 @@ public class PlayerShooting : MonoBehaviour
             if (isFiring && currentAmmoInMag > 0 && !isReloading && !isUltimateActive)
             {
                 lmgCurrentHeatTime += Time.deltaTime;
-                if (lmgCurrentHeatTime > currentWeapon.heatRampUpTime) lmgCurrentHeatTime = currentWeapon.heatRampUpTime;
+                if (lmgCurrentHeatTime > currentWeapon.heatRampUpTime)
+                    lmgCurrentHeatTime = currentWeapon.heatRampUpTime;
             }
             else
             {
@@ -360,23 +463,31 @@ public class PlayerShooting : MonoBehaviour
             if (ammoText != null)
             {
                 float heatFactor = lmgCurrentHeatTime / currentWeapon.heatRampUpTime;
-                if (heatFactor > 0.5f) ammoText.color = Color.Lerp(defaultAmmoColor, Color.red, heatFactor);
-                else if (!isUltimateActive) ammoText.color = defaultAmmoColor;
+                if (heatFactor > 0.5f)
+                    ammoText.color = Color.Lerp(defaultAmmoColor, Color.red, heatFactor);
+                else if (!isUltimateActive)
+                    ammoText.color = defaultAmmoColor;
             }
         }
-        else { lmgCurrentHeatTime = 0; }
+        else
+        {
+            lmgCurrentHeatTime = 0;
+        }
     }
 
     float GetCurrentWeaponDamage()
     {
         if (currentWeapon == null) return 0f;
+
         float baseDmg = currentWeapon.damage;
+
         if (currentWeapon.weaponType == WeaponType.RPD && currentWeapon.isUpgraded)
         {
             float heatProgress = lmgCurrentHeatTime / currentWeapon.heatRampUpTime;
             float heatMultiplier = Mathf.Lerp(1.0f, currentWeapon.maxHeatDamageMultiplier, heatProgress);
             baseDmg *= heatMultiplier;
         }
+
         return baseDmg * damageMultiplier;
     }
 
@@ -384,9 +495,11 @@ public class PlayerShooting : MonoBehaviour
     {
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         RaycastHit hit;
+
         if (Physics.Raycast(ray, out hit, currentWeapon.range))
         {
             if (hit.collider.CompareTag("Zombie")) return true;
+
             ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
             if (hitbox != null) return true;
         }
@@ -403,12 +516,16 @@ public class PlayerShooting : MonoBehaviour
             if (EventSystem.current != null)
             {
                 if (EventSystem.current.IsPointerOverGameObject()) isPointerOverUI = true;
-                if (Input.touchCount > 0 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId)) isPointerOverUI = true;
+                if (Input.touchCount > 0 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
+                    isPointerOverUI = true;
             }
         }
 
         bool enemyInSight = false;
-        if (useAutoFire && !isPointerOverUI && !isReloading) { enemyInSight = IsAimingAtEnemy(); }
+        if (useAutoFire && !isPointerOverUI && !isReloading)
+        {
+            enemyInSight = IsAimingAtEnemy();
+        }
 
         bool mouseInput = Input.GetMouseButton(0) && !isPointerOverUI;
         bool mouseInputDown = Input.GetMouseButtonDown(0) && !isPointerOverUI;
@@ -416,10 +533,8 @@ public class PlayerShooting : MonoBehaviour
         bool fireInputHeld = mouseInput || isMobileFiring || enemyInSight;
         bool fireInputDownCombined = mouseInputDown;
 
-        // --- SWITCH CON LOS NUEVOS NOMBRES ---
         switch (currentWeapon.weaponType)
         {
-            // SEMI-AUTOMÁTICAS
             case WeaponType.Glock:
             case WeaponType.Remington:
             case WeaponType.HuntingShotgun:
@@ -428,7 +543,6 @@ public class PlayerShooting : MonoBehaviour
             case WeaponType.Fal:
             case WeaponType.M14:
 
-                // Excepción: Glock y Fal se vuelven Auto al mejorar
                 bool becomesAuto = currentWeapon.isUpgraded && (currentWeapon.weaponType == WeaponType.Glock || currentWeapon.weaponType == WeaponType.Fal);
 
                 if (becomesAuto)
@@ -439,7 +553,7 @@ public class PlayerShooting : MonoBehaviour
                         Shoot();
                     }
                 }
-                else // Comportamiento Semi-Auto normal
+                else
                 {
                     if ((fireInputDownCombined || (enemyInSight && useAutoFire)) && Time.time >= nextFireTime && !isBursting)
                     {
@@ -455,7 +569,6 @@ public class PlayerShooting : MonoBehaviour
                 }
                 break;
 
-            // FULL AUTOMÁTICAS
             case WeaponType.AK47:
             case WeaponType.M4A1:
             case WeaponType.MTAR:
@@ -467,6 +580,7 @@ public class PlayerShooting : MonoBehaviour
                 if (fireInputHeld && Time.time >= nextFireTime)
                 {
                     nextFireTime = Time.time + currentWeapon.fireRate;
+
                     if (currentWeapon.weaponType == WeaponType.Flamethrower) ShootFlamethrower();
                     else if (currentWeapon.weaponType == WeaponType.AA12) StartCoroutine(ShootShotgunCoroutine());
                     else ShootRifle();
@@ -475,12 +589,20 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // --- MÉTODOS PÚBLICOS MÓVILES ---
-    public void SetMobileFiring(bool isFiring) { isMobileFiring = isFiring; }
-    public void MobileToggleAim() { isMobileAiming = !isMobileAiming; }
+    public void SetMobileFiring(bool isFiring)
+    {
+        isMobileFiring = isFiring;
+    }
+
+    public void MobileToggleAim()
+    {
+        isMobileAiming = !isMobileAiming;
+    }
+
     public void MobileFireOnce()
     {
         if (currentWeapon == null) return;
+
         if (Time.time >= nextFireTime && !isBursting && !isReloading)
         {
             bool isSemi = (currentWeapon.weaponType == WeaponType.Glock && !currentWeapon.isUpgraded) ||
@@ -494,70 +616,147 @@ public class PlayerShooting : MonoBehaviour
             if (isSemi)
             {
                 nextFireTime = Time.time + currentWeapon.fireRate;
-                if (currentWeapon.weaponType == WeaponType.Remington || currentWeapon.weaponType == WeaponType.HuntingShotgun) StartCoroutine(ShootShotgunCoroutine());
-                else if (currentWeapon.weaponType == WeaponType.L11 || currentWeapon.weaponType == WeaponType.SVU) StartCoroutine(ShootSniperCoroutine());
-                else Shoot();
+
+                if (currentWeapon.weaponType == WeaponType.Remington || currentWeapon.weaponType == WeaponType.HuntingShotgun)
+                    StartCoroutine(ShootShotgunCoroutine());
+                else if (currentWeapon.weaponType == WeaponType.L11 || currentWeapon.weaponType == WeaponType.SVU)
+                    StartCoroutine(ShootSniperCoroutine());
+                else
+                    Shoot();
             }
         }
     }
+
     public void MobileReload()
     {
         if (!isReloading && currentAmmoInMag < currentWeapon.magCapacity && totalAmmo > 0)
             StartCoroutine(ReloadCoroutine());
     }
 
-    // --- ACCIONES DE DISPARO ---
     void Shoot()
     {
-        if (currentAmmoInMag <= 0) { HandleEmptyClip(); return; }
+        if (currentAmmoInMag <= 0)
+        {
+            HandleEmptyClip();
+            return;
+        }
+
         FireBaseLogic();
+
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range)) HandleHit(hit, GetCurrentWeaponDamage());
+        if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
+        {
+            HandleHit(hit, GetCurrentWeaponDamage());
+        }
         ApplyRecoil();
     }
 
-    IEnumerator BurstFire() { if (isBursting) yield break; isBursting = true; int burstCount = 3; for (int i = 0; i < burstCount; i++) { if (currentAmmoInMag <= 0) { HandleEmptyClip(); break; } FireBaseLogic(); Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward); if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range)) HandleHit(hit, GetCurrentWeaponDamage()); ApplyRecoil(); yield return new WaitForSeconds(currentWeapon.fireRate); } yield return new WaitForSeconds(0.1f); isBursting = false; }
+    IEnumerator BurstFire()
+    {
+        if (isBursting) yield break;
+
+        isBursting = true;
+        int burstCount = 3;
+
+        for (int i = 0; i < burstCount; i++)
+        {
+            if (currentAmmoInMag <= 0)
+            {
+                HandleEmptyClip();
+                break;
+            }
+
+            FireBaseLogic();
+
+            Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+            if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
+            {
+                HandleHit(hit, GetCurrentWeaponDamage());
+            }
+            ApplyRecoil();
+            yield return new WaitForSeconds(currentWeapon.fireRate);
+        }
+        yield return new WaitForSeconds(0.1f);
+        isBursting = false;
+    }
 
     void ShootRifle()
     {
-        if (currentAmmoInMag <= 0) { HandleEmptyClip(); return; }
+        if (currentAmmoInMag <= 0)
+        {
+            HandleEmptyClip();
+            return;
+        }
+
         FireBaseLogic();
+
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range)) HandleHit(hit, GetCurrentWeaponDamage());
+        if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
+        {
+            HandleHit(hit, GetCurrentWeaponDamage());
+        }
         ApplyRecoil();
     }
 
     IEnumerator ShootShotgunCoroutine()
     {
-        if (currentAmmoInMag <= 0) { HandleEmptyClip(); yield break; }
+        if (currentAmmoInMag <= 0)
+        {
+            HandleEmptyClip();
+            yield break;
+        }
+
         FireBaseLogic();
+
         for (int i = 0; i < currentWeapon.pelletCount; i++)
         {
             Vector3 direction = playerCamera.transform.forward;
-            direction = Quaternion.Euler(Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle), Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle), 0) * direction;
+            direction = Quaternion.Euler(
+                Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle),
+                Random.Range(-currentWeapon.spreadAngle, currentWeapon.spreadAngle),
+                0
+            ) * direction;
+
             Ray ray = new Ray(playerCamera.transform.position, direction);
-            if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range)) HandleHit(hit, GetCurrentWeaponDamage());
+            if (Physics.Raycast(ray, out RaycastHit hit, currentWeapon.range))
+            {
+                HandleHit(hit, GetCurrentWeaponDamage());
+            }
         }
         ApplyRecoil();
-        if (currentWeapon.pumpActionSound != null) { yield return new WaitForSeconds(currentWeapon.actionSoundDelay); PlaySound(currentWeapon.pumpActionSound); }
+
+        if (currentWeapon.pumpActionSound != null)
+        {
+            yield return new WaitForSeconds(currentWeapon.actionSoundDelay);
+            PlaySound(currentWeapon.pumpActionSound);
+        }
     }
 
     IEnumerator ShootSniperCoroutine()
     {
-        if (currentAmmoInMag <= 0) { HandleEmptyClip(); yield break; }
+        if (currentAmmoInMag <= 0)
+        {
+            HandleEmptyClip();
+            yield break;
+        }
+
         FireBaseLogic();
         ApplyRecoil();
+
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         RaycastHit[] hits = Physics.RaycastAll(ray, currentWeapon.range);
+
         if (hits.Length > 0)
         {
             var sortedHits = hits.OrderBy(h => h.distance);
             HashSet<ZombieController> alreadyDamaged = new HashSet<ZombieController>();
             int targetsHit = 0;
+
             foreach (var hit in sortedHits)
             {
                 ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
                 ZombieController zombieHealth = (hitbox != null) ? hitbox.zombieController : hit.collider.GetComponent<ZombieController>();
+
                 if (zombieHealth != null)
                 {
                     if (!alreadyDamaged.Contains(zombieHealth))
@@ -568,45 +767,84 @@ public class PlayerShooting : MonoBehaviour
                         if (targetsHit >= currentWeapon.penetrationCount) break;
                     }
                 }
-                else HandleHit(hit, GetCurrentWeaponDamage());
+                else
+                {
+                    HandleHit(hit, GetCurrentWeaponDamage());
+                }
             }
         }
-        if (currentWeapon.boltActionSound != null) { yield return new WaitForSeconds(currentWeapon.actionSoundDelay); PlaySound(currentWeapon.boltActionSound); }
+
+        if (currentWeapon.boltActionSound != null)
+        {
+            yield return new WaitForSeconds(currentWeapon.actionSoundDelay);
+            PlaySound(currentWeapon.boltActionSound);
+        }
     }
 
     void ShootFlamethrower()
     {
         PlaySound(currentWeapon.shootSound);
-        // StartCoroutine(MuzzleFlashRoutine()); // COMENTADO para evitar parpadeo de luz, usamos partículas
 
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        RaycastHit[] hits = Physics.SphereCastAll(ray.origin, currentWeapon.flameRadius, ray.direction, currentWeapon.range, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+        RaycastHit[] hits = Physics.SphereCastAll(
+            ray.origin,
+            currentWeapon.flameRadius,
+            ray.direction,
+            currentWeapon.range,
+            Physics.DefaultRaycastLayers,
+            QueryTriggerInteraction.Ignore
+        );
+
         HashSet<ZombieController> burnedZombies = new HashSet<ZombieController>();
+
         foreach (RaycastHit hit in hits)
         {
             ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
             ZombieController zombie = (hitbox != null) ? hitbox.zombieController : hit.collider.GetComponent<ZombieController>();
-            if (zombie != null) { if (burnedZombies.Add(zombie)) HandleHit(hit, currentWeapon.damage * damageMultiplier); }
+
+            if (zombie != null)
+            {
+                if (burnedZombies.Add(zombie))
+                {
+                    HandleHit(hit, currentWeapon.damage * damageMultiplier);
+                }
+            }
         }
     }
 
     void HandleHit(RaycastHit hit, float damage)
     {
         Palomas collectible = hit.collider.GetComponent<Palomas>();
-        if (collectible != null) { collectible.TakeDamage(damage * damageMultiplier); SpawnImpactEffects(hit); return; }
+        if (collectible != null)
+        {
+            collectible.TakeDamage(damage * damageMultiplier);
+            SpawnImpactEffects(hit);
+            return;
+        }
 
         ZombieHitbox hitbox = hit.collider.GetComponent<ZombieHitbox>();
         ZombieController zombieHealth = (hitbox != null) ? hitbox.zombieController : hit.collider.GetComponent<ZombieController>();
 
         if (zombieHealth != null)
         {
-            if (zombieHealth.GetHP() <= 0) { SpawnImpactEffects(hit); return; }
-            if (currentWeapon.weaponType != WeaponType.Flamethrower && ScoreManager.Instance != null) ScoreManager.Instance.AddScore(pointsPerHit);
+            if (zombieHealth.GetHP() <= 0)
+            {
+                SpawnImpactEffects(hit);
+                return;
+            }
 
-            if (hitbox != null) zombieHealth.TakeDamage(damage, hitbox.hitboxType); else zombieHealth.TakeDamage(damage);
+            if (currentWeapon.weaponType != WeaponType.Flamethrower && ScoreManager.Instance != null)
+                ScoreManager.Instance.AddScore(pointsPerHit);
 
-            // --- EFECTOS ESPECIALES ---
-            if (currentWeapon.causesSlow) zombieHealth.ApplySlow(currentWeapon.slowAmount, currentWeapon.slowDuration);
+            if (hitbox != null)
+                zombieHealth.TakeDamage(damage, hitbox.hitboxType);
+            else
+                zombieHealth.TakeDamage(damage);
+
+            // --- APLICACIÓN DE EFECTOS ---
+            if (currentWeapon.causesSlow)
+                zombieHealth.ApplySlow(currentWeapon.slowAmount, currentWeapon.slowDuration);
+
             if (currentWeapon.causesKnockback)
             {
                 Vector3 pushDirection = (zombieHealth.transform.position - transform.position).normalized;
@@ -617,18 +855,24 @@ public class PlayerShooting : MonoBehaviour
             if (zombieHealth.GetHP() <= 0)
             {
                 ShowFloatingScore(hit.point, pointsPerKillDisplay);
+
                 // Efecto Vampiro
                 if ((currentWeapon.weaponType == WeaponType.UZI || currentWeapon.weaponType == WeaponType.Mp7) && currentWeapon.isUpgraded)
                 {
                     if (currentAmmoInMag < currentWeapon.magCapacity)
                     {
                         currentAmmoInMag += currentWeapon.vampireAmmoRestore;
-                        if (currentAmmoInMag > currentWeapon.magCapacity) currentAmmoInMag = currentWeapon.magCapacity;
+                        if (currentAmmoInMag > currentWeapon.magCapacity)
+                            currentAmmoInMag = currentWeapon.magCapacity;
                         UpdateAmmoUI();
                     }
                 }
             }
-            else { if (currentWeapon.weaponType != WeaponType.Flamethrower) ShowFloatingScore(hit.point, pointsPerHit); }
+            else
+            {
+                if (currentWeapon.weaponType != WeaponType.Flamethrower)
+                    ShowFloatingScore(hit.point, pointsPerHit);
+            }
         }
         SpawnImpactEffects(hit);
     }
@@ -649,25 +893,47 @@ public class PlayerShooting : MonoBehaviour
         PlaySound(currentWeapon.shootSound);
         currentAmmoInMag--;
         UpdateAmmoUI();
-        if (currentWeapon.weaponType != WeaponType.Flamethrower) StartCoroutine(MuzzleFlashRoutine());
+        if (currentWeapon.weaponType != WeaponType.Flamethrower)
+            StartCoroutine(MuzzleFlashRoutine());
     }
 
     void HandleEmptyClip()
     {
         if (isUltimateActive) return;
         PlaySound(currentWeapon.emptyClipSound);
-        if (totalAmmo > 0) { if (!isReloading) StartCoroutine(ReloadCoroutine()); }
-        else { if (ammoText != null) { ammoText.text = "SIN MUNICIÓN"; ammoText.color = Color.red; } }
+        if (totalAmmo > 0)
+        {
+            if (!isReloading) StartCoroutine(ReloadCoroutine());
+        }
+        else
+        {
+            if (ammoText != null)
+            {
+                ammoText.text = "SIN MUNICIÓN";
+                ammoText.color = Color.red;
+            }
+        }
     }
 
     private void SpawnImpactEffects(RaycastHit hit)
     {
         GameObject particlePrefab = null;
         Sprite decalSprite = null;
-        if (hit.collider.CompareTag("Zombie")) particlePrefab = bloodParticlePrefab;
-        else if (hit.collider.CompareTag("Mapa")) { particlePrefab = dustParticlePrefab; decalSprite = mapBulletHoleSprite; }
 
-        if (particlePrefab != null) { GameObject effect = Instantiate(particlePrefab, hit.point + (hit.normal * 0.02f), Quaternion.LookRotation(hit.normal)); Destroy(effect, 2f); }
+        if (hit.collider.CompareTag("Zombie"))
+            particlePrefab = bloodParticlePrefab;
+        else if (hit.collider.CompareTag("Mapa"))
+        {
+            particlePrefab = dustParticlePrefab;
+            decalSprite = mapBulletHoleSprite;
+        }
+
+        if (particlePrefab != null)
+        {
+            GameObject effect = Instantiate(particlePrefab, hit.point + (hit.normal * 0.02f), Quaternion.LookRotation(hit.normal));
+            Destroy(effect, 2f);
+        }
+
         if (decalSprite != null && bulletHoleBasePrefab != null)
         {
             Quaternion hitRotation = Quaternion.LookRotation(hit.normal);
@@ -682,21 +948,28 @@ public class PlayerShooting : MonoBehaviour
     private void ApplyRecoil()
     {
         if (isUltimateActive) return;
+
         if (cameraController != null)
         {
             float vertical = Random.Range(currentWeapon.recoilVerticalMin, currentWeapon.recoilVerticalMax);
             float horizontal = Random.Range(currentWeapon.recoilHorizontalMin, currentWeapon.recoilHorizontalMax);
             cameraController.AddRecoil(vertical, horizontal);
         }
-        if (weaponHolder != null) weaponCurrentOffset = new Vector3(0, 0, -currentWeapon.weaponKickbackDistance);
+        if (weaponHolder != null)
+            weaponCurrentOffset = new Vector3(0, 0, -currentWeapon.weaponKickbackDistance);
     }
 
     private void UpdateAmmoUI()
     {
         if (ammoText == null) return;
+
         if (currentWeapon != null)
         {
-            if (isUltimateActive) { ammoText.text = "∞ / ∞"; ammoText.color = Color.yellow; }
+            if (isUltimateActive)
+            {
+                ammoText.text = "∞ / ∞";
+                ammoText.color = Color.yellow;
+            }
             else
             {
                 ammoText.text = $"{currentAmmoInMag} / {totalAmmo}";
@@ -705,14 +978,29 @@ public class PlayerShooting : MonoBehaviour
                 else ammoText.color = defaultAmmoColor;
             }
         }
-        else { ammoText.text = ""; ammoText.color = defaultAmmoColor; }
+        else
+        {
+            ammoText.text = "";
+            ammoText.color = defaultAmmoColor;
+        }
     }
 
-    private void ClearCrosshair() { if (crosshairImage != null) crosshairImage.enabled = false; }
-    public void SetCrosshair(Vector2 size, Vector2 aimedSize) { if (crosshairRectTransform == null) return; crosshairRectTransform.sizeDelta = size; crosshairImage.enabled = true; }
+    private void ClearCrosshair()
+    {
+        if (crosshairImage != null) crosshairImage.enabled = false;
+    }
+
+    public void SetCrosshair(Vector2 size, Vector2 aimedSize)
+    {
+        if (crosshairRectTransform == null) return;
+        crosshairRectTransform.sizeDelta = size;
+        crosshairImage.enabled = true;
+    }
+
     private void UpdateCrosshair()
     {
         if (crosshairRectTransform == null) return;
+
         if (currentWeapon != null && currentWeapon.crosshairIcon != null)
         {
             crosshairImage.sprite = currentWeapon.crosshairIcon;
@@ -723,64 +1011,124 @@ public class PlayerShooting : MonoBehaviour
             crosshairRectTransform.sizeDelta = currentWeapon.crosshairSize;
             crosshairImage.enabled = true;
         }
-        else crosshairImage.enabled = false;
+        else
+        {
+            crosshairImage.enabled = false;
+        }
     }
 
-    private IEnumerator MuzzleFlashRoutine() { if (muzzleLight == null) yield break; muzzleLight.enabled = true; yield return new WaitForSeconds(flashDuration); muzzleLight.enabled = false; }
-    private void PlaySound(AudioClip clip) { if (audioSource != null && clip != null) audioSource.PlayOneShot(clip); }
+    private IEnumerator MuzzleFlashRoutine()
+    {
+        if (muzzleLight == null) yield break;
+        muzzleLight.enabled = true;
+        yield return new WaitForSeconds(flashDuration);
+        muzzleLight.enabled = false;
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+    }
 
     void HandleReloadInput()
     {
         if (isUltimateActive) return;
         if (currentWeapon == null) return;
-        if (Input.GetKeyDown(KeyCode.R) && !isReloading && currentAmmoInMag < currentWeapon.magCapacity && totalAmmo > 0) StartCoroutine(ReloadCoroutine());
+        if (Input.GetKeyDown(KeyCode.R) && !isReloading && currentAmmoInMag < currentWeapon.magCapacity && totalAmmo > 0)
+            StartCoroutine(ReloadCoroutine());
     }
 
     IEnumerator ReloadCoroutine()
     {
         isReloading = true;
+
+        // Reproducimos el sonido general (ej: el ruido de la ropa al levantar el arma)
+        // Si es una escopeta de cartuchos, evita poner aquí el sonido completo de recarga, usa uno sutil.
         PlaySound(currentWeapon.reloadSound);
+
         lmgCurrentHeatTime = 0;
+
         float reloadTime = currentWeapon.reloadTime * reloadTimeMultiplier;
         float animTime = 1f / reloadAnimSpeed;
         float t = 0;
-        while (t < 1f) { t += Time.deltaTime * reloadAnimSpeed; weaponHolder.localRotation = Quaternion.Lerp(Quaternion.Euler(weaponInitialLocalRot), Quaternion.Euler(reloadRotation), t); yield return null; }
+
+        // Animación de levantar el arma
+        while (t < 1f)
+        {
+            t += Time.deltaTime * reloadAnimSpeed;
+            weaponHolder.localRotation = Quaternion.Lerp(Quaternion.Euler(weaponInitialLocalRot), Quaternion.Euler(reloadRotation), t);
+            yield return null;
+        }
 
         int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
         int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
+
+        // Tiempo de espera inicial antes de empezar a meter balas (ajustable)
         float waitTime = Mathf.Max(0, reloadTime - animTime * 2f);
 
-        if (currentWeapon.weaponType == WeaponType.Remington || currentWeapon.weaponType == WeaponType.HuntingShotgun || currentWeapon.weaponType == WeaponType.AA12)
+        // --- LÓGICA ESPECÍFICA DE ESCOPETAS DE TUBO ---
+        if (currentWeapon.weaponType == WeaponType.Remington || currentWeapon.weaponType == WeaponType.HuntingShotgun)
         {
-            if (currentWeapon.weaponType == WeaponType.AA12)
+            // Calculamos cuánto tarda en meter CADA cartucho individualmente
+            // Si el tiempo de recarga es 4s y metes 4 balas = 1s por bala.
+            // Si metes 2 balas = 1s por bala (total 2s).
+            // Para que sea constante, definimos un tiempo base por cartucho si ammoToLoad > 0
+
+            float timePerBullet = 0f;
+
+            if (ammoToLoad > 0)
             {
-                if (waitTime > 0) yield return new WaitForSeconds(waitTime);
-                currentAmmoInMag += ammoToLoad; totalAmmo -= ammoToLoad;
+                // Opción A: Dividir el tiempo total (ReloadTime) entre la capacidad del cargador
+                // Esto hace que cada bala tarde siempre lo mismo, recargues 1 o 6.
+                timePerBullet = currentWeapon.reloadTime / currentWeapon.magCapacity;
             }
-            else
+
+            for (int i = 0; i < ammoToLoad; i++)
             {
-                float timePerBullet = (waitTime > 0 && ammoToLoad > 0) ? waitTime / ammoToLoad : 0;
-                for (int i = 0; i < ammoToLoad; i++)
+                // REPRODUCIR SONIDO DE CARTUCHO (CLIC)
+                if (currentWeapon.shellInsertSound != null)
                 {
-                    if (timePerBullet > 0) yield return new WaitForSeconds(timePerBullet);
-                    currentAmmoInMag++; totalAmmo--; UpdateAmmoUI();
+                    PlaySound(currentWeapon.shellInsertSound);
                 }
+
+                // Esperar el tiempo que tarda la animación de meter esa bala
+                if (timePerBullet > 0) yield return new WaitForSeconds(timePerBullet);
+
+                currentAmmoInMag++;
+                totalAmmo--;
+                UpdateAmmoUI();
             }
         }
+        // --- LÓGICA PARA EL RESTO DE ARMAS (Cargador completo) ---
         else
         {
+            // Esperamos el tiempo de recarga completo (ej. cambiar cargador de AK47)
             if (waitTime > 0) yield return new WaitForSeconds(waitTime);
-            currentAmmoInMag += ammoToLoad; totalAmmo -= ammoToLoad;
+
+            currentAmmoInMag += ammoToLoad;
+            totalAmmo -= ammoToLoad;
         }
 
+        // Animación de bajar el arma
         t = 0;
-        while (t < 1f) { t += Time.deltaTime * reloadAnimSpeed; weaponHolder.localRotation = Quaternion.Lerp(Quaternion.Euler(reloadRotation), Quaternion.Euler(weaponInitialLocalRot), t); yield return null; }
-        isReloading = false; UpdateAmmoUI();
+        while (t < 1f)
+        {
+            t += Time.deltaTime * reloadAnimSpeed;
+            weaponHolder.localRotation = Quaternion.Lerp(Quaternion.Euler(reloadRotation), Quaternion.Euler(weaponInitialLocalRot), t);
+            yield return null;
+        }
+
+        isReloading = false;
+        UpdateAmmoUI();
     }
 
     void HandleAiming()
     {
-        if (currentWeapon == null || !currentWeapon.canAim) { if (isAiming) StopAiming(); return; }
+        if (currentWeapon == null || !currentWeapon.canAim)
+        {
+            if (isAiming) StopAiming();
+            return;
+        }
 
         bool aimInput = Input.GetMouseButton(1) || isMobileAiming;
         if (aimInput) isAiming = true; else isAiming = false;
@@ -796,14 +1144,32 @@ public class PlayerShooting : MonoBehaviour
 
         if (isAiming && currentWeapon.sniperScopeSprite != null)
         {
-            if (crosshairRectTransform != null) { crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f); crosshairRectTransform.anchorMax = new Vector2(0.5f, 0.5f); crosshairRectTransform.pivot = new Vector2(0.5f, 0.5f); crosshairRectTransform.anchoredPosition = Vector2.zero; crosshairRectTransform.sizeDelta = currentWeapon.aimedCrosshairSize; }
-            crosshairImage.sprite = currentWeapon.sniperScopeSprite; crosshairImage.enabled = true;
-            if (!weaponHiddenForScope) { if (currentWeaponModel != null) currentWeaponModel.SetActive(false); weaponHiddenForScope = true; }
+            if (crosshairRectTransform != null)
+            {
+                crosshairRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+                crosshairRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                crosshairRectTransform.pivot = new Vector2(0.5f, 0.5f);
+                crosshairRectTransform.anchoredPosition = Vector2.zero;
+                crosshairRectTransform.sizeDelta = currentWeapon.aimedCrosshairSize;
+            }
+            crosshairImage.sprite = currentWeapon.sniperScopeSprite;
+            crosshairImage.enabled = true;
+
+            if (!weaponHiddenForScope)
+            {
+                if (currentWeaponModel != null) currentWeaponModel.SetActive(false);
+                weaponHiddenForScope = true;
+            }
         }
         else
         {
-            if (weaponHiddenForScope) { if (currentWeaponModel != null) currentWeaponModel.SetActive(true); weaponHiddenForScope = false; }
-            if (isAiming) crosshairImage.enabled = false; else UpdateCrosshair();
+            if (weaponHiddenForScope)
+            {
+                if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
+                weaponHiddenForScope = false;
+            }
+            if (isAiming) crosshairImage.enabled = false;
+            else UpdateCrosshair();
         }
     }
 
@@ -813,139 +1179,283 @@ public class PlayerShooting : MonoBehaviour
         isMobileAiming = false;
         if (cameraController != null) cameraController.SetSensitivityMultiplier(1f);
         if (playerCamera != null) playerCamera.fieldOfView = defaultFOV;
-        if (weaponHiddenForScope) { if (currentWeaponModel != null) currentWeaponModel.SetActive(true); weaponHiddenForScope = false; }
+        if (weaponHiddenForScope)
+        {
+            if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
+            weaponHiddenForScope = false;
+        }
         UpdateCrosshair();
     }
 
-    // --- MÉTODOS DE APOYO Y UTILIDADES ---
-
     void HandleMeleeInput()
     {
-        if (Input.GetKeyDown(meleeKey) && !isReloading && !isUltimateActive && currentWeapon != null) StartCoroutine(QuickMeleeRoutine());
+        if (Input.GetKeyDown(meleeKey) && !isReloading && !isUltimateActive && currentWeapon != null)
+            StartCoroutine(QuickMeleeRoutine());
     }
 
     private IEnumerator QuickMeleeRoutine()
     {
         if (knifeGameObject == null) yield break;
-        isMeleeAttacking = true; isReloading = false; isBursting = false; StopAiming();
-        Vector3 savedWeaponPos = Vector3.zero; Quaternion savedWeaponRot = Quaternion.identity;
-        if (currentWeaponModel != null) { savedWeaponPos = currentWeaponModel.transform.localPosition; savedWeaponRot = currentWeaponModel.transform.localRotation; currentWeaponModel.SetActive(false); }
-        if (crosshairImage != null) crosshairImage.enabled = false; if (cameraController != null) cameraController.enabled = false;
-        knifeGameObject.SetActive(true); if (knifeAnimator != null) knifeAnimator.SetTrigger(meleeAnimationName);
+
+        isMeleeAttacking = true;
+        isReloading = false;
+        isBursting = false;
+        StopAiming();
+
+        Vector3 savedWeaponPos = Vector3.zero;
+        Quaternion savedWeaponRot = Quaternion.identity;
+
+        if (currentWeaponModel != null)
+        {
+            savedWeaponPos = currentWeaponModel.transform.localPosition;
+            savedWeaponRot = currentWeaponModel.transform.localRotation;
+            currentWeaponModel.SetActive(false);
+        }
+
+        if (crosshairImage != null) crosshairImage.enabled = false;
+        if (cameraController != null) cameraController.enabled = false;
+
+        knifeGameObject.SetActive(true);
+        if (knifeAnimator != null) knifeAnimator.SetTrigger(meleeAnimationName);
+
         yield return new WaitForSeconds(damageDelay);
+
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
-        if (Physics.Raycast(ray, out RaycastHit hit, knifeRange)) HandleHit(hit, knifeDamage);
+        if (Physics.Raycast(ray, out RaycastHit hit, knifeRange))
+            HandleHit(hit, knifeDamage);
+
         yield return new WaitForSeconds(meleeDuration - damageDelay);
+
         knifeGameObject.SetActive(false);
-        if (currentWeaponModel != null) { currentWeaponModel.SetActive(true); currentWeaponModel.transform.localPosition = savedWeaponPos; currentWeaponModel.transform.localRotation = savedWeaponRot; }
-        if (cameraController != null) cameraController.enabled = true; if (crosshairImage != null) crosshairImage.enabled = true;
+
+        if (currentWeaponModel != null)
+        {
+            currentWeaponModel.SetActive(true);
+            currentWeaponModel.transform.localPosition = savedWeaponPos;
+            currentWeaponModel.transform.localRotation = savedWeaponRot;
+        }
+
+        if (cameraController != null) cameraController.enabled = true;
+        if (crosshairImage != null) crosshairImage.enabled = true;
+
         isMeleeAttacking = false;
     }
 
     void HandleUltimateLogic()
     {
-        if (!isUltimateUnlocked) { if (ultimateUIParent != null && ultimateUIParent.activeSelf) ultimateUIParent.SetActive(false); return; }
-        if (ultimateUIParent != null && !ultimateUIParent.activeSelf) ultimateUIParent.SetActive(true);
+        if (!isUltimateUnlocked)
+        {
+            if (ultimateUIParent != null && ultimateUIParent.activeSelf)
+                ultimateUIParent.SetActive(false);
+            return;
+        }
+
+        if (ultimateUIParent != null && !ultimateUIParent.activeSelf)
+            ultimateUIParent.SetActive(true);
+
         if (isUltimateActive) return;
         if (ultimateWeaponData == null) return;
+
         float percentage = 0f;
-        if (ultimateWeaponData.requiredKillsForUlt > 0) percentage = (float)currentKillsCount / ultimateWeaponData.requiredKillsForUlt;
+        if (ultimateWeaponData.requiredKillsForUlt > 0)
+            percentage = (float)currentKillsCount / ultimateWeaponData.requiredKillsForUlt;
+
         if (ultimateIconFill != null) ultimateIconFill.fillAmount = percentage;
 
         if (currentKillsCount >= ultimateWeaponData.requiredKillsForUlt)
         {
             ultimateIsReady = true;
-            if (ultimateReadyVisual != null && !ultimateReadyVisual.activeSelf) ultimateReadyVisual.SetActive(true);
+            if (ultimateReadyVisual != null && !ultimateReadyVisual.activeSelf)
+                ultimateReadyVisual.SetActive(true);
             if (ultimateIconFill != null) ultimateIconFill.fillAmount = 1f;
+
             if (Input.GetKeyDown(ultimateKey)) StartCoroutine(ActivateUltimateRoutine());
         }
         else
         {
             ultimateIsReady = false;
-            if (ultimateReadyVisual != null && ultimateReadyVisual.activeSelf) ultimateReadyVisual.SetActive(false);
+            if (ultimateReadyVisual != null && ultimateReadyVisual.activeSelf)
+                ultimateReadyVisual.SetActive(false);
         }
     }
 
     void HandleWeaponSwitching()
     {
         if (isReloading || isAiming || isBursting) return;
+
         float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll > 0f) { if (currentSlotIndex != 0 && weaponSlots[0] != null) SwitchToSlot(0); }
-        else if (scroll < 0f) { if (currentSlotIndex != 1 && weaponSlots[1] != null) SwitchToSlot(1); }
+
+        if (scroll > 0f)
+        {
+            if (currentSlotIndex != 0 && weaponSlots[0] != null) SwitchToSlot(0);
+        }
+        else if (scroll < 0f)
+        {
+            if (currentSlotIndex != 1 && weaponSlots[1] != null) SwitchToSlot(1);
+        }
+
         if (Input.GetKeyDown(KeyCode.Alpha1) && currentSlotIndex != 0 && weaponSlots[0] != null) SwitchToSlot(0);
         if (Input.GetKeyDown(KeyCode.Alpha2) && currentSlotIndex != 1 && weaponSlots[1] != null) SwitchToSlot(1);
     }
 
     private void SwitchToSlot(int newIndex)
     {
-        StopAllCoroutines(); isReloading = false; isBursting = false; lmgCurrentHeatTime = 0; StopAiming(); SaveCurrentAmmoState();
-        if (newIndex == currentSlotIndex) return; StartCoroutine(SwitchWeaponCoroutine(newIndex));
+        StopAllCoroutines();
+        isReloading = false;
+        isBursting = false;
+        lmgCurrentHeatTime = 0;
+        StopAiming();
+        SaveCurrentAmmoState();
+
+        if (newIndex == currentSlotIndex) return;
+
+        StartCoroutine(SwitchWeaponCoroutine(newIndex));
     }
 
     private IEnumerator SwitchWeaponCoroutine(int newIndex)
     {
-        isReloading = true; Vector3 startPosition = weaponHolder.localPosition; Quaternion startRotation = weaponHolder.localRotation;
-        Vector3 targetUpPosition = startPosition + switchUpOffset + (Vector3.back * switchBackDistance.z); Quaternion targetRotation = Quaternion.Euler(switchRotation);
-        float timer = 0f; while (timer < switchDuration) { timer += Time.deltaTime; float progress = timer / switchDuration; weaponHolder.localPosition = Vector3.Lerp(startPosition, targetUpPosition, progress); weaponHolder.localRotation = Quaternion.Slerp(startRotation, targetRotation, progress); yield return null; }
-        currentSlotIndex = newIndex; RefreshWeaponVisuals(weaponSlots[currentSlotIndex]); weaponHolder.localRotation = targetRotation;
-        Vector3 currentWeaponPos = weaponHolder.localPosition; Quaternion finalRotation = Quaternion.Euler(weaponInitialLocalRot);
-        timer = 0f; while (timer < switchDuration) { timer += Time.deltaTime; float progress = timer / switchDuration; weaponHolder.localPosition = Vector3.Lerp(currentWeaponPos, weaponInitialLocalPos, progress); weaponHolder.localRotation = Quaternion.Slerp(targetRotation, finalRotation, progress); yield return null; }
-        weaponHolder.localPosition = weaponInitialLocalPos; weaponHolder.localRotation = finalRotation; isReloading = false;
+        isReloading = true;
+        Vector3 startPosition = weaponHolder.localPosition;
+        Quaternion startRotation = weaponHolder.localRotation;
+
+        Vector3 targetUpPosition = startPosition + switchUpOffset + (Vector3.back * switchBackDistance.z);
+        Quaternion targetRotation = Quaternion.Euler(switchRotation);
+
+        float timer = 0f;
+        while (timer < switchDuration)
+        {
+            timer += Time.deltaTime;
+            float progress = timer / switchDuration;
+            weaponHolder.localPosition = Vector3.Lerp(startPosition, targetUpPosition, progress);
+            weaponHolder.localRotation = Quaternion.Slerp(startRotation, targetRotation, progress);
+            yield return null;
+        }
+
+        currentSlotIndex = newIndex;
+        RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
+
+        weaponHolder.localRotation = targetRotation;
+        Vector3 currentWeaponPos = weaponHolder.localPosition;
+        Quaternion finalRotation = Quaternion.Euler(weaponInitialLocalRot);
+
+        timer = 0f;
+        while (timer < switchDuration)
+        {
+            timer += Time.deltaTime;
+            float progress = timer / switchDuration;
+            weaponHolder.localPosition = Vector3.Lerp(currentWeaponPos, weaponInitialLocalPos, progress);
+            weaponHolder.localRotation = Quaternion.Slerp(targetRotation, finalRotation, progress);
+            yield return null;
+        }
+
+        weaponHolder.localPosition = weaponInitialLocalPos;
+        weaponHolder.localRotation = finalRotation;
+        isReloading = false;
     }
 
     public void RegisterZombieKill()
     {
         if (isUltimateActive) return;
         if (!isUltimateUnlocked) return;
-        if (ultimateWeaponData != null) { if (currentKillsCount < ultimateWeaponData.requiredKillsForUlt) currentKillsCount++; }
+
+        if (ultimateWeaponData != null)
+        {
+            if (currentKillsCount < ultimateWeaponData.requiredKillsForUlt)
+                currentKillsCount++;
+        }
         UpdateUltimateUI();
     }
 
     IEnumerator ActivateUltimateRoutine()
     {
-        isUltimateActive = true; ultimateIsReady = false; if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
-        preUltSlotIndex = currentSlotIndex; RefreshWeaponVisuals(ultimateWeaponData);
-        currentAmmoInMag = 9999; totalAmmo = 9999; UpdateAmmoUI(); currentKillsCount = 0; UpdateUltimateUI();
+        isUltimateActive = true;
+        ultimateIsReady = false;
+
+        if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(false);
+
+        preUltSlotIndex = currentSlotIndex;
+        RefreshWeaponVisuals(ultimateWeaponData);
+
+        currentAmmoInMag = 9999;
+        totalAmmo = 9999;
+        UpdateAmmoUI();
+
+        currentKillsCount = 0;
+        UpdateUltimateUI();
+
         float timer = ultimateDuration;
-        while (timer > 0) { timer -= Time.deltaTime; if (ultimateIconFill != null) ultimateIconFill.fillAmount = timer / ultimateDuration; yield return null; }
-        isUltimateActive = false; if (ultimateIconFill != null) ultimateIconFill.fillAmount = 0f;
-        SelectSlot(preUltSlotIndex); UpdateUltimateUI();
+        while (timer > 0)
+        {
+            timer -= Time.deltaTime;
+            if (ultimateIconFill != null) ultimateIconFill.fillAmount = timer / ultimateDuration;
+            yield return null;
+        }
+
+        isUltimateActive = false;
+        if (ultimateIconFill != null) ultimateIconFill.fillAmount = 0f;
+
+        SelectSlot(preUltSlotIndex);
+        UpdateUltimateUI();
     }
 
     public void RegisterCollectibleFound()
     {
         if (isUltimateUnlocked) return;
+
         collectiblesFoundCount++;
         UpdateCollectibleDisplay();
-        if (collectiblesFoundCount >= totalCollectiblesRequired && !isUltimateUnlocked) UnlockUltimatePermanently();
+
+        if (collectiblesFoundCount >= totalCollectiblesRequired && !isUltimateUnlocked)
+            UnlockUltimatePermanently();
     }
 
     private void UnlockUltimatePermanently()
     {
         isUltimateUnlocked = true;
+
         if (ultimateUIParent != null) ultimateUIParent.SetActive(true);
         if (ultimateWeaponData != null) currentKillsCount = ultimateWeaponData.requiredKillsForUlt;
+
         UpdateUltimateUI();
-        if (unlockMessageText != null) { StopCoroutine("DisplayUnlockMessageRoutine"); StartCoroutine("DisplayUnlockMessageRoutine"); }
+
+        if (unlockMessageText != null)
+        {
+            StopCoroutine("DisplayUnlockMessageRoutine");
+            StartCoroutine("DisplayUnlockMessageRoutine");
+        }
     }
 
     private void UpdateUltimateUI()
     {
         if (ultimateWeaponData == null) return;
-        if (!isUltimateUnlocked) { if (ultimateUIParent != null) ultimateUIParent.SetActive(false); return; }
-        if (ultimateUIParent != null && !ultimateUIParent.activeSelf) ultimateUIParent.SetActive(true);
+
+        if (!isUltimateUnlocked)
+        {
+            if (ultimateUIParent != null) ultimateUIParent.SetActive(false);
+            return;
+        }
+
+        if (ultimateUIParent != null && !ultimateUIParent.activeSelf)
+            ultimateUIParent.SetActive(true);
+
         int requiredKills = ultimateWeaponData.requiredKillsForUlt;
         float fillAmount = requiredKills > 0 ? (float)currentKillsCount / requiredKills : 1f;
+
         if (ultimateIconFill != null) ultimateIconFill.fillAmount = fillAmount;
+
         ultimateIsReady = currentKillsCount >= requiredKills;
+
         if (ultimateReadyVisual != null) ultimateReadyVisual.SetActive(ultimateIsReady);
-        if (ultimateKillCountText != null) ultimateKillCountText.text = ultimateIsReady ? $"LISTO" : $"{currentKillsCount}/{requiredKills}";
+        if (ultimateKillCountText != null)
+            ultimateKillCountText.text = ultimateIsReady ? $"LISTO" : $"{currentKillsCount}/{requiredKills}";
     }
 
     public void UpdateCollectibleDisplay()
     {
         if (collectibleCountText == null) return;
+
         collectibleCountText.text = $"{collectiblesFoundCount} / {totalCollectiblesRequired}";
+
         if (displayCollectibleCoroutine != null) StopCoroutine(displayCollectibleCoroutine);
         displayCollectibleCoroutine = StartCoroutine(DisplayCollectibleRoutine());
     }
@@ -969,20 +1479,42 @@ public class PlayerShooting : MonoBehaviour
 
     public bool DropCurrentWeapon(out WeaponData dataToDrop, out GameObject modelToDrop)
     {
-        dataToDrop = null; modelToDrop = null;
+        dataToDrop = null;
+        modelToDrop = null;
+
         if (currentWeapon == null) return false;
-        dataToDrop = currentWeapon; modelToDrop = currentWeaponModel;
-        currentWeapon = null; currentWeaponModel = null;
-        if (modelToDrop != null) { modelToDrop.transform.SetParent(null); modelToDrop.SetActive(false); }
-        UpdateAmmoUI(); ClearCrosshair(); isWeaponDropped = true; return true;
+
+        dataToDrop = currentWeapon;
+        modelToDrop = currentWeaponModel;
+
+        currentWeapon = null;
+        currentWeaponModel = null;
+
+        if (modelToDrop != null)
+        {
+            modelToDrop.transform.SetParent(null);
+            modelToDrop.SetActive(false);
+        }
+
+        UpdateAmmoUI();
+        ClearCrosshair();
+        isWeaponDropped = true;
+        return true;
     }
 
     public void PickupUpgradedWeapon(WeaponData newWeaponData, GameObject model)
     {
         if (newWeaponData == null) return;
-        EquipWeapon(newWeaponData); ForceCurrentWeaponAmmoToFull();
-        currentWeaponModel = model; currentWeaponModel.transform.SetParent(weaponHolder);
-        currentWeaponModel.transform.localPosition = Vector3.zero; currentWeaponModel.transform.localRotation = Quaternion.identity; currentWeaponModel.SetActive(true);
+
+        EquipWeapon(newWeaponData);
+        ForceCurrentWeaponAmmoToFull();
+
+        currentWeaponModel = model;
+        currentWeaponModel.transform.SetParent(weaponHolder);
+        currentWeaponModel.transform.localPosition = Vector3.zero;
+        currentWeaponModel.transform.localRotation = Quaternion.identity;
+        currentWeaponModel.SetActive(true);
+
         isWeaponDropped = false;
     }
 
@@ -1082,29 +1614,5 @@ public class PlayerShooting : MonoBehaviour
     {
         if (currentWeapon != null) return currentWeapon.weaponType;
         return (WeaponType)(-1);
-    }
-
-    public void EquipWeapon(WeaponData newWeapon)
-    {
-        if (newWeapon == null) return;
-
-        SaveCurrentAmmoState();
-
-        if (weaponSlots[0] == null)
-        {
-            weaponSlots[0] = newWeapon;
-            currentSlotIndex = 0;
-        }
-        else if (weaponSlots[1] == null)
-        {
-            weaponSlots[1] = newWeapon;
-            currentSlotIndex = 1;
-        }
-        else
-        {
-            weaponSlots[currentSlotIndex] = newWeapon;
-        }
-
-        RefreshWeaponVisuals(weaponSlots[currentSlotIndex]);
     }
 }

@@ -2,17 +2,19 @@ using UnityEngine;
 using TMPro;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq; // Necesario para el filtrado de listas
 
-[RequireComponent(typeof(AudioSource))] // --- NUEVO: Asegura que haya AudioSource
+[RequireComponent(typeof(AudioSource))]
 public class MysteryBox : MonoBehaviour
 {
     [Header("Configuración de la Ruleta")]
+    [Tooltip("Lista de todas las armas que pueden salir en la caja")]
     public List<WeaponData> possibleWeapons;
     public int pointsCost = 950;
 
     [Header("Referencias Visuales")]
-    public Transform spinningPart;
-    public Transform weaponSpawnPoint;
+    public Transform spinningPart;    // La tapa o interrogación que gira
+    public Transform weaponSpawnPoint; // Dónde aparece el arma flotando
 
     [Header("UI e Interacción")]
     public float interactionDistance = 3f;
@@ -23,13 +25,19 @@ public class MysteryBox : MonoBehaviour
     public float spinDuration = 4f;
     public float rotationSpeed = 800f;
 
-    [Header("Sonidos")] // --- NUEVO ---
+    [Header("Sonidos")]
     public AudioSource audioSource;
-    public AudioClip spinSound;      // Sonido del giro (loop o largo)
-    public AudioClip weaponReadySound; // Opcional: Sonido al aparecer el arma (ding!)
+    public AudioClip spinSound;
+    public AudioClip weaponReadySound;
 
-    // --- ESTADOS INTERNOS ---
-    private enum BoxState { Idle, Spinning, WeaponReady, Resetting }
+    // Estados internos de la caja
+    private enum BoxState
+    {
+        Idle,
+        Spinning,
+        WeaponReady,
+        Resetting
+    }
     private BoxState currentState = BoxState.Idle;
 
     private Camera playerCamera;
@@ -44,13 +52,15 @@ public class MysteryBox : MonoBehaviour
         playerCamera = Camera.main;
         playerShooting = FindObjectOfType<PlayerShooting>();
 
-        // --- NUEVO: Inicializar AudioSource si no se asignó manual ---
         if (audioSource == null)
         {
             audioSource = GetComponent<AudioSource>();
         }
 
-        if (interactionText != null) interactionText.gameObject.SetActive(false);
+        if (interactionText != null)
+        {
+            interactionText.gameObject.SetActive(false);
+        }
     }
 
     void Update()
@@ -60,6 +70,7 @@ public class MysteryBox : MonoBehaviour
 
     void CheckForInteraction()
     {
+        // Si la caja está ocupada, no mostrar texto ni permitir interacción
         if (currentState == BoxState.Spinning || currentState == BoxState.Resetting)
         {
             if (playerLooking && interactionText != null)
@@ -75,6 +86,7 @@ public class MysteryBox : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, interactionDistance))
         {
+            // Comprobamos si miramos la caja o alguno de sus hijos
             if (hit.collider.gameObject == gameObject || hit.collider.transform.parent == transform)
             {
                 playerLooking = true;
@@ -88,16 +100,21 @@ public class MysteryBox : MonoBehaviour
             }
         }
 
+        // Si dejamos de mirar
         if (playerLooking)
         {
             playerLooking = false;
-            if (interactionText != null) interactionText.gameObject.SetActive(false);
+            if (interactionText != null)
+            {
+                interactionText.gameObject.SetActive(false);
+            }
         }
     }
 
     void UpdateInteractionMessage()
     {
         if (interactionText == null) return;
+
         interactionText.gameObject.SetActive(true);
 
         switch (currentState)
@@ -105,9 +122,12 @@ public class MysteryBox : MonoBehaviour
             case BoxState.Idle:
                 interactionText.text = $"Pulsa [{interactionKey}] para probar suerte por {pointsCost} puntos";
                 break;
+
             case BoxState.WeaponReady:
                 if (selectedWeapon != null)
+                {
                     interactionText.text = $"Pulsa [{interactionKey}] para coger {selectedWeapon.weaponName}";
+                }
                 break;
         }
     }
@@ -133,28 +153,63 @@ public class MysteryBox : MonoBehaviour
         else
         {
             Debug.Log("No tienes suficientes puntos.");
+            // Aquí podrías poner un sonido de error
         }
     }
 
     IEnumerator SpinRoutine()
     {
         currentState = BoxState.Spinning;
-        if (interactionText != null) interactionText.gameObject.SetActive(false);
 
-        // --- NUEVO: REPRODUCIR SONIDO DE GIRO ---
+        if (interactionText != null)
+        {
+            interactionText.gameObject.SetActive(false);
+        }
+
+        // Reproducir sonido de giro en bucle
         if (audioSource != null && spinSound != null)
         {
             audioSource.clip = spinSound;
-            audioSource.loop = true; // Hacemos que se repita mientras gira
+            audioSource.loop = true;
             audioSource.Play();
         }
 
-        if (possibleWeapons.Count > 0)
+        // --- LÓGICA DE FILTRADO DE ARMAS ---
+        List<WeaponData> availableWeapons = new List<WeaponData>();
+
+        if (playerShooting != null)
         {
-            int randomIndex = Random.Range(0, possibleWeapons.Count);
-            selectedWeapon = possibleWeapons[randomIndex];
+            foreach (var weapon in possibleWeapons)
+            {
+                // Solo añadimos a la lista las armas que el jugador NO tenga
+                if (!playerShooting.HasWeapon(weapon.weaponType))
+                {
+                    availableWeapons.Add(weapon);
+                }
+            }
+        }
+        else
+        {
+            // Si no encontramos al jugador, usamos todas por seguridad
+            availableWeapons = new List<WeaponData>(possibleWeapons);
         }
 
+        // Si el jugador ya tiene TODAS las armas posibles, 
+        // usamos la lista completa para que al menos salga algo (para cambiar slot)
+        if (availableWeapons.Count == 0)
+        {
+            availableWeapons = new List<WeaponData>(possibleWeapons);
+        }
+
+        // Selección aleatoria
+        if (availableWeapons.Count > 0)
+        {
+            int randomIndex = Random.Range(0, availableWeapons.Count);
+            selectedWeapon = availableWeapons[randomIndex];
+        }
+        // -----------------------------------
+
+        // Animación de giro
         float timer = 0f;
         float currentSpeed = rotationSpeed;
 
@@ -162,6 +217,8 @@ public class MysteryBox : MonoBehaviour
         {
             timer += Time.deltaTime;
             float progress = timer / spinDuration;
+
+            // Deceleración suave
             currentSpeed = Mathf.Lerp(rotationSpeed, 0f, progress);
 
             if (spinningPart != null)
@@ -172,13 +229,12 @@ public class MysteryBox : MonoBehaviour
             yield return null;
         }
 
-        // --- NUEVO: DETENER SONIDO DE GIRO ---
+        // Detener sonido de giro
         if (audioSource != null)
         {
             audioSource.Stop();
-            audioSource.loop = false; // Quitamos el loop por si acaso
+            audioSource.loop = false;
 
-            // Opcional: Sonido de éxito al terminar
             if (weaponReadySound != null)
             {
                 audioSource.PlayOneShot(weaponReadySound);
@@ -187,6 +243,8 @@ public class MysteryBox : MonoBehaviour
 
         ShowFloatingWeapon();
         currentState = BoxState.WeaponReady;
+
+        // Iniciar cuenta atrás para que desaparezca
         StartCoroutine(TimeoutRoutine());
     }
 
@@ -197,8 +255,12 @@ public class MysteryBox : MonoBehaviour
             visualWeaponModel = Instantiate(selectedWeapon.weaponModelPrefab, weaponSpawnPoint.position, weaponSpawnPoint.rotation);
             visualWeaponModel.transform.SetParent(weaponSpawnPoint);
 
+            // Desactivar colliders del modelo visual para evitar físicas raras
             var colliders = visualWeaponModel.GetComponentsInChildren<Collider>();
-            foreach (var col in colliders) col.enabled = false;
+            foreach (var col in colliders)
+            {
+                col.enabled = false;
+            }
         }
     }
 
@@ -211,6 +273,7 @@ public class MysteryBox : MonoBehaviour
             yield return null;
         }
 
+        // Si se acaba el tiempo y sigue en WeaponReady, cerrar
         if (currentState == BoxState.WeaponReady)
         {
             CloseBox();
@@ -223,7 +286,10 @@ public class MysteryBox : MonoBehaviour
         {
             playerShooting.EquipWeapon(selectedWeapon);
             playerShooting.ForceCurrentWeaponAmmoToFull();
+
+            // Registrar en tienda estática (opcional)
             WeaponStore.RegisterStartingWeapon(selectedWeapon);
+
             Debug.Log($"¡Has obtenido {selectedWeapon.weaponName} de la caja!");
         }
 
@@ -234,9 +300,14 @@ public class MysteryBox : MonoBehaviour
     {
         currentState = BoxState.Resetting;
 
-        if (visualWeaponModel != null) Destroy(visualWeaponModel);
+        if (visualWeaponModel != null)
+        {
+            Destroy(visualWeaponModel);
+        }
+
         selectedWeapon = null;
 
+        // Pequeño delay antes de poder volver a usarla
         Invoke("ResetToIdle", 2f);
     }
 

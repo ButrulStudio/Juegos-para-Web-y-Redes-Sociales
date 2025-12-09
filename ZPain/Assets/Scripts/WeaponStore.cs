@@ -5,26 +5,27 @@ using System.Collections.Generic;
 public class WeaponStore : MonoBehaviour
 {
     [Header("Configuración del arma en la tienda")]
+    [Tooltip("El ScriptableObject base del arma que vende esta pared")]
     public WeaponData weaponData;
 
     [Header("Detección e interacción")]
     public float interactionDistance = 3f;
     public KeyCode interactionKey = KeyCode.E;
 
-    [Header("UI del mensaje (opcional)")]
+    [Header("UI del mensaje")]
     public TextMeshProUGUI interactionText;
 
     private Camera playerCamera;
     private PlayerShooting playerShooting;
     private bool playerLooking = false;
 
-    // Se mantiene estático para la sesión de juego actual
+    // Diccionario para historial (opcional, no afecta la compra lógica ahora)
     private static Dictionary<WeaponType, WeaponData> ownedWeaponInstances = new Dictionary<WeaponType, WeaponData>();
 
     void Start()
     {
         playerCamera = Camera.main;
-        playerShooting = FindAnyObjectByType<PlayerShooting>();
+        playerShooting = FindObjectOfType<PlayerShooting>();
 
         if (interactionText != null)
             interactionText.gameObject.SetActive(false);
@@ -39,12 +40,15 @@ public class WeaponStore : MonoBehaviour
     {
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         RaycastHit hit;
+
         if (Physics.Raycast(ray, out hit, interactionDistance))
         {
+            // Verificamos si miramos a este objeto de tienda
             if (hit.collider.gameObject == gameObject)
             {
                 playerLooking = true;
                 ShowInteractionMessage();
+
                 if (Input.GetKeyDown(interactionKey))
                 {
                     TryPurchaseOrEquip();
@@ -52,6 +56,7 @@ public class WeaponStore : MonoBehaviour
                 return;
             }
         }
+
         if (playerLooking)
         {
             playerLooking = false;
@@ -62,116 +67,104 @@ public class WeaponStore : MonoBehaviour
 
     void ShowInteractionMessage()
     {
-        if (interactionText == null || playerShooting == null) return;
-
-        bool alreadyOwned = ownedWeaponInstances.ContainsKey(weaponData.weaponType);
-        bool isAmmoFull = playerShooting.IsAmmoFull(weaponData);
-        bool isEquipped = playerShooting.GetEquippedWeaponType() == weaponData.weaponType;
+        if (interactionText == null || playerShooting == null || weaponData == null) return;
 
         interactionText.gameObject.SetActive(true);
 
-        if (!alreadyOwned)
+        // 1. ¿Llevamos el arma encima AHORA MISMO?
+        bool currentlyHasWeapon = playerShooting.HasWeapon(weaponData.weaponType);
+
+        if (!currentlyHasWeapon)
         {
+            // MODO COMPRA DE ARMA (Porque no la llevas)
             if (weaponData.price <= 0)
-                interactionText.text = "Pulsa [" + interactionKey + "] para coger " + weaponData.weaponName + " (gratis)";
+                interactionText.text = $"Pulsa [{interactionKey}] para coger {weaponData.weaponName} (gratis)";
             else
-                interactionText.text = "Pulsa [" + interactionKey + "] para comprar " + weaponData.weaponName + " por " + weaponData.price + " puntos";
-            return;
+                interactionText.text = $"Pulsa [{interactionKey}] para comprar {weaponData.weaponName} por {weaponData.price} puntos";
         }
-
-        if (isEquipped && isAmmoFull)
+        else
         {
-            interactionText.text = $"{weaponData.weaponName} — MUNICIÓN LLENA";
-            return;
+            // MODO COMPRA DE MUNICIÓN (Porque sí la llevas)
+            // Comprobamos si la munición está llena para el arma Específica
+            if (playerShooting.IsAmmoFullForType(weaponData))
+            {
+                interactionText.text = "Munición Completa";
+            }
+            else
+            {
+                interactionText.text = $"Pulsa [{interactionKey}] para comprar munición por {weaponData.ammoPrice} puntos";
+            }
         }
-
-        interactionText.text = "Pulsa [" + interactionKey + "] para comprar munición de " + weaponData.weaponName + " por " + weaponData.ammoPrice + " puntos";
     }
 
     void TryPurchaseOrEquip()
     {
-        if (playerShooting == null) return;
+        if (playerShooting == null || weaponData == null) return;
 
-        bool alreadyOwned = ownedWeaponInstances.ContainsKey(weaponData.weaponType);
-        bool isAmmoFull = playerShooting.IsAmmoFull(weaponData);
-        bool isEquipped = playerShooting.GetEquippedWeaponType() == weaponData.weaponType;
+        // Comprobamos si la tiene equipada o en la mochila
+        bool currentlyHasWeapon = playerShooting.HasWeapon(weaponData.weaponType);
 
-        if (!alreadyOwned)
+        if (!currentlyHasWeapon)
         {
-            WeaponData newWeaponInstance = Instantiate(weaponData);
+            // --- COMPRA DE ARMA NUEVA ---
             int cost = (int)weaponData.price;
 
             if (cost <= 0 || ScoreManager.Instance.TrySpendPoints(cost))
             {
-                ownedWeaponInstances.Add(newWeaponInstance.weaponType, newWeaponInstance);
-                playerShooting.EquipWeapon(newWeaponInstance);
+                // EquipWeapon crea una copia limpia (sin mejoras) y la pone en el slot
+                playerShooting.EquipWeapon(weaponData);
                 playerShooting.ForceCurrentWeaponAmmoToFull();
-                Debug.Log($"Has comprado {newWeaponInstance.weaponName} por {cost} puntos.");
+
+                // Registro histórico (opcional)
+                if (!ownedWeaponInstances.ContainsKey(weaponData.weaponType))
+                {
+                    ownedWeaponInstances.Add(weaponData.weaponType, weaponData);
+                }
+
+                interactionText.text = "¡Arma comprada!";
+                Debug.Log($"Has comprado {weaponData.weaponName} por {cost} puntos.");
+
+                // Actualizamos mensaje inmediatamente
+                ShowInteractionMessage();
             }
             else
             {
-                Destroy(newWeaponInstance);
-                Debug.Log("No tienes suficientes puntos para comprar esta arma.");
+                interactionText.text = "No tienes suficientes puntos";
             }
-            return;
         }
-
-        if (isEquipped && isAmmoFull)
+        else
         {
-            Debug.Log("Munición ya al máximo. No se puede comprar.");
-            ShowInteractionMessage();
-            return;
+            // --- COMPRA DE MUNICIÓN ---
+            if (playerShooting.IsAmmoFullForType(weaponData)) return; // Ya está llena
+
+            if (ScoreManager.Instance.TrySpendPoints(weaponData.ammoPrice))
+            {
+                // Rellenamos la munición del arma específica
+                playerShooting.RefillAmmoForType(weaponData.weaponType);
+
+                interactionText.text = "¡Munición Recargada!";
+                Debug.Log("Munición comprada.");
+
+                ShowInteractionMessage();
+            }
+            else
+            {
+                interactionText.text = "No tienes suficientes puntos";
+            }
         }
-
-        int ammoCost = weaponData.ammoPrice;
-        if (!ScoreManager.Instance.TrySpendPoints(ammoCost))
-        {
-            Debug.Log("No tienes suficientes puntos para comprar munición.");
-            return;
-        }
-
-        WeaponData instanceToEquip = ownedWeaponInstances[weaponData.weaponType];
-        playerShooting.EquipWeapon(instanceToEquip);
-        playerShooting.ForceCurrentWeaponAmmoToFull();
-
-        Debug.Log("Has pagado la munición y equipado " + instanceToEquip.weaponName + ".");
-        ShowInteractionMessage();
     }
 
     public static void ResetOwnedWeapons()
     {
-        if (ownedWeaponInstances != null)
-        {
-            foreach (var weaponInstance in ownedWeaponInstances.Values)
-            {
-                if (weaponInstance != null)
-                {
-                    Destroy(weaponInstance);
-                }
-            }
-            ownedWeaponInstances.Clear();
-        }
-        Debug.Log("Datos estáticos de Armas reseteados.");
-    }
-
-    public static ICollection<WeaponData> GetOwnedWeaponData()
-    {
-        return ownedWeaponInstances.Values;
+        ownedWeaponInstances.Clear();
     }
 
     public static void RegisterStartingWeapon(WeaponData weaponInstance)
     {
         if (weaponInstance == null) return;
-
-        if (ownedWeaponInstances.Count == 0)
-        {
-            ownedWeaponInstances.Clear();
-        }
-
         if (!ownedWeaponInstances.ContainsKey(weaponInstance.weaponType))
         {
             ownedWeaponInstances.Add(weaponInstance.weaponType, weaponInstance);
-            Debug.Log($"Arma inicial {weaponInstance.weaponName} registrada en la tienda.");
         }
     }
 }
