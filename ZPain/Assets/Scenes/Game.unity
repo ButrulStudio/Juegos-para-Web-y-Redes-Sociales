@@ -52728,7 +52728,7 @@ MonoBehaviour:
   playerCamera: {fileID: 330585545}
   weaponHolder: {fileID: 1377504225}
   cameraController: {fileID: 1726440932}
-  upgradedWeaponMaterial: {fileID: 0}
+  upgradedWeaponMaterial: {fileID: 2100000, guid: 0c05b09b074647342a76b1d56f4ed513, type: 2}
   ammoText: {fileID: 1666018140}
   crosshairImage: {fileID: 986990805}
   pointsPerHit: 10
