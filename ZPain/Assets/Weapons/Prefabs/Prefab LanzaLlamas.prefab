@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 1789768169161273546}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.70710677, z: 6.2527748e-12, w: 0.70710677}
-  m_LocalPosition: {x: 14.300002, y: -0.000005848779, z: 6.399998}
+  m_LocalPosition: {x: 14.82, y: 0, z: 6.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -116,7 +116,7 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.59
+      scalar: 1.07
       minScalar: 4
       maxCurve:
         serializedVersion: 2
@@ -169,7 +169,7 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 23.44
+      scalar: 3
       minScalar: 5
       maxCurve:
         serializedVersion: 2
@@ -287,7 +287,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 1.32
+      scalar: 0.5
       minScalar: 1
       maxCurve:
         serializedVersion: 2

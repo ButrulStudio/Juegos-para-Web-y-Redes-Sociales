@@ -15,7 +15,7 @@ MonoBehaviour:
   powerUpType: 3
   powerUpName: Schweppes
   description: "Aumenta el da\xF1o de las armas"
-  cost: 0
+  cost: 4000
   icon: {fileID: 21300000, guid: c031bd32fe1628247857ebfd78da4702, type: 3}
   applySound: {fileID: 8300000, guid: 0e86bd8f62956be458794a982c83e90e, type: 3}
   armorRestore: 0

@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
 
+[RequireComponent(typeof(AudioSource))]
 public class WeaponStore : MonoBehaviour
 {
     [Header("Configuración del arma en la tienda")]
@@ -15,17 +16,21 @@ public class WeaponStore : MonoBehaviour
     [Header("UI del mensaje")]
     public TextMeshProUGUI interactionText;
 
+    [Header("Sonidos")]
+    public AudioClip purchaseSound;
+    private AudioSource audioSource;
+
     private Camera playerCamera;
     private PlayerShooting playerShooting;
     private bool playerLooking = false;
 
-    // Diccionario para historial (opcional, no afecta la compra lógica ahora)
     private static Dictionary<WeaponType, WeaponData> ownedWeaponInstances = new Dictionary<WeaponType, WeaponData>();
 
     void Start()
     {
         playerCamera = Camera.main;
         playerShooting = FindObjectOfType<PlayerShooting>();
+        audioSource = GetComponent<AudioSource>();
 
         if (interactionText != null)
             interactionText.gameObject.SetActive(false);
@@ -43,7 +48,6 @@ public class WeaponStore : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, interactionDistance))
         {
-            // Verificamos si miramos a este objeto de tienda
             if (hit.collider.gameObject == gameObject)
             {
                 playerLooking = true;
@@ -71,12 +75,10 @@ public class WeaponStore : MonoBehaviour
 
         interactionText.gameObject.SetActive(true);
 
-        // 1. ¿Llevamos el arma encima AHORA MISMO?
         bool currentlyHasWeapon = playerShooting.HasWeapon(weaponData.weaponType);
 
         if (!currentlyHasWeapon)
         {
-            // MODO COMPRA DE ARMA (Porque no la llevas)
             if (weaponData.price <= 0)
                 interactionText.text = $"Pulsa [{interactionKey}] para coger {weaponData.weaponName} (gratis)";
             else
@@ -84,8 +86,6 @@ public class WeaponStore : MonoBehaviour
         }
         else
         {
-            // MODO COMPRA DE MUNICIÓN (Porque sí la llevas)
-            // Comprobamos si la munición está llena para el arma Específica
             if (playerShooting.IsAmmoFullForType(weaponData))
             {
                 interactionText.text = "Munición Completa";
@@ -101,30 +101,28 @@ public class WeaponStore : MonoBehaviour
     {
         if (playerShooting == null || weaponData == null) return;
 
-        // Comprobamos si la tiene equipada o en la mochila
         bool currentlyHasWeapon = playerShooting.HasWeapon(weaponData.weaponType);
 
         if (!currentlyHasWeapon)
         {
-            // --- COMPRA DE ARMA NUEVA ---
             int cost = (int)weaponData.price;
 
             if (cost <= 0 || ScoreManager.Instance.TrySpendPoints(cost))
             {
-                // EquipWeapon crea una copia limpia (sin mejoras) y la pone en el slot
                 playerShooting.EquipWeapon(weaponData);
                 playerShooting.ForceCurrentWeaponAmmoToFull();
 
-                // Registro histórico (opcional)
                 if (!ownedWeaponInstances.ContainsKey(weaponData.weaponType))
                 {
                     ownedWeaponInstances.Add(weaponData.weaponType, weaponData);
                 }
 
-                interactionText.text = "¡Arma comprada!";
-                Debug.Log($"Has comprado {weaponData.weaponName} por {cost} puntos.");
+                if (audioSource != null && purchaseSound != null)
+                {
+                    audioSource.PlayOneShot(purchaseSound);
+                }
 
-                // Actualizamos mensaje inmediatamente
+                interactionText.text = "¡Arma comprada!";
                 ShowInteractionMessage();
             }
             else
@@ -134,17 +132,18 @@ public class WeaponStore : MonoBehaviour
         }
         else
         {
-            // --- COMPRA DE MUNICIÓN ---
-            if (playerShooting.IsAmmoFullForType(weaponData)) return; // Ya está llena
+            if (playerShooting.IsAmmoFullForType(weaponData)) return;
 
             if (ScoreManager.Instance.TrySpendPoints(weaponData.ammoPrice))
             {
-                // Rellenamos la munición del arma específica
                 playerShooting.RefillAmmoForType(weaponData.weaponType);
 
-                interactionText.text = "¡Munición Recargada!";
-                Debug.Log("Munición comprada.");
+                if (audioSource != null && purchaseSound != null)
+                {
+                    audioSource.PlayOneShot(purchaseSound);
+                }
 
+                interactionText.text = "¡Munición Recargada!";
                 ShowInteractionMessage();
             }
             else

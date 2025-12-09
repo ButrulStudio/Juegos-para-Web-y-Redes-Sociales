@@ -27,7 +27,7 @@ MonoBehaviour:
   maxAmmo: 200
   reloadTime: 2
   isUpgraded: 0
-  upgradeCost: 100
+  upgradeCost: 9999999
   weaponModelPrefab: {fileID: 7346113742249740739, guid: d50ec7c952f7968428c274da675ced7f, type: 3}
   bulletHolePrefab: {fileID: 0}
   canAim: 0
