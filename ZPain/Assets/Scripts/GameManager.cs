@@ -11,7 +11,8 @@ public class GameManager : MonoBehaviour
 
     [Header("--- DEBUG (SOLO EDITOR) ---")]
     [Tooltip("Actívalo para probar controles táctiles. Desactívalo para jugar con ratón.")]
-    public bool simulateMobileInEditor = true; 
+    public bool simulateMobileInEditor = true;
+    public bool forceMobileUI = false;
 
     [Header("Configuración Inicial")]
     public WeaponData startingWeaponAsset;
@@ -69,9 +70,9 @@ public class GameManager : MonoBehaviour
             playerShooting.InitializeNewGame(startingWeaponAsset);
         }
     }
+
     void OnValidate()
     {
-
         if (Application.isPlaying)
         {
             UpdateGameMode();
@@ -81,21 +82,41 @@ public class GameManager : MonoBehaviour
     private void UpdateGameMode()
     {
         bool isMobileMode = false;
+        if (Application.isMobilePlatform)
+        {
+            isMobileMode = true;
+        }
+
+#if UNITY_WEBGL
+        if (SystemInfo.deviceType == DeviceType.Handheld)
+        {
+            isMobileMode = true;
+        }
+
+        string os = SystemInfo.operatingSystem.ToLower();
+        if (os.Contains("android") || os.Contains("iphone") || os.Contains("ipad") || os.Contains("ios"))
+        {
+            isMobileMode = true;
+        }
+#endif
+
 
 #if UNITY_EDITOR
-
         isMobileMode = simulateMobileInEditor;
-#elif UNITY_ANDROID || UNITY_IOS
-            // En móvil real, siempre es true
-            isMobileMode = true;
-#else
-            // En PC Build, siempre es false
-            isMobileMode = false;
 #endif
+
+        if (forceMobileUI) isMobileMode = true;
 
         if (mobilePauseButtonHUD != null)
         {
             mobilePauseButtonHUD.SetActive(isMobileMode);
+            if (isMobileMode)
+            {
+                foreach (Transform child in mobilePauseButtonHUD.transform)
+                {
+                    child.gameObject.SetActive(true);
+                }
+            }
         }
 
         if (isMobileMode)
@@ -105,7 +126,6 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-
             if (!IsPaused)
             {
                 Cursor.visible = false;
@@ -121,29 +141,25 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
     private void Update()
     {
-
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.F5))
         {
             simulateMobileInEditor = !simulateMobileInEditor;
             UpdateGameMode();
-            Debug.Log("Modo Móvil: " + simulateMobileInEditor);
         }
 #endif
 
         if (Input.GetKeyDown(KeyCode.Escape) && !isTogglingPause) TogglePause();
     }
 
-
     public void TogglePause() { if (!isTogglingPause) StartCoroutine(TogglePauseCoroutine()); }
 
     public IEnumerator TogglePauseCoroutine()
     {
         isTogglingPause = true;
-        if (pausePanel.activeSelf) 
+        if (pausePanel.activeSelf)
         {
             animator.SetBool("Mobile", false); Time.timeScale = 1; IsPaused = false;
             yield return new WaitForSecondsRealtime(0.3f);
@@ -151,7 +167,7 @@ public class GameManager : MonoBehaviour
 
             UpdateGameMode();
         }
-        else 
+        else
         {
             if (sensitivitySlider_Pause != null) LoadCurrentSettingsToSliders();
             if (mobilePauseButtonHUD != null) mobilePauseButtonHUD.SetActive(false);
@@ -162,14 +178,82 @@ public class GameManager : MonoBehaviour
         isTogglingPause = false;
     }
 
-    public void PlayerDied() { Time.timeScale = 0; GameIsOver = true; if (gameOverPanel != null) gameOverPanel.SetActive(true); Cursor.visible = true; Cursor.lockState = CursorLockMode.None; }
-    private void SetupPauseMenuSliders() { if (sensitivitySlider_Pause == null) return; LoadCurrentSettingsToSliders(); sensitivitySlider_Pause.onValueChanged.AddListener(SetSensitivity_Pause); musicSlider_Pause.onValueChanged.AddListener(SetMusicVolume_Pause); sfxSlider_Pause.onValueChanged.AddListener(SetSFXVolume_Pause); }
-    private void LoadCurrentSettingsToSliders() { sensitivitySlider_Pause.value = PlayerPrefs.GetFloat("MasterSensitivity", 100f); musicSlider_Pause.value = PlayerPrefs.GetFloat("MasterMusicVolume", 0.75f); sfxSlider_Pause.value = PlayerPrefs.GetFloat("MasterSFXVolume", 0.75f); }
-    public void SetSensitivity_Pause(float value) { PlayerPrefs.SetFloat("MasterSensitivity", value); if (cameraController != null) cameraController.SetSensibility(value); }
-    public void SetMusicVolume_Pause(float value) { if (mainAudioMixer == null) return; mainAudioMixer.SetFloat("MusicVolume", Mathf.Log10(value) * 20); PlayerPrefs.SetFloat("MasterMusicVolume", value); }
-    public void SetSFXVolume_Pause(float value) { if (mainAudioMixer == null) return; mainAudioMixer.SetFloat("SFXVolume", Mathf.Log10(value) * 20); PlayerPrefs.SetFloat("MasterSFXVolume", value); }
+    public void PlayerDied()
+    {
+        Time.timeScale = 0;
+        GameIsOver = true;
+
+        if (mobilePauseButtonHUD != null)
+        {
+            mobilePauseButtonHUD.SetActive(false);
+        }
+
+        if (gameOverPanel != null) gameOverPanel.SetActive(true);
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+    }
+
+    private void SetupPauseMenuSliders()
+    {
+        if (sensitivitySlider_Pause == null) return;
+        LoadCurrentSettingsToSliders();
+        sensitivitySlider_Pause.onValueChanged.AddListener(SetSensitivity_Pause);
+        musicSlider_Pause.onValueChanged.AddListener(SetMusicVolume_Pause);
+        sfxSlider_Pause.onValueChanged.AddListener(SetSFXVolume_Pause);
+    }
+
+    private void LoadCurrentSettingsToSliders()
+    {
+        sensitivitySlider_Pause.value = PlayerPrefs.GetFloat("MasterSensitivity", 100f);
+        musicSlider_Pause.value = PlayerPrefs.GetFloat("MasterMusicVolume", 0.75f);
+        sfxSlider_Pause.value = PlayerPrefs.GetFloat("MasterSFXVolume", 0.75f);
+    }
+
+    public void SetSensitivity_Pause(float value)
+    {
+        PlayerPrefs.SetFloat("MasterSensitivity", value);
+        if (cameraController != null) cameraController.SetSensibility(value);
+    }
+
+    public void SetMusicVolume_Pause(float value)
+    {
+        if (mainAudioMixer == null) return;
+        mainAudioMixer.SetFloat("MusicVolume", Mathf.Log10(value) * 20);
+        PlayerPrefs.SetFloat("MasterMusicVolume", value);
+    }
+
+    public void SetSFXVolume_Pause(float value)
+    {
+        if (mainAudioMixer == null) return;
+        mainAudioMixer.SetFloat("SFXVolume", Mathf.Log10(value) * 20);
+        PlayerPrefs.SetFloat("MasterSFXVolume", value);
+    }
+
     public void QuitToMainMenu() { StartCoroutine(QuitToMainMenuCoroutine()); }
-    private IEnumerator QuitToMainMenuCoroutine() { if (transitionAnimator != null) transitionAnimator.SetTrigger("StartTransition"); yield return new WaitForSecondsRealtime(0.3f); PowerUpStore.ResetOwnedPowerUps(); WeaponStore.ResetOwnedWeapons(); Time.timeScale = 1; Cursor.visible = true; Cursor.lockState = CursorLockMode.None; SceneManager.LoadScene("MainMenu"); }
+
+    private IEnumerator QuitToMainMenuCoroutine()
+    {
+        if (transitionAnimator != null) transitionAnimator.SetTrigger("StartTransition");
+        yield return new WaitForSecondsRealtime(0.3f);
+        PowerUpStore.ResetOwnedPowerUps();
+        WeaponStore.ResetOwnedWeapons();
+        Time.timeScale = 1;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+        SceneManager.LoadScene("MainMenu");
+    }
+
     public void RetryButton() { StartCoroutine(RetryCoroutine()); }
-    private IEnumerator RetryCoroutine() { if (transitionAnimator != null) transitionAnimator.SetTrigger("StartTransition"); yield return new WaitForSecondsRealtime(0.3f); PowerUpStore.ResetOwnedPowerUps(); WeaponStore.ResetOwnedWeapons(); Time.timeScale = 1; Cursor.visible = true; Cursor.lockState = CursorLockMode.None; SceneManager.LoadScene(SceneManager.GetActiveScene().name); }
+
+    private IEnumerator RetryCoroutine()
+    {
+        if (transitionAnimator != null) transitionAnimator.SetTrigger("StartTransition");
+        yield return new WaitForSecondsRealtime(0.3f);
+        PowerUpStore.ResetOwnedPowerUps();
+        WeaponStore.ResetOwnedWeapons();
+        Time.timeScale = 1;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
 }

@@ -30,12 +30,17 @@ public class PlayerShooting : MonoBehaviour
     public int pointsPerKillDisplay = 150;
     [SerializeField] private GameObject floatingTextPrefab;
 
-    [Header("Ajustes Móviles (Auto-Fire)")]
+    [Header("Ajustes Móviles")]
     public bool useAutoFire = true;
     public LayerMask obstacleLayers;
 
+    // --- VARIABLES DE CONTROL MÓVIL ---
     private bool isMobileFiring = false;
     private bool isMobileAiming = false;
+    private bool mobileTriggerPulled = false;
+
+    // Esta es la variable que faltaba y daba error:
+    [HideInInspector] public bool mobileInteractPressed = false;
 
     [Header("--- SISTEMA DE ULTIMATE ---")]
     [SerializeField] private WeaponData ultimateWeaponData;
@@ -190,7 +195,6 @@ public class PlayerShooting : MonoBehaviour
 
         if (weaponToEquip != null)
         {
-
             WeaponData newInstance = Instantiate(weaponToEquip);
             newInstance.name = weaponToEquip.name;
             EquipWeapon(newInstance);
@@ -222,7 +226,6 @@ public class PlayerShooting : MonoBehaviour
         HandleReloadInput();
         HandleAiming();
 
-        // Interpolación del movimiento del arma 
         if (weaponHolder != null && currentWeapon != null)
         {
             Vector3 targetPosition = weaponInitialLocalPos;
@@ -240,10 +243,6 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // ==================================================================================
-    // SECCIÓN DE INVENTARIO Y GESTIÓN DE ARMAS
-    // ==================================================================================
-
     public bool HasWeapon(WeaponType typeToCheck)
     {
         foreach (WeaponData weapon in weaponSlots)
@@ -258,7 +257,6 @@ public class PlayerShooting : MonoBehaviour
 
     public void RefillAmmoForType(WeaponType typeToRefill)
     {
-        // Si es el arma actual
         if (currentWeapon != null && currentWeapon.weaponType == typeToRefill)
         {
             currentAmmoInMag = currentWeapon.magCapacity;
@@ -268,7 +266,6 @@ public class PlayerShooting : MonoBehaviour
             return;
         }
 
-        // 2. Si está en el otro slot 
         foreach (WeaponData weapon in weaponSlots)
         {
             if (weapon != null && weapon.weaponType == typeToRefill)
@@ -287,14 +284,12 @@ public class PlayerShooting : MonoBehaviour
     {
         if (weaponData == null) return true;
 
-        // Verificar arma actual
         if (currentWeapon != null && currentWeapon.weaponType == weaponData.weaponType)
         {
             int maxTotal = currentWeapon.maxAmmo - currentWeapon.magCapacity;
             return currentAmmoInMag >= currentWeapon.magCapacity && totalAmmo >= maxTotal;
         }
 
-        // Verificar caché
         if (ammoInMagCache.ContainsKey(weaponData.weaponType))
         {
             int cachedMag = ammoInMagCache[weaponData.weaponType];
@@ -319,7 +314,6 @@ public class PlayerShooting : MonoBehaviour
 
         SaveCurrentAmmoState();
 
-        // Instanciamos para asegurar que es un objeto nuevo sin mejoras previas
         WeaponData newWeaponInstance = Instantiate(newWeaponAsset);
         newWeaponInstance.name = newWeaponAsset.name;
 
@@ -370,18 +364,15 @@ public class PlayerShooting : MonoBehaviour
         {
             currentWeaponModel = Instantiate(currentWeapon.weaponModelPrefab, weaponHolder);
 
-            // Muzzle Flash
             Light newMuzzleLight = currentWeaponModel.GetComponentInChildren<Light>();
             muzzleLight = newMuzzleLight;
 
-            // Partículas Lanzallamas
             if (currentWeapon.weaponType == WeaponType.Flamethrower)
             {
                 flamethrowerParticles = currentWeaponModel.GetComponentInChildren<ParticleSystem>();
                 if (flamethrowerParticles != null) flamethrowerParticles.Stop();
             }
 
-            // Material de Mejora 
             if (currentWeapon.isUpgraded && upgradedWeaponMaterial != null)
             {
                 Renderer[] renderers = currentWeaponModel.GetComponentsInChildren<Renderer>(true);
@@ -410,55 +401,58 @@ public class PlayerShooting : MonoBehaviour
         UpdateCrosshair();
     }
 
-    // ==================================================================================
-    // SECCIÓN DE LÓGICA DE DISPARO Y EFECTOS
-    // ==================================================================================
-
     void HandleFlamethrowerEffects()
     {
-        if (currentWeapon != null && currentWeapon.weaponType == WeaponType.Flamethrower && flamethrowerParticles != null)
+        if (currentWeapon != null && currentWeapon.weaponType == WeaponType.Flamethrower)
         {
-            // Detección de UI 
             bool isPointerOverUI = false;
-            if (Cursor.lockState == CursorLockMode.None && EventSystem.current != null)
+            if (EventSystem.current != null)
             {
                 if (EventSystem.current.IsPointerOverGameObject()) isPointerOverUI = true;
                 if (Input.touchCount > 0 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
                     isPointerOverUI = true;
             }
 
-            bool fireInputHeld = (Input.GetMouseButton(0) && !isPointerOverUI) || isMobileFiring || (useAutoFire && IsAimingAtEnemy());
-
-            // --- LÓGICA DE DISPARO  ---
-            if (fireInputHeld && !isReloading && currentAmmoInMag > 0)
+            bool mouseHeld = false;
+            if (!Application.isMobilePlatform)
             {
-                // 1. PARTÍCULAS
-                if (!flamethrowerParticles.isEmitting)
-                {
-                    flamethrowerParticles.Play();
-                }
+                mouseHeld = Input.GetMouseButton(0) && !isPointerOverUI;
+            }
 
-                if (audioSource != null && (!audioSource.isPlaying || audioSource.clip != currentWeapon.shootSound))
+            bool fireInputHeld = mouseHeld || isMobileFiring || (useAutoFire && IsAimingAtEnemy());
+            bool canFire = fireInputHeld && !isReloading && currentAmmoInMag > 0;
+
+            if (flamethrowerParticles != null)
+            {
+                if (canFire)
                 {
-                    audioSource.clip = currentWeapon.shootSound;
-                    audioSource.loop = true; 
-                    audioSource.Play();      
+                    if (!flamethrowerParticles.isPlaying) flamethrowerParticles.Play();
+                }
+                else
+                {
+                    if (flamethrowerParticles.isPlaying) flamethrowerParticles.Stop();
                 }
             }
-            // --- LÓGICA DE PARADA  ---
-            else
-            {
-                // 1. PARTÍCULAS
-                if (flamethrowerParticles.isEmitting)
-                {
-                    flamethrowerParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-                }
 
-                if (audioSource != null && audioSource.isPlaying && audioSource.clip == currentWeapon.shootSound)
+            if (audioSource != null && currentWeapon.shootSound != null)
+            {
+                if (canFire)
                 {
-                    audioSource.Stop();       
-                    audioSource.loop = false; 
-                    audioSource.clip = null;  
+                    if (!audioSource.isPlaying || audioSource.clip != currentWeapon.shootSound)
+                    {
+                        audioSource.clip = currentWeapon.shootSound;
+                        audioSource.loop = true;
+                        audioSource.Play();
+                    }
+                }
+                else
+                {
+                    if (audioSource.isPlaying && audioSource.clip == currentWeapon.shootSound)
+                    {
+                        audioSource.Stop();
+                        audioSource.loop = false;
+                        audioSource.clip = null;
+                    }
                 }
             }
         }
@@ -535,14 +529,20 @@ public class PlayerShooting : MonoBehaviour
         if (currentWeapon == null) return;
 
         bool isPointerOverUI = false;
-        if (Cursor.lockState == CursorLockMode.None)
+        if (EventSystem.current != null)
         {
-            if (EventSystem.current != null)
-            {
-                if (EventSystem.current.IsPointerOverGameObject()) isPointerOverUI = true;
-                if (Input.touchCount > 0 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
-                    isPointerOverUI = true;
-            }
+            if (EventSystem.current.IsPointerOverGameObject()) isPointerOverUI = true;
+            if (Input.touchCount > 0 && EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
+                isPointerOverUI = true;
+        }
+
+        bool mouseInput = false;
+        bool mouseInputDown = false;
+
+        if (!Application.isMobilePlatform)
+        {
+            mouseInput = Input.GetMouseButton(0) && !isPointerOverUI;
+            mouseInputDown = Input.GetMouseButtonDown(0) && !isPointerOverUI;
         }
 
         bool enemyInSight = false;
@@ -551,11 +551,8 @@ public class PlayerShooting : MonoBehaviour
             enemyInSight = IsAimingAtEnemy();
         }
 
-        bool mouseInput = Input.GetMouseButton(0) && !isPointerOverUI;
-        bool mouseInputDown = Input.GetMouseButtonDown(0) && !isPointerOverUI;
-
         bool fireInputHeld = mouseInput || isMobileFiring || enemyInSight;
-        bool fireInputDownCombined = mouseInputDown;
+        bool fireInputDownCombined = mouseInputDown || mobileTriggerPulled;
 
         switch (currentWeapon.weaponType)
         {
@@ -611,12 +608,31 @@ public class PlayerShooting : MonoBehaviour
                 }
                 break;
         }
+        mobileTriggerPulled = false;
     }
 
     public void SetMobileFiring(bool isFiring)
     {
+        if (isFiring && !isMobileFiring)
+        {
+            mobileTriggerPulled = true;
+        }
         isMobileFiring = isFiring;
     }
+
+    // --- ESTA ES LA FUNCIÓN QUE FALTABA Y DABA ERROR ---
+    public void MobilePressInteract()
+    {
+        mobileInteractPressed = true;
+        StartCoroutine(ResetMobileInteract());
+    }
+
+    private IEnumerator ResetMobileInteract()
+    {
+        yield return null;
+        mobileInteractPressed = false;
+    }
+    // --------------------------------------------------
 
     public void MobileToggleAim()
     {
@@ -807,7 +823,7 @@ public class PlayerShooting : MonoBehaviour
 
     void ShootFlamethrower()
     {
-
+        // Lanzamos un SphereCast (un rayo gordo) para quemar en área
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         RaycastHit[] hits = Physics.SphereCastAll(
             ray.origin,
@@ -818,6 +834,7 @@ public class PlayerShooting : MonoBehaviour
             QueryTriggerInteraction.Ignore
         );
 
+        // Usamos un HashSet para no dañar al mismo zombi dos veces en el mismo frame
         HashSet<ZombieController> burnedZombies = new HashSet<ZombieController>();
 
         foreach (RaycastHit hit in hits)
@@ -864,7 +881,6 @@ public class PlayerShooting : MonoBehaviour
             else
                 zombieHealth.TakeDamage(damage);
 
-            // --- APLICACIÓN DE EFECTOS ---
             if (currentWeapon.causesSlow)
                 zombieHealth.ApplySlow(currentWeapon.slowAmount, currentWeapon.slowDuration);
 
@@ -879,7 +895,6 @@ public class PlayerShooting : MonoBehaviour
             {
                 ShowFloatingScore(hit.point, pointsPerKillDisplay);
 
-                // Efecto Vampiro
                 if ((currentWeapon.weaponType == WeaponType.UZI || currentWeapon.weaponType == WeaponType.Mp7) && currentWeapon.isUpgraded)
                 {
                     if (currentAmmoInMag < currentWeapon.magCapacity)
@@ -1064,16 +1079,13 @@ public class PlayerShooting : MonoBehaviour
     IEnumerator ReloadCoroutine()
     {
         isReloading = true;
-
         PlaySound(currentWeapon.reloadSound);
-
         lmgCurrentHeatTime = 0;
 
         float reloadTime = currentWeapon.reloadTime * reloadTimeMultiplier;
         float animTime = 1f / reloadAnimSpeed;
         float t = 0;
 
-        // Animación de levantar el arma
         while (t < 1f)
         {
             t += Time.deltaTime * reloadAnimSpeed;
@@ -1083,16 +1095,11 @@ public class PlayerShooting : MonoBehaviour
 
         int neededAmmo = currentWeapon.magCapacity - currentAmmoInMag;
         int ammoToLoad = Mathf.Min(neededAmmo, totalAmmo);
-
-        // Tiempo de espera inicial antes de empezar a meter balas (ajustable)
         float waitTime = Mathf.Max(0, reloadTime - animTime * 2f);
 
-        // --- LÓGICA ESPECÍFICA DE ESCOPETAS DE TUBO ---
         if (currentWeapon.weaponType == WeaponType.Remington || currentWeapon.weaponType == WeaponType.HuntingShotgun)
         {
-
             float timePerBullet = 0f;
-
             if (ammoToLoad > 0)
             {
                 timePerBullet = currentWeapon.reloadTime / currentWeapon.magCapacity;
@@ -1112,17 +1119,14 @@ public class PlayerShooting : MonoBehaviour
                 UpdateAmmoUI();
             }
         }
-        // --- LÓGICA PARA EL RESTO DE ARMAS  ---
         else
         {
-            // Esperamos el tiempo de recarga completo
             if (waitTime > 0) yield return new WaitForSeconds(waitTime);
 
             currentAmmoInMag += ammoToLoad;
             totalAmmo -= ammoToLoad;
         }
 
-        // Animación de bajar el arma
         t = 0;
         while (t < 1f)
         {
@@ -1143,11 +1147,24 @@ public class PlayerShooting : MonoBehaviour
             return;
         }
 
-        bool aimInput = Input.GetMouseButton(1) || isMobileAiming;
+        bool aimInput = false;
+
+        if (Application.isMobilePlatform)
+        {
+            aimInput = isMobileAiming;
+        }
+        else
+        {
+            aimInput = Input.GetMouseButton(1) || isMobileAiming;
+        }
+
         if (aimInput) isAiming = true; else isAiming = false;
 
         float targetFOV = isAiming ? currentWeapon.aimedFOV : defaultFOV;
-        playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * adsSpeed);
+        if (playerCamera != null)
+        {
+            playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * adsSpeed);
+        }
 
         if (cameraController != null)
         {
@@ -1165,8 +1182,12 @@ public class PlayerShooting : MonoBehaviour
                 crosshairRectTransform.anchoredPosition = Vector2.zero;
                 crosshairRectTransform.sizeDelta = currentWeapon.aimedCrosshairSize;
             }
-            crosshairImage.sprite = currentWeapon.sniperScopeSprite;
-            crosshairImage.enabled = true;
+
+            if (crosshairImage != null)
+            {
+                crosshairImage.sprite = currentWeapon.sniperScopeSprite;
+                crosshairImage.enabled = true;
+            }
 
             if (!weaponHiddenForScope)
             {
@@ -1181,8 +1202,15 @@ public class PlayerShooting : MonoBehaviour
                 if (currentWeaponModel != null) currentWeaponModel.SetActive(true);
                 weaponHiddenForScope = false;
             }
-            if (isAiming) crosshairImage.enabled = false;
-            else UpdateCrosshair();
+
+            if (isAiming)
+            {
+                if (crosshairImage != null) crosshairImage.enabled = false;
+            }
+            else
+            {
+                UpdateCrosshair();
+            }
         }
     }
 
