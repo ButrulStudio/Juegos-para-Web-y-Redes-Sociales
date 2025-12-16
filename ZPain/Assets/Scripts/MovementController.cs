@@ -79,7 +79,7 @@ public class MovementController : MonoBehaviour
 
     void Update()
     {
-        HandleMovement();
+        //HandleMovement();
     }
 
     private void HandleMovement()
