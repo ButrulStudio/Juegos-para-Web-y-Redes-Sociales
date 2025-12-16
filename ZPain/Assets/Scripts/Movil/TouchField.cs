@@ -6,9 +6,13 @@ public class TouchField : MonoBehaviour, IDragHandler, IPointerUpHandler, IPoint
     [HideInInspector]
     public Vector2 TouchDist;
 
+    void Update()
+    {
+        TouchDist = Vector2.zero;
+    }
+
     public void OnDrag(PointerEventData eventData)
     {
-        // Guardamos cuánto se ha movido el dedo en este frame
         TouchDist = eventData.delta;
     }
 
@@ -18,11 +22,6 @@ public class TouchField : MonoBehaviour, IDragHandler, IPointerUpHandler, IPoint
     }
 
     public void OnPointerDown(PointerEventData eventData)
-    {
-        TouchDist = Vector2.zero;
-    }
-
-    void LateUpdate()
     {
         TouchDist = Vector2.zero;
     }

@@ -2,75 +2,71 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    [Header("Sensibilidad")]
-    [SerializeField] private float sensibility = 100f;
-    [Tooltip("Multiplicador para ajustar la velocidad del dedo respecto al ratón")]
-    [SerializeField] private float mobileSensitivityMultiplier = 0.2f;
-
     [Header("Referencias")]
-    public Transform jugador;
+    public Transform playerBody;
 
-    [Header("Controles Móviles")]
-    public TouchField mobileTouchField;
+    [Tooltip("Arrastra aquí tu objeto TouchField (el cuadrado blanco del Canvas)")]
+    public TouchField touchField;
 
-    [Header("Recoil")]
-    [SerializeField] private float recoilRecoverySpeed = 5f;
+    [Header("Ajustes")]
+    public float mouseSensitivity = 100f;
+    [Tooltip("Sensibilidad para el móvil (prueba con 0.2 o 0.5)")]
+    public float mobileSensitivity = 0.2f;
 
-    private Vector2 recoilOffset;
-    [SerializeField, Range(0f, 1f)] private float recoilMultiplier = 0.01f;
-    private float verticalRotation = 0f;
+    private float xRotation = 0f;
+
     private float sensitivityMultiplier = 1f;
 
     void Start()
     {
-        
-        sensibility = PlayerPrefs.GetFloat("MasterSensitivity", this.sensibility);
-
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     void Update()
     {
-        if (GameManager.IsPaused || GameManager.GameIsOver)
-            return;
+        if (GameManager.IsPaused) return;
 
-        float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
+        float mouseX = 0;
+        float mouseY = 0;
 
-        if (mobileTouchField != null && mobileTouchField.gameObject.activeInHierarchy)
+
+        if (Application.isMobilePlatform)
         {
-            mouseX += mobileTouchField.TouchDist.x * mobileSensitivityMultiplier;
-            mouseY += mobileTouchField.TouchDist.y * mobileSensitivityMultiplier;
+            if (touchField != null)
+            {
+                mouseX = touchField.TouchDist.x * mobileSensitivity * sensitivityMultiplier;
+                mouseY = touchField.TouchDist.y * mobileSensitivity * sensitivityMultiplier;
+            }
+        }
+        else
+        {
+            float currentSens = mouseSensitivity * sensitivityMultiplier;
+            mouseX = Input.GetAxis("Mouse X") * currentSens * Time.deltaTime;
+            mouseY = Input.GetAxis("Mouse Y") * currentSens * Time.deltaTime;
         }
 
-        float finalInputX = mouseX * sensibility * sensitivityMultiplier * Time.deltaTime;
-        float finalInputY = mouseY * sensibility * sensitivityMultiplier * Time.deltaTime;
 
+        xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
-        verticalRotation -= finalInputY;
-        verticalRotation -= recoilOffset.x;
-        verticalRotation = Mathf.Clamp(verticalRotation, -90f, 90f);
-
-
-        jugador.Rotate(Vector3.up * (finalInputX + recoilOffset.y));
-
-        transform.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
-
-
-        recoilOffset = Vector2.Lerp(recoilOffset, Vector2.zero, Time.deltaTime * recoilRecoverySpeed);
-    }
-
-    public void AddRecoil(float vertical, float horizontal)
-    {
-        recoilOffset += new Vector2(vertical, horizontal) * recoilMultiplier;
-    }
-
-    public void SetSensibility(float newSensibility)
-    {
-        sensibility = newSensibility;
+        transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        playerBody.Rotate(Vector3.up * mouseX);
     }
 
     public void SetSensitivityMultiplier(float multiplier)
     {
         sensitivityMultiplier = multiplier;
+    }
+
+    public void SetSensibility(float value)
+    {
+        mouseSensitivity = value;
+    }
+
+    public void AddRecoil(float vertical, float horizontal)
+    {
+        xRotation -= vertical;
+        playerBody.Rotate(Vector3.up * horizontal);
     }
 }

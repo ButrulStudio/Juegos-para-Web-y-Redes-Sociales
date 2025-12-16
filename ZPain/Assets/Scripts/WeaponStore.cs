@@ -53,7 +53,7 @@ public class WeaponStore : MonoBehaviour
                 playerLooking = true;
                 ShowInteractionMessage();
 
-                if (Input.GetKeyDown(interactionKey))
+                if (Input.GetKeyDown(interactionKey) || (playerShooting != null && playerShooting.mobileInteractPressed))
                 {
                     TryPurchaseOrEquip();
                 }
